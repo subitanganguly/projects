@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ToriButik</title>
+    <link rel="icon" type="image/png" href="img/logotab.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+        
+<body>
+    <div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+    <nav class="navbar fixed-top px-3" style="background-color: rgb(112, 255, 203);">
+        <div class="container">
+            <!-- Logo & Brand -->
+            <a class="navbar-brand" href="#">
+                <img src="img/logo.png" alt="Logo" width="60" height="40" class="d-inline-block align-text-top boat">
+                ToriButik
+            </a>
+    
+        </div>
+    </nav>
+    
+
+    <div class="container" style="padding-top:60px;">
+         <!-- Search Input for Product ID -->
+         <form class="d-flex ms-auto mb-3" onsubmit="searchProductID(event)">
+            <input class="form-control me-2" type="search" id="searchInput" placeholder="Search Product ID" aria-label="Search">
+            <button class="btn btn-dark" type="submit">Search</button>
+        </form>
+        <div class="form-floating">
+            <select class="form-select" id="floatingSelect" aria-label="Floating label select example" onchange="filterProducts()">
+                <option value="all" selected>Show All</option>
+                <option value="Kurta">Kurtas For Men</option>
+                <option value="shirt">Shirts For Men</option>
+                <option value="Kurti">kurtis for Women</option>
+                <option value="clothbag">Cloth Bags</option>
+                <option value="umbrella">Umbrella</option>
+            </select>
+            <label for="floatingSelect">Select Product</label>
+        </div>
+       
+
+         <!-- Products Start From Here -->
+        <div id="kurta-container"></div>
+        <div id="kurtis-container"></div>
+        <div id="shirt-container"></div>
+        <div id="clothbag-container"></div>
+        <div id="umbrella-container"></div>
+
+        <!-- Image Zoom Modal -->
+        <!-- Image Zoom Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass">
+            <div class="modal-body text-center position-relative">
+                <!-- Close Button -->
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-2" data-bs-dismiss="modal" aria-label="Close"></button>
+                <!-- Image -->
+                <img id="modalImg" class="img-fluid" style="max-height: 80vh; border-radius: 20px;">
+                
+                <!-- Product Details -->
+                <p class="text-dark mt-3">
+                    <span id="pp-299"></span><br>
+                    <span id="modalProductId" class="product-id fw-bold"></span><br>
+                    <span id="cotton-kurta" class="description"></span>
+                </p>
+
+                                                    
+            </div>
+        </div>
+    </div>
+</div>
+
+        
+
+    </div>
+
+    <script>
+        function filterProducts() {
+    let selectedValue = document.getElementById("floatingSelect").value;
+    let products = document.querySelectorAll(".product");
+
+    products.forEach(product => {
+        if (selectedValue === "all" || product.id === selectedValue) {
+            product.style.display = "flex"; // Use flexbox to keep row layout
+            product.style.flexWrap = "wrap"; // Ensure wrapping for multiple cards
+        } else {
+            product.style.display = "none";
+        }
+    });
+}
+
+    </script>
+
+<script>
+    // Function to open image in modal (zoom)
+    function openImageModal(imageElement) {
+    let card = imageElement.closest('.card'); // Find the card
+    let imgSrc = imageElement.getAttribute("src"); // Get clicked image source
+    let productId = card.querySelector(".product-id").textContent; // Get product ID
+    
+    document.getElementById("modalImg").setAttribute("src", imgSrc); // Set modal image
+    document.getElementById("modalProductId").textContent = productId; // Set modal product ID
+
+    // Show the modal
+    let modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+}
+
+
+//     function shareImage(buttonElement) {
+//     // Find the closest image within the same card
+//     let card = buttonElement.closest(".card");
+//     let imgElement = card.querySelector(".card-img-top");
+//     let imageUrl = imgElement.src; // Get the image source dynamically
+
+//     if (navigator.share) {
+//         navigator.share({
+//             title: 'Check this product!',
+//             text: 'Look at this awesome product!',
+//             url: imageUrl // Use the dynamically fetched URL
+//         }).catch(error => console.log('Error sharing:', error));
+//     } else {
+//         navigator.clipboard.writeText(imageUrl);
+//         alert("Image link copied to clipboard!");
+//     }
+// }
+
+function shareOnWhatsApp(button) {
+    let card = button.closest('.card');
+    let imgElement = card.querySelector('img');
+    let productIdElement = card.querySelector('.product-id');
+
+    let imageUrl = window.location.origin + '/' + imgElement.getAttribute('src');
+    let productId = productIdElement ? productIdElement.textContent : "Unknown Product"; // Get product ID or default
+
+    let phoneNumber = "7679876754";  // Replace with the desired number
+    let message = encodeURIComponent(`Hello, is this still available?\n\n Product ${productId}\n${imageUrl}`);
+    let whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+
+    window.open(whatsappUrl, '_blank');
+}
+
+</script>
+
+<script>
+    function getProductShareLink(buttonElement) {
+    let card = buttonElement.closest(".card");
+    let productId = card.getAttribute("data-product-id");
+
+    let baseUrl = window.location.origin + "/index.html"; // Adjust if needed
+    return `${baseUrl}?product=${productId}`;
+}
+
+// Copy Product Link to Clipboard
+function copyProductLink(buttonElement) {
+    let shareUrl = getProductShareLink(buttonElement);
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        alert("Product link copied to clipboard!");
+    }).catch(error => console.log("Error copying link:", error));
+}
+
+// Share Via Navigator API
+function shareViaNavigator(buttonElement) {
+    let shareUrl = getProductShareLink(buttonElement);
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Check this product!',
+            text: 'Look at this awesome product!',
+            url: shareUrl
+        }).catch(error => console.log("Error sharing:", error));
+    } else {
+        copyProductLink(buttonElement); // Fallback to copying link if `navigator.share` isn't available
+    }
+}
+
+function setProductIDs() {
+    document.querySelectorAll(".card").forEach(card => {
+        let imgElement = card.querySelector("img");
+        if (imgElement) {
+            let imgSrc = imgElement.getAttribute("src"); // Get image source
+            let parts = imgSrc.split("/"); // Split path by "/"
+            let folderName = parts[1].toUpperCase(); // Convert folder name to uppercase (e.g., "KURTA")
+            let firstLetter = folderName.charAt(0); // First letter (K)
+            let lastLetter = folderName.charAt(folderName.length - 1); // Last letter (A)
+            let fileName = parts.pop().split(".")[0]; // Extract filename (e.g., "10" from "10.jpg")
+            
+            let productId = `${firstLetter}${lastLetter}${fileName}`; // Format as "KA10"
+            
+            // Set the Product ID in the card
+            card.setAttribute("data-product-id", productId);
+
+            let productIdElement = card.querySelector(".product-id");
+            if (productIdElement) {
+                productIdElement.textContent = `ID: ${productId}`; // Display Product ID
+            }
+        }
+    });
+}
+
+// Call setProductIDs() after page load
+document.addEventListener("DOMContentLoaded", setProductIDs);
+
+
+// function setProductIDs() {
+//     document.querySelectorAll(".card").forEach(card => {
+//         let imgElement = card.querySelector("img");
+//         if (imgElement) {
+//             let imgSrc = imgElement.getAttribute("src"); // Get image source
+//             let parts = imgSrc.split("/"); // Split path by "/"
+//             let folderName = parts[1].toUpperCase(); // Convert folder name to uppercase (e.g., "KURTA")
+//             let firstLetter = folderName.charAt(0); // First letter (K)
+//             let lastLetter = folderName.charAt(folderName.length - 1); // Last letter (A)
+//             let fileName = parts.pop().split(".")[0]; // Extract filename (e.g., "1" from "1.jpg")
+            
+//             let productId = `ID: ${firstLetter}${lastLetter}${fileName}`; // Format as "ID: KA1"
+            
+//             let productIdElement = card.querySelector(".product-id");
+//             if (productIdElement) {
+//                 productIdElement.textContent = productId; // Set the Product ID text
+//             }
+//         }
+//     });
+// }
+
+
+   // Load the Kurta and Kurtis sections dynamically
+Promise.all([
+    fetch("products/kurta.html").then(response => response.text()),
+    fetch("products/kurtis.html").then(response => response.text()),
+    fetch("products/shirt.html").then(response => response.text()),
+    fetch("products/clothbag.html").then(response => response.text()), 
+    fetch("products/umbrella.html").then(response => response.text())
+])
+.then(([kurtaData, kurtisData, shirtData, clothbagData, umbrellaData]) => {
+    document.getElementById("kurta-container").innerHTML = kurtaData;
+    document.getElementById("kurtis-container").innerHTML = kurtisData;
+    document.getElementById("shirt-container").innerHTML = shirtData;
+    document.getElementById("clothbag-container").innerHTML = clothbagData;
+    document.getElementById("umbrella-container").innerHTML = umbrellaData;
+    updatePrices(); // Run the price update function after loading
+    setProductIDs();// Assign Product IDs after loading products
+    updateDescription();
+
+    // After all products are loaded, check for URL parameter
+    checkUrlForProductId();
+})
+.catch(error => console.error("Error loading product sections:", error));
+
+function updatePrices() {
+    document.querySelectorAll("#pp-199").forEach(el => el.textContent = "Rs: 199/-");
+    document.querySelectorAll("#pp-so-199").forEach(el => el.textContent = "Sold Out Rs: 199/-");
+    document.querySelectorAll("#pp-250").forEach(el => el.textContent = "Rs: 250/-");
+    document.querySelectorAll("#pp-so-250").forEach(el => el.textContent = "Sold Out Rs: 250/-");
+    document.querySelectorAll("#pp-275").forEach(el => el.textContent = "Rs: 275/-");
+    document.querySelectorAll("#pp-so-275").forEach(el => el.textContent = "Sold Out Rs: 275/-");
+    document.querySelectorAll("#pp-299").forEach(el => el.textContent = "Rs: 299/-");
+    document.querySelectorAll("#pp-so-299").forEach(el => el.textContent = "Sold Out Rs: 299/-");
+    document.querySelectorAll("#pp-350").forEach(el => el.textContent = "Rs: 350/-");
+    document.querySelectorAll("#pp-so-350").forEach(el => el.textContent = "Sold Out Rs: 350/-");
+    document.querySelectorAll("#pp-375").forEach(el => el.textContent = "Rs: 375/-");
+    document.querySelectorAll("#pp-so-375").forEach(el => el.textContent = "Sold Out Rs: 375/-");
+    document.querySelectorAll("#pp-399").forEach(el => el.textContent = "Rs: 399/-");
+    document.querySelectorAll("#pp-so-399").forEach(el => el.textContent = "Sold Out Rs: 399/-");
+    document.querySelectorAll("#pp-450").forEach(el => el.textContent = "Rs: 450/-");
+    document.querySelectorAll("#pp-so-450").forEach(el => el.textContent = "Sold Out Rs: 450/-");
+    document.querySelectorAll("#pp-475").forEach(el => el.textContent = "Rs: 475/-");
+    document.querySelectorAll("#pp-so-475").forEach(el => el.textContent = "Sold Out Rs: 475/-");
+    document.querySelectorAll("#pp-499").forEach(el => el.textContent = "Rs: 499/-");
+    document.querySelectorAll("#pp-so-499").forEach(el => el.textContent = "Sold Out Rs: 499/-");
+    document.querySelectorAll("#pp-550").forEach(el => el.textContent = "Rs: 550/-");
+    document.querySelectorAll("#pp-so-550").forEach(el => el.textContent = "Sold Out Rs: 550/-");
+    document.querySelectorAll("#pp-575").forEach(el => el.textContent = "Rs: 575/-");
+    document.querySelectorAll("#pp-so-575").forEach(el => el.textContent = "Sold Out Rs: 575/-");
+    document.querySelectorAll("#pp-599").forEach(el => el.textContent = "Rs: 599/-");
+    document.querySelectorAll("#pp-so-599").forEach(el => el.textContent = "Sold Out Rs: 599/-");
+    document.querySelectorAll("#pp-650").forEach(el => el.textContent = "Rs: 650/-");
+    document.querySelectorAll("#pp-so-650").forEach(el => el.textContent = "Sold Out Rs: 650/-");
+    document.querySelectorAll("#pp-675").forEach(el => el.textContent = "Rs: 675/-");
+    document.querySelectorAll("#pp-so-675").forEach(el => el.textContent = "Sold Out Rs: 675/-");
+    document.querySelectorAll("#pp-699").forEach(el => el.textContent = "Rs: 699/-");
+    document.querySelectorAll("#pp-so-699").forEach(el => el.textContent = "Sold Out Rs: 699/-");
+
+
+}
+
+function updateDescription(){
+    document.querySelectorAll("#cotton-kurta").forEach(el => el.textContent = "Cotton kurta for men");
+    document.querySelectorAll("#ajrakh-kurta").forEach(el => el.textContent = "Ajrakh kurta for men");
+
+    document.querySelectorAll("#cotton-kurti").forEach(el => el.textContent = "Cotton kurtis for women");
+}
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".card").forEach(card => {
+            let imgElement = card.querySelector("img");
+            if (imgElement) {
+                let imgSrc = imgElement.getAttribute("src"); // Get image source
+                let parts = imgSrc.split("/"); // Split path by "/"
+                let folderName = parts[1].toUpperCase(); // Get folder name (e.g., "kurta" -> "KURTA")
+                let fileName = parts.pop().split(".")[0]; // Extract filename (e.g., "1")
+                
+                let productId = folderName + fileName; // Format as "KURTA1"
+                
+                let productIdElement = card.querySelector(".product-id");
+                if (productIdElement) {
+                    productIdElement.textContent = productId; // Set Product ID
+                }
+            }
+        });
+    });
+
+
+
+
+
+
+
+
+
+    function checkUrlForProductId() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('product');
+    
+    if (productId) {
+        // Set the search input value
+        document.getElementById('searchInput').value = productId;
+        
+        // Trigger the search
+        searchProductById(productId);
+    }
+}
+
+function searchProductById(productId) {
+    let searchValue = productId.toUpperCase();
+    let productCards = document.querySelectorAll(".card");
+    let found = false;
+
+    productCards.forEach(card => {
+        let productIdElement = card.querySelector(".product-id");
+
+        if (productIdElement) {
+            let cardProductId = productIdElement.textContent.toUpperCase();
+
+            if (cardProductId.includes(searchValue)) {  // More flexible matching
+                card.scrollIntoView({ behavior: "smooth", block: "center" });
+                card.style.border = "3px solid red";
+                setTimeout(() => { card.style.border = "none"; }, 2000);
+                found = true;
+            } else {
+                card.style.border = "none";
+            }
+        }
+    });
+
+    if (!found) {
+        console.log("Product ID not found:", productId);
+    }
+}
+
+
+
+    function searchProductID(event) {
+    event.preventDefault(); // Prevent page reload
+
+    let searchValue = document.getElementById("searchInput").value.trim().toUpperCase();
+    let productCards = document.querySelectorAll(".card");
+
+    let found = false;
+
+    productCards.forEach(card => {
+        let productIdElement = card.querySelector(".product-id");
+
+        if (productIdElement) {
+            let productId = productIdElement.textContent.toUpperCase();
+
+            if (productId === `ID: ${searchValue}`) {  // Exact match
+                card.scrollIntoView({ behavior: "smooth", block: "center" }); // Scroll to product
+                card.style.border = "3px solid red"; // Highlight product
+                setTimeout(() => { card.style.border = "none"; }, 2000); // Remove highlight after 2s
+                found = true;
+            } else {
+                card.style.border = "none"; // Remove highlight if it's not a match
+            }
+        }
+    });
+
+    if (!found) {
+        alert("Product ID not found!");
+    }
+}
+
+
+
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
