@@ -152,35 +152,120 @@ function shareOnWhatsApp(button) {
 </script>
 
 <script>
-    function getProductShareLink(buttonElement) {
-    let card = buttonElement.closest(".card");
-    let productId = card.getAttribute("data-product-id");
+//     function getProductShareLink(buttonElement) {
+//     let card = buttonElement.closest(".card");
+//     let productId = card.getAttribute("data-product-id");
 
-    let baseUrl = window.location.origin + "/index.html"; // Adjust if needed
-    return `${baseUrl}?product=${productId}`;
-}
+//     let baseUrl = window.location.origin + "/index.html"; // Adjust if needed
+//     return `${baseUrl}?product=${productId}`;
+// }
 
-// Copy Product Link to Clipboard
-function copyProductLink(buttonElement) {
-    let shareUrl = getProductShareLink(buttonElement);
-    navigator.clipboard.writeText(shareUrl).then(() => {
-        alert("Product link copied to clipboard!");
-    }).catch(error => console.log("Error copying link:", error));
-}
+// // Copy Product Link to Clipboard
+// function copyProductLink(buttonElement) {
+//     let shareUrl = getProductShareLink(buttonElement);
+//     navigator.clipboard.writeText(shareUrl).then(() => {
+//         alert("Product link copied to clipboard!");
+//     }).catch(error => console.log("Error copying link:", error));
+// }
 
-// Share Via Navigator API
-function shareViaNavigator(buttonElement) {
-    let shareUrl = getProductShareLink(buttonElement);
+// // Share Via Navigator API
+// function shareViaNavigator(buttonElement) {
+//     let shareUrl = getProductShareLink(buttonElement);
     
-    if (navigator.share) {
-        navigator.share({
-            title: 'Check this product!',
-            text: 'Look at this awesome product!',
-            url: shareUrl
-        }).catch(error => console.log("Error sharing:", error));
-    } else {
-        copyProductLink(buttonElement); // Fallback to copying link if `navigator.share` isn't available
+//     if (navigator.share) {
+//         navigator.share({
+//             title: 'Check this product!',
+//             text: 'Look at this awesome product!',
+//             url: shareUrl
+//         }).catch(error => console.log("Error sharing:", error));
+//     } else {
+//         copyProductLink(buttonElement); // Fallback to copying link if `navigator.share` isn't available
+//     }
+// }
+
+function getProductShareLink(buttonElement) {
+    const card = buttonElement.closest(".card");
+    const productId = card.getAttribute("data-product-id");
+    // Ensure clean URL without duplicate slashes
+    const baseUrl = `${window.location.origin}${window.location.pathname}`.replace(/([^:]\/)\/+/g, '$1');
+    return `${baseUrl}?product=${encodeURIComponent(productId)}`;
+}
+
+async function copyProductLink(buttonElement) {
+    try {
+        const shareUrl = getProductShareLink(buttonElement);
+        
+        // Modern clipboard API
+        if (navigator.clipboard) {
+            await navigator.clipboard.writeText(shareUrl);
+        } else {
+            // Fallback for older browsers
+            fallbackCopy(shareUrl);
+        }
+        
+        // Visual feedback
+        showFeedback(buttonElement, "Copied!");
+    } catch (error) {
+        console.error("Copy failed:", error);
+        showFeedback(buttonElement, "Failed to copy");
     }
+}
+
+async function shareViaNavigator(buttonElement) {
+    try {
+        const shareUrl = getProductShareLink(buttonElement);
+        
+        // Check for Web Share API support
+        if (navigator.share) {
+            await navigator.share({
+                title: document.title || 'Check this product!',
+                text: 'I found this awesome product!',
+                url: shareUrl
+            });
+        } 
+        // Check for Android intent sharing
+        else if (navigator.userAgent.match(/Android/i)) {
+            window.location.href = `intent://share?text=${encodeURIComponent('Check this product: ' + shareUrl)}#Intent;package=com.android.chrome;scheme=https;end`;
+        }
+        // Fallback for all other cases
+        else {
+            await copyProductLink(buttonElement);
+        }
+    } catch (error) {
+        console.error("Sharing failed:", error);
+        if (error.name !== 'AbortError') {
+            await copyProductLink(buttonElement);
+        }
+    }
+}
+
+// Helper functions
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed'; // Prevent scrolling
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+        return document.execCommand('copy');
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+        return false;
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+
+function showFeedback(element, message) {
+    const originalText = element.innerText;
+    element.innerText = message;
+    element.disabled = true;
+    
+    setTimeout(() => {
+        element.innerText = originalText;
+        element.disabled = false;
+    }, 2000);
 }
 
 function setProductIDs() {
