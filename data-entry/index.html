@@ -53,12 +53,20 @@
                 Data Entry</a>
             </div>
         </nav>
-        
-        <!-- Button to open modal for folder name input -->
-        <button class="btn btn-primary rounded-pill mt-5 mb-3" data-toggle="modal" data-target="#folderModal" style="font-size: 25px;">
-            <i class="bi bi-folder-plus"></i>
+         <!-- Button to open modal for folder name input -->
+         <button class="btn btn-primary rounded-pill mt-5 mb-3" data-toggle="modal" data-target="#folderModal">
+            Add Folder <i class="bi bi-folder-plus"></i>
         </button>
         
+        <!-- Add these near your folder creation button -->
+        <button class="btn btn-success rounded-pill mt-5 mb-3 ms-2" id="exportBtn">
+            Export Data <i class="bi bi-download"></i>
+        </button>
+        <button class="btn btn-info rounded-pill mt-5 mb-3 ms-2" id="importBtn">
+            Import Data <i class="bi bi-upload"></i>
+        </button>
+        <input type="file" id="fileInput" accept=".json" style="display: none;">
+       
         <!-- Display created folders here -->
         <div id="foldersList" class="">
             <!-- Folders will be listed here dynamically -->
@@ -185,6 +193,77 @@
 
         // Load the folders when the page is loaded
         window.onload = loadFolders;
+
+
+        // Add this to your existing script in index.html
+
+// Export all data to JSON file
+document.getElementById('exportBtn').addEventListener('click', function() {
+    // Get all data from localStorage
+    const allData = {};
+    const folders = JSON.parse(localStorage.getItem('folders')) || [];
+    
+    // Add each folder's data
+    folders.forEach(folder => {
+        allData[folder.name] = JSON.parse(localStorage.getItem(folder.name)) || {};
+    });
+    
+    // Add metadata
+    allData.metadata = {
+        exportedAt: new Date().toISOString(),
+        appVersion: "1.0",
+        dataCount: folders.length
+    };
+    
+    // Create download link
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `folder_app_data_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    
+    alert('Data exported successfully!');
+});
+
+// Import data from JSON file
+document.getElementById('importBtn').addEventListener('click', function() {
+    document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            if (confirm('This will overwrite all current data. Are you sure?')) {
+                // Clear existing data
+                localStorage.clear();
+                
+                // Restore folders and their data
+                const folders = [];
+                for (const key in importedData) {
+                    if (key !== 'metadata') {
+                        folders.push({ name: key });
+                        localStorage.setItem(key, JSON.stringify(importedData[key]));
+                    }
+                }
+                localStorage.setItem('folders', JSON.stringify(folders));
+                
+                alert('Data imported successfully!');
+                window.location.reload();
+            }
+        } catch (error) {
+            alert('Error importing data: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
+});
     </script>
 </body>
 </html>
