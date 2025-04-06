@@ -164,10 +164,12 @@
                 </select>
             </div>
             <div class="col-md-6">
-                <label for="optimizeSelect" class="form-label">Optimization</label>
+                <label for="optimizeSelect" class="form-label">Optimization Level</label>
                 <select class="form-select" id="optimizeSelect">
-                    <option value="optimize" selected>Optimize (reduce size, keep quality)</option>
-                    <option value="none">No optimization</option>
+                    <option value="veryhigh">Very High (smallest possible size, significant quality loss)</option>
+                    <option value="high">High (smallest size, noticeable quality loss)</option>
+                    <option value="medium" selected>Medium (reduce size, keep good quality)</option>
+                    <option value="none">No optimization (original quality)</option>
                 </select>
             </div>
         </div>
@@ -411,6 +413,8 @@
             }
         }
 
+       
+
         function convertImages() {
             if (!imageList.length) {
                 alert('Please select at least one image.');
@@ -421,6 +425,25 @@
             const optimization = document.getElementById('optimizeSelect').value;
             const mimeType = getMimeType(format);
             const fileExtension = getFileExtension(format);
+
+            // Determine quality based on optimization setting
+            let quality;
+            switch(optimization) {
+                case 'veryhigh': 
+                    quality = 0.4; // Very aggressive compression
+                    break;
+                case 'high': 
+                    quality = 0.6; // More aggressive compression
+                    break;
+                case 'medium': 
+                    quality = 0.85; // Balanced compression
+                    break;
+                case 'none': 
+                    quality = 1.0; // No compression
+                    break;
+                default:
+                    quality = 0.85; // Default to medium if something unexpected
+            }
 
             imageList.forEach((imgData, index) => {
                 const reader = new FileReader();
@@ -436,9 +459,6 @@
                         canvas.height = img.height;
                         ctx.drawImage(img, 0, 0);
 
-                        // Determine quality based on optimization setting
-                        const quality = optimization === 'optimize' ? 0.85 : 1.0;
-
                         canvas.toBlob((blob) => {
                             const fileName = `${imgData.name}.${fileExtension}`;
                             const link = document.createElement('a');
@@ -453,6 +473,7 @@
                 reader.readAsDataURL(imgData.file);
             });
         }
+
     </script>
 </body>
 </html>
