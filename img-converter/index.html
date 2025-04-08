@@ -115,6 +115,12 @@
             border-radius: 8px;
             margin-bottom: 20px;
         }
+        .spinner-border {
+            display: none;
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.15em;
+        }
     </style>
 </head>
 <body class="container mt-1">
@@ -137,20 +143,29 @@
                     <option value="webp">WebP (.webp)</option>
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6" id="sizeSelectContainer">
                 <label for="sizeSelect" class="form-label">Max File Size</label>
                 <select class="form-select" id="sizeSelect">
                     <option value="30">Under 30KB</option>
                     <option value="50">Under 50KB</option>
                     <option value="100" selected>Under 100KB</option>
-                    <option value="200">Under 200KB</option>
-                    <option value="300">Under 300KB</option>
-                    <option value="500">Under 500KB</option>
-                    <option value="1024">Under 1MB</option>
                 </select>
             </div>
         </div>
-        <a class="btn btn-outline-dark mt-3" href="optimize.html">Optimize Image</a>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label for="qualitySlider" class="form-label">Quality: <span id="qualityValue">90</span>%</label>
+                <input type="range" class="form-range" min="10" max="100" value="90" id="qualitySlider" oninput="document.getElementById('qualityValue').textContent = this.value;">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="useQuality" onchange="toggleQualityMode()">
+                    <label class="form-check-label" for="useQuality">Use Quality Slider</label>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-outline-dark mt-3" onclick="convertImages()" id="convertBtn">
+            <span class="spinner-border spinner-border-sm" id="convertSpinner"></span>
+            Convert & Download
+        </button>
     </div>
 
     <!-- Image Selection -->
@@ -159,16 +174,17 @@
     <!-- Drag & Drop Area -->
     <div class="preview-container" id="filenameInputs"></div>
 
-    <!-- Convert Button -->
-    <div class="text-center mt-3">
-        <button class="btn btn-primary" onclick="convertImages()">Convert & Download</button>
-    </div>
-
     <canvas id="canvas" style="display: none;"></canvas>
 
     <script>
         let imageList = [];
         let draggedItem = null;
+        let isConverting = false;
+
+        function toggleQualityMode() {
+            const useQuality = document.getElementById('useQuality').checked;
+            document.getElementById('sizeSelectContainer').style.display = useQuality ? 'none' : 'block';
+        }
 
         function generateInputs() {
             const inputDiv = document.getElementById('filenameInputs');
@@ -269,65 +285,94 @@
             }
         }
 
-        function convertImages() {
+        async function convertImages() {
+            if (isConverting) return;
+            
             if (!imageList.length) {
                 alert('Please select at least one image.');
                 return;
             }
 
+            isConverting = true;
+            const convertBtn = document.getElementById('convertBtn');
+            const spinner = document.getElementById('convertSpinner');
+            convertBtn.disabled = true;
+            spinner.style.display = 'inline-block';
+
             const format = document.getElementById('formatSelect').value;
-            const maxSizeKB = parseInt(document.getElementById('sizeSelect').value);
+            const useQuality = document.getElementById('useQuality').checked;
+            const quality = useQuality ? parseInt(document.getElementById('qualitySlider').value) / 100 : 0.9;
+            const maxSizeKB = useQuality ? null : parseInt(document.getElementById('sizeSelect').value);
             const mimeType = getMimeType(format);
             const fileExtension = getFileExtension(format);
 
-            imageList.forEach((imgData, index) => {
-                const reader = new FileReader();
-                reader.onload = function (event) {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = function () {
-                        const canvas = document.getElementById('canvas');
-                        const ctx = canvas.getContext('2d');
+            try {
+                for (const imgData of imageList) {
+                    await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = function (event) {
+                            const img = new Image();
+                            img.src = event.target.result;
+                            img.onload = function () {
+                                const canvas = document.getElementById('canvas');
+                                const ctx = canvas.getContext('2d');
 
-                        // Resize while maintaining aspect ratio
-                        const maxWidth = 800;
-                        const scale = maxWidth / img.width;
-                        const newWidth = img.width * scale;
-                        const newHeight = img.height * scale;
+                                // Resize while maintaining aspect ratio
+                                const maxWidth = 800;
+                                const scale = maxWidth / img.width;
+                                const newWidth = img.width * scale;
+                                const newHeight = img.height * scale;
 
-                        canvas.width = newWidth;
-                        canvas.height = newHeight;
-                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                                canvas.width = newWidth;
+                                canvas.height = newHeight;
+                                ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
-                        // Convert to selected format with quality adjustment to meet size requirements
-                        let quality = 0.9;
-                        let imageData;
-                        let attempts = 0;
-                        const maxAttempts = 10;
-                        
-                        do {
-                            imageData = canvas.toDataURL(mimeType, quality);
-                            const sizeKB = (imageData.length * 0.75) / 1024; // Approximate size in KB
-                            
-                            if (sizeKB <= maxSizeKB || quality <= 0.1 || attempts >= maxAttempts) {
-                                break;
-                            }
-                            
-                            quality -= 0.1;
-                            attempts++;
-                        } while (true);
+                                if (useQuality) {
+                                    // Use quality slider value directly
+                                    const imageData = canvas.toDataURL(mimeType, quality);
+                                    downloadImage(imageData, imgData.name, fileExtension);
+                                    resolve();
+                                } else {
+                                    // Auto-adjust quality to meet size requirements
+                                    let currentQuality = 0.9;
+                                    let imageData;
+                                    let attempts = 0;
+                                    const maxAttempts = 10;
+                                    
+                                    do {
+                                        imageData = canvas.toDataURL(mimeType, currentQuality);
+                                        const sizeKB = (imageData.length * 0.75) / 1024;
+                                        
+                                        if (sizeKB <= maxSizeKB || currentQuality <= 0.1 || attempts >= maxAttempts) {
+                                            break;
+                                        }
+                                        
+                                        currentQuality -= 0.1;
+                                        attempts++;
+                                    } while (true);
 
-                        // Create download link
-                        const link = document.createElement('a');
-                        link.href = imageData;
-                        link.download = `${imgData.name}.${fileExtension}`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    };
-                };
-                reader.readAsDataURL(imgData.file);
-            });
+                                    downloadImage(imageData, imgData.name, fileExtension);
+                                    resolve();
+                                }
+                            };
+                        };
+                        reader.readAsDataURL(imgData.file);
+                    });
+                }
+            } finally {
+                isConverting = false;
+                convertBtn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        }
+
+        function downloadImage(dataUrl, name, extension) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `${name}.${extension}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 
