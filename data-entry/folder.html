@@ -182,6 +182,35 @@
 #filterIndicator i {
     margin-right: 5px;
 }
+
+.sort-icon{
+    font-size: 16px;
+}
+
+.summaries-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.column-sum {
+    padding: 5px;
+    background-color: #f8f9fa;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.178);
+}
+
+.grand-total {
+    padding-top: 5px;
+    font-size: 1.1em;
+    color: #0d6efd;
+}
+#rowCount{
+    padding: 5px;
+    background-color: #dddddd40;
+    color: #333333;
+    font-size: 20px;
+    border-radius: 5px;
+
+}
     </style>
 </head>
 <body>
@@ -196,7 +225,7 @@
         <div class="action-navbar">
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="displayAddRowForm()">
-                    <i class="fas fa-plus"></i> Add
+                    <i class="fas fa-plus"></i> Add Data
                 </button>
                 <button class="btn btn-secondary" onclick="displayAddColumnForm()">
                     <i class="fas fa-columns"></i> Add Column
@@ -215,7 +244,7 @@
                     <i class="fas fa-calculator"></i> Sum
                 </button>
                 <button class="btn btn-danger" id="deleteAllBtn">
-                    <i class="fas fa-trash"></i> Delete All
+                    <i class="fas fa-trash"></i> Delete Data
                 </button>
             </div>
             <div class="ms-auto">
@@ -382,7 +411,6 @@ function displayTable(data) {
     searchAndCounterContainer.id = "searchAndCounterContainer";
     searchAndCounterContainer.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <input type="text" id="searchInput" class="form-control me-2" placeholder="Search" onkeyup="searchTable()" />
         </div>
         <span id="rowCount" class="mb-3">Showing 0 Data</span><br>
         <span id="columnSum" class="mb-3" style="display: none;"></span>
@@ -934,26 +962,7 @@ function downloadExcel() {
     XLSX.writeFile(wb, filename);
 }
 
-function searchTable() {
-    const searchTerm = document.getElementById("searchInput").value.toLowerCase();
-    const rows = document.querySelectorAll("#folderData table tbody tr");
 
-    rows.forEach(row => {
-        const cells = row.getElementsByTagName("td");
-        let rowVisible = false;
-
-        for (let i = 0; i < cells.length - 1; i++) {
-            if (cells[i].textContent.toLowerCase().includes(searchTerm)) {
-                rowVisible = true;
-                break;
-            }
-        }
-
-        row.style.display = rowVisible ? "" : "none";
-    });
-
-    updateRowCount();
-}
 
 function updateRowCount() {
     const visibleRows = document.querySelectorAll("#folderData table tbody tr:not([style*='display: none'])").length;
@@ -962,12 +971,35 @@ function updateRowCount() {
 }
 
 function calculateAndDisplaySum() {
-    if (!folderData || !folderData.rows.length || typeof window.lastSumColumnIndex === 'undefined') {
-        document.getElementById('columnSum').style.display = 'none';
+    const sumElement = document.getElementById('columnSum');
+    
+    // Check if we have data to work with
+    if (!folderData || !folderData.rows.length) {
+        sumElement.style.display = 'none';
         return;
     }
 
-    const columnIndex = window.lastSumColumnIndex;
+    // Check for multiple column sums first (new feature)
+    const savedColumnIndices = localStorage.getItem(`${folderName}_sumColumnIndices`);
+    if (savedColumnIndices) {
+        const selectedColumns = JSON.parse(savedColumnIndices);
+        calculateMultipleColumnsSum(selectedColumns);
+        return;
+    }
+    
+    // Fall back to single column sum (original functionality)
+    const savedColumnIndex = localStorage.getItem(`${folderName}_sumColumnIndex`);
+    if (savedColumnIndex !== null) {
+        const columnIndex = parseInt(savedColumnIndex);
+        calculateSingleColumnSum(columnIndex);
+        return;
+    }
+    
+    // No sum columns selected
+    sumElement.style.display = 'none';
+}
+
+function calculateSingleColumnSum(columnIndex) {
     const rows = document.querySelectorAll("#folderData table tbody tr:not([style*='display: none'])");
     let sum = 0;
     let count = 0;
@@ -975,7 +1007,7 @@ function calculateAndDisplaySum() {
     rows.forEach(row => {
         const cell = row.cells[columnIndex];
         if (cell) {
-            const value = parseFloat(cell.textContent);
+            const value = parseFloat(cell.textContent.replace(/[^\d.-]/g, '')); // Improved number parsing
             if (!isNaN(value)) {
                 sum += value;
                 count++;
@@ -988,6 +1020,62 @@ function calculateAndDisplaySum() {
     sumElement.innerHTML = `Sum of <strong>${folderData.columns[columnIndex]}</strong>: ${sum.toFixed(2)} (from ${count} rows)`;
 }
 
+function calculateMultipleColumnsSum(columnIndices) {
+    const rows = document.querySelectorAll("#folderData table tbody tr:not([style*='display: none'])");
+    let sums = {};
+    let counts = {};
+    
+    // Initialize sums and counts for each column
+    columnIndices.forEach(index => {
+        sums[index] = 0;
+        counts[index] = 0;
+    });
+
+    // Calculate sums
+    rows.forEach(row => {
+        columnIndices.forEach(index => {
+            const cell = row.cells[index];
+            if (cell) {
+                const value = parseFloat(cell.textContent.replace(/[^\d.-]/g, '')); // Improved number parsing
+                if (!isNaN(value)) {
+                    sums[index] += value;
+                    counts[index]++;
+                }
+            }
+        });
+    });
+
+    // Generate results HTML
+    let resultsHTML = '<div class="multi-sum-results">';
+    
+    // Individual column sums
+    columnIndices.forEach(index => {
+        resultsHTML += `
+            <span class="column-sum">
+                <strong>${folderData.columns[index]}</strong>: ${sums[index].toFixed(2)} (from ${counts[index]} rows) |
+            </span>
+        `;
+    });
+    
+    // Grand total if multiple columns (from ${totalCount} rows)
+    if (columnIndices.length > 1) {
+        const grandTotal = columnIndices.reduce((total, index) => total + sums[index], 0);
+        const totalCount = columnIndices.reduce((total, index) => total + counts[index], 0);
+        resultsHTML += `
+            <div class="grand-total">
+                <strong>Combined Total</strong>: ${grandTotal.toFixed(2)} 
+            </div>
+        `;
+    }
+    
+    resultsHTML += '</div>';
+
+    // Display results
+    const sumElement = document.getElementById('columnSum');
+    sumElement.style.display = 'block';
+    sumElement.innerHTML = resultsHTML;
+}
+
 // Modified displayColumnSum function to save the selected column
 function displayColumnSum() {
     if (!folderData || !folderData.rows.length) {
@@ -995,22 +1083,119 @@ function displayColumnSum() {
         return;
     }
 
-    const columnList = folderData.columns.map((col, index) => `${index + 1}. ${col}`).join('\n');
-    const columnNumber = prompt(`Which column do you want to sum?\n\n${columnList}`);
+    // Create a modal for column selection
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'sumColumnsModal';
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Select Columns to Sum</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Select columns to include in the sum calculation:</p>
+                    <div id="columnCheckboxes" class="mb-3">
+                        ${folderData.columns.map((col, index) => `
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="${index}" id="colCheck${index}">
+                                <label class="form-check-label" for="colCheck${index}">
+                                    ${col} (Column ${index + 1})
+                                </label>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="calculateSelectedColumnsSum()">Calculate Sum</button>
+                </div>
+            </div>
+        </div>
+    `;
     
-    if (columnNumber === null) return;
+    document.body.appendChild(modal);
+    const sumModal = new bootstrap.Modal(document.getElementById('sumColumnsModal'));
+    sumModal.show();
+}
+
+function calculateSelectedColumnsSum() {
+    const checkboxes = document.querySelectorAll('#columnCheckboxes input[type="checkbox"]:checked');
     
-    const columnIndex = parseInt(columnNumber) - 1;
-    
-    if (isNaN(columnIndex) || columnIndex < 0 || columnIndex >= folderData.columns.length) {
-        alert("Please enter a valid column number.");
+    if (checkboxes.length === 0) {
+        alert('Please select at least one column to sum.');
         return;
     }
 
-    window.lastSumColumnIndex = columnIndex;
-    // Save the selected column index to localStorage
-    localStorage.setItem(`${folderName}_sumColumnIndex`, columnIndex);
-    calculateAndDisplaySum();
+    const selectedColumns = Array.from(checkboxes).map(checkbox => parseInt(checkbox.value));
+    const rows = document.querySelectorAll("#folderData table tbody tr:not([style*='display: none'])");
+    
+    let sums = {};
+    let counts = {};
+    
+    // Initialize sums and counts for each selected column
+    selectedColumns.forEach(colIndex => {
+        sums[colIndex] = 0;
+        counts[colIndex] = 0;
+    });
+
+    // Calculate sums for each column
+    rows.forEach(row => {
+        selectedColumns.forEach(colIndex => {
+            const cell = row.cells[colIndex];
+            if (cell) {
+                const value = parseFloat(cell.textContent);
+                if (!isNaN(value)) {
+                    sums[colIndex] += value;
+                    counts[colIndex]++;
+                }
+            }
+        });
+    });
+
+    // Generate the summary display
+    let summaryHTML = '<div class="summaries-container">';
+    
+    selectedColumns.forEach(colIndex => {
+        const columnName = folderData.columns[colIndex];
+        const sum = sums[colIndex];
+        const count = counts[colIndex];
+        
+        summaryHTML += `
+            <div class="column-summary mb-2">
+                <strong>${columnName}</strong>: ${sum.toFixed(2)} (from ${count} rows)
+            </div>
+        `;
+    });
+
+    // Calculate grand total if multiple columns selected
+    if (selectedColumns.length > 1) {
+        const grandTotal = Object.values(sums).reduce((a, b) => a + b, 0);
+        const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
+        
+        summaryHTML += `
+            <div class="grand-total mt-2 pt-2 border-top">
+                <strong>Grand Total</strong>: ${grandTotal.toFixed(2)} (from ${totalCount} rows)
+            </div>
+        `;
+    }
+
+    summaryHTML += '</div>';
+
+    // Display the results
+    const sumElement = document.getElementById('columnSum');
+    sumElement.style.display = 'block';
+    sumElement.innerHTML = summaryHTML;
+
+    // Close the modal
+    const sumModal = bootstrap.Modal.getInstance(document.getElementById('sumColumnsModal'));
+    sumModal.hide();
+    document.body.removeChild(document.getElementById('sumColumnsModal'));
+
+    // Save the selected columns for future reference
+    window.lastSumColumnIndices = selectedColumns;
+    localStorage.setItem(`${folderName}_sumColumnIndices`, JSON.stringify(selectedColumns));
 }
 
 function createColumnForm() {
@@ -1128,7 +1313,6 @@ function submitRowForm() {
     searchAndCounterContainer.id = "searchAndCounterContainer";
     searchAndCounterContainer.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <input type="text" id="searchInput" class="form-control me-2" placeholder="Search" onkeyup="searchTable()" />
             <button class="btn btn-info" onclick="openFilterSidebar()">
                 <i class="fas fa-filter"></i> Filter
             </button>
@@ -1199,12 +1383,86 @@ function deleteAllData() {
     }
 }
 
-function displayDeleteAllButton() {
-    const deleteAllButton = document.createElement('button');
-    deleteAllButton.textContent = 'Delete All Data';
-    deleteAllButton.classList.add('btn', 'btn-danger', 'delete-all-btn', 'mt-3', 'ms-2');
-    deleteAllButton.onclick = deleteAllData;
-    document.getElementById('formContainer').appendChild(deleteAllButton);
+function deleteAllData() {
+    // Check if there are any active filters
+    const savedFilters = localStorage.getItem(`${folderName}_filters`);
+    const hasFilters = savedFilters && Object.keys(JSON.parse(savedFilters)).length > 0;
+
+    let confirmMessage = 'Are you sure you want to delete all data for this folder?';
+    
+    if (hasFilters) {
+        confirmMessage = 'You have active filters applied. Do you want to:\n\n' +
+                        '1. Delete ALL data (including filtered data)\n' +
+                        '2. Delete only the currently VISIBLE (filtered) data\n' +
+                        '3. Cancel';
+        
+        const userChoice = prompt(confirmMessage, '3');
+        
+        if (userChoice === null || userChoice === '3') {
+            return; // User canceled
+        }
+        
+        if (userChoice === '1') {
+            // Delete all data
+            if (confirm('This will delete ALL data, including filtered data. Are you sure?')) {
+                localStorage.removeItem(folderName);
+                localStorage.removeItem(`${folderName}_filters`);
+                localStorage.removeItem(`${folderName}_sumColumnIndex`);
+                folderData = null;
+                document.getElementById('formContainer').innerHTML = '';
+                alert('All data has been deleted!');
+                window.location.reload();
+            }
+        } else if (userChoice === '2') {
+            // Delete only visible (filtered) data
+            deleteFilteredData();
+        }
+    } else {
+        // No filters - proceed with normal delete confirmation
+        if (confirm(confirmMessage)) {
+            localStorage.removeItem(folderName);
+            localStorage.removeItem(`${folderName}_filters`);
+            localStorage.removeItem(`${folderName}_sumColumnIndex`);
+            folderData = null;
+            document.getElementById('formContainer').innerHTML = '';
+            alert('All data has been deleted!');
+            window.location.reload();
+        }
+    }
+}
+
+function deleteFilteredData() {
+    // Get all visible rows (after filtering)
+    const visibleRowIndices = [];
+    const rows = document.querySelectorAll("#folderData table tbody tr");
+    
+    rows.forEach((row, index) => {
+        if (row.style.display !== 'none') {
+            visibleRowIndices.push(index);
+        }
+    });
+    
+    if (visibleRowIndices.length === 0) {
+        alert('No visible rows to delete!');
+        return;
+    }
+    
+    // Sort indices in descending order for safe deletion
+    visibleRowIndices.sort((a, b) => b - a);
+    
+    // Delete the visible rows from the data
+    visibleRowIndices.forEach(index => {
+        folderData.rows.splice(index, 1);
+    });
+    
+    // Save the updated data
+    localStorage.setItem(folderName, JSON.stringify(folderData));
+    
+    // Refresh the display
+    document.getElementById('formContainer').innerHTML = '';
+    displayTable(folderData);
+    updateRowCount();
+    alert(`Deleted ${visibleRowIndices.length} visible rows!`);
 }
 
 function addImportExcelButton() {

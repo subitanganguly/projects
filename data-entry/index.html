@@ -53,8 +53,9 @@
                 Data Entry</a>
             </div>
         </nav>
+
          <!-- Button to open modal for folder name input -->
-         <button class="btn btn-primary rounded-pill mt-5 mb-3" data-toggle="modal" data-target="#folderModal">
+        <button class="btn btn-primary rounded-pill mt-5 mb-3" data-bs-toggle="modal" data-bs-target="#folderModal">
             Add Folder <i class="bi bi-folder-plus"></i>
         </button>
         
@@ -74,24 +75,24 @@
     </div>
 
     <!-- Modal for folder creation -->
-    <div class="modal fade" id="folderModal" tabindex="-1" role="dialog" aria-labelledby="folderModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="folderModalLabel">Enter Folder Name</h5>
-                    
-                </div>
-                <div class="modal-body">
-                    <label for="folderName">Folder Name</label>
-                    <input type="text" class="form-control" id="folderName" placeholder="Enter folder name">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="createFolderBtn">Create Folder</button>
-                </div>
+<div class="modal fade" id="folderModal" tabindex="-1" aria-labelledby="folderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="folderModalLabel">Enter Folder Name</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label for="folderName">Folder Name</label>
+                <input type="text" class="form-control" id="folderName" placeholder="Enter folder name">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="createFolderBtn">Create Folder</button>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Confirmation Modal for folder deletion -->
     <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
@@ -111,9 +112,6 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     
     <script>
         let folderToDelete = null; // Variable to store the folder to delete
@@ -143,43 +141,51 @@
         }
 
         // Function to create a new folder
-        document.getElementById('createFolderBtn').addEventListener('click', function() {
-            const folderName = document.getElementById('folderName').value;
-            if (folderName) {
-                const folders = JSON.parse(localStorage.getItem('folders')) || [];
-                folders.push({ name: folderName, data: '' });
-                localStorage.setItem('folders', JSON.stringify(folders));
-                document.getElementById('folderName').value = ''; // Clear input
-                loadFolders(); // Reload folder list
-                $('#folderModal').modal('hide'); // Hide modal after folder creation
-            } else {
-                alert('Please enter a folder name!');
-            }
-        });
+// Function to create a new folder
+document.getElementById('createFolderBtn').addEventListener('click', function() {
+    const folderName = document.getElementById('folderName').value;
+    if (folderName) {
+        const folders = JSON.parse(localStorage.getItem('folders')) || [];
+        folders.push({ name: folderName, data: '' });
+        localStorage.setItem('folders', JSON.stringify(folders));
+        document.getElementById('folderName').value = ''; // Clear input
+        loadFolders(); // Reload folder list
+        
+        // Hide modal using Bootstrap 5 method
+        const modal = bootstrap.Modal.getInstance(document.getElementById('folderModal'));
+        modal.hide();
+    } else {
+        alert('Please enter a folder name!');
+    }
+});
 
-        // Function to prepare folder deletion
-        function prepareDeleteFolder(index) {
-            folderToDelete = index; // Store the index of the folder to delete
-            $('#deleteConfirmationModal').modal('show'); // Show confirmation modal
-        }
-        // Handle the Cancel button click to close the modal
-       document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
-            $('#deleteConfirmationModal').modal('hide'); // Close the modal
-        });
+// Function to prepare folder deletion
+function prepareDeleteFolder(index) {
+    folderToDelete = index; // Store the index of the folder to delete
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+    deleteModal.show();
+}
 
+// Handle the Cancel button click to close the modal
+document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
+    const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmationModal'));
+    deleteModal.hide();
+});
 
-        // Function to delete a folder
-        document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-            const folders = JSON.parse(localStorage.getItem('folders')) || [];
-            if (folderToDelete !== null) {
-                folders.splice(folderToDelete, 1); // Remove the folder at the given index
-                localStorage.setItem('folders', JSON.stringify(folders));
-                loadFolders(); // Reload the folder list after deletion
-                $('#deleteConfirmationModal').modal('hide'); // Hide confirmation modal
-                folderToDelete = null; // Reset the folder to delete
-            }
-        });
-
+// Function to delete a folder
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+    const folders = JSON.parse(localStorage.getItem('folders')) || [];
+    if (folderToDelete !== null) {
+        folders.splice(folderToDelete, 1); // Remove the folder at the given index
+        localStorage.setItem('folders', JSON.stringify(folders));
+        loadFolders(); // Reload the folder list after deletion
+        
+        const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmationModal'));
+        deleteModal.hide();
+        
+        folderToDelete = null; // Reset the folder to delete
+    }
+});
         // Function to edit a folder
         function editFolder(index) {
             const folders = JSON.parse(localStorage.getItem('folders')) || [];
