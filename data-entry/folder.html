@@ -246,6 +246,10 @@
                 <button class="btn btn-danger" id="deleteAllBtn">
                     <i class="fas fa-trash"></i> Delete Data
                 </button>
+                <button id="openTextPage" class="btn btn-primary ">
+                    <i class="fas fa-envelope"></i> Generate Envelope
+                </button>
+
             </div>
             <div class="ms-auto">
                 <button class="btn btn-info" onclick="openFilterSidebar()">
@@ -1761,6 +1765,60 @@ function updateFilterIndicator() {
         filterIndicator.style.display = 'none';
     }
 }
+
+
+
+
+
+// document.getElementById('openTextPage').addEventListener('click', () => {
+//     const table = document.querySelector('#folderData table');
+//     if (!table) return;
+
+//     const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+
+//     const filteredRows = Array.from(table.querySelectorAll('tbody tr'))
+//         .filter(row => row.style.display !== 'none')
+//         .map(row => {
+//             return Array.from(row.cells).map(cell => cell.textContent.trim());
+//         });
+
+//     // Save filtered data in localStorage
+//     const filteredData = {
+//         headers,
+//         rows: filteredRows
+//     };
+
+//     localStorage.setItem('filteredTableData', JSON.stringify(filteredData));
+//     window.open('text.html', '_blank'); // open in new tab
+// });
+
+document.getElementById('openTextPage').addEventListener('click', () => {
+    const table = document.querySelector('#folderData table');
+    if (!table) return;
+
+    // Get only the clean column text (exclude emojis or sort icons)
+    const headers = Array.from(table.querySelectorAll('thead th')).map(th => {
+        return th.childNodes.length > 0 ? th.childNodes[0].textContent.trim() : th.textContent.trim();
+    });
+
+    // Get only visible rows and their cell content
+    const filteredRows = Array.from(table.querySelectorAll('tbody tr'))
+        .filter(row => row.style.display !== 'none')
+        .map(row => {
+            return Array.from(row.cells).map(cell => cell.textContent.trim());
+        });
+
+    // Save filtered data to localStorage
+    const filteredData = {
+        headers,
+        rows: filteredRows
+    };
+
+    localStorage.setItem('filteredTableData', JSON.stringify(filteredData));
+    window.open('text.html', '_blank'); // open in new tab
+});
+
+
     </script>
 </body>
 </html>
