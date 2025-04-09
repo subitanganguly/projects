@@ -11,6 +11,7 @@
     <!-- Add jsPDF and html2canvas libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Josefin Sans', sans-serif;
@@ -611,20 +612,157 @@
             return sizes[document.getElementById('fontSize').value] || '20px';
         }
         
-        async function downloadAllAsPDF() {
-            if (!tableData) return;
+        // async function downloadAllAsPDF() {
+        //     if (!tableData) return;
             
-            // Create a zip file containing all documents
-            // Note: For actual zip functionality, you'd need a library like JSZip
-            // This is a simplified version that downloads them one by one
+        //     // Create a zip file containing all documents
+        //     // Note: For actual zip functionality, you'd need a library like JSZip
+        //     // This is a simplified version that downloads them one by one
+            
+        //     for (let rowIndex = 0; rowIndex < tableData.rows.length; rowIndex++) {
+        //         await downloadSingleAsPDF(rowIndex);
+        //         await new Promise(resolve => setTimeout(resolve, 1000)); // Delay between downloads
+        //     }
+            
+        //     alert(`Downloaded ${tableData.rows.length} PDF files.`);
+        // }
+        async function downloadAllAsPDF() {
+    if (!tableData) return;
+    
+    // Get user preference
+    const downloadOption = await Swal.fire({
+        title: 'Download Options',
+        text: 'Do you want to download all items as separate PDFs or combined into one PDF?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Combined PDF',
+        cancelButtonText: 'Separate PDFs',
+        reverseButtons: true
+    });
+    
+    const downloadCombined = downloadOption.isConfirmed;
+    const button = document.querySelector('.btn-danger[onclick="downloadAllAsPDF()"]');
+    const originalButtonText = button.innerHTML;
+    
+    try {
+        // Show loading spinner
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF(s)...';
+        button.disabled = true;
+        
+        if (downloadCombined) {
+            // Create a single PDF with all items
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm'
+            });
+            
+            const pageSize = document.getElementById('pageSize').value;
+            const margin = parseInt(document.getElementById('marginSize').value) || 10;
             
             for (let rowIndex = 0; rowIndex < tableData.rows.length; rowIndex++) {
-                await downloadSingleAsPDF(rowIndex);
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Delay between downloads
+                // Process template with current row data
+                const template = document.getElementById('editableText').innerHTML;
+                let processedContent = template;
+                
+                tableData.headers.forEach((header, headerIndex) => {
+                    const value = tableData.rows[rowIndex][headerIndex] || '';
+                    processedContent = processedContent.replace(
+                        new RegExp(`\\{\\{${header}\\}\\}`, 'g'), 
+                        value
+                    );
+                });
+                
+                // Create temporary div for html2canvas
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = processedContent;
+                tempDiv.style.width = document.getElementById('editableText').style.width || '100%';
+                tempDiv.style.padding = '20px';
+                tempDiv.style.fontFamily = document.getElementById('fontFamily').value;
+                tempDiv.style.fontSize = getFontSizeFromSelect();
+                tempDiv.style.lineHeight = '1.6';
+                
+                if (pageSize === 'a4') {
+                    tempDiv.classList.add('page-a4');
+                } else if (pageSize === 'a6') {
+                    tempDiv.classList.add('page-a6');
+                } else if (pageSize === 'whatsapp') {
+                    tempDiv.classList.add('page-whatsapp');
+                }
+                
+                tempDiv.style.position = 'absolute';
+                tempDiv.style.left = '-9999px';
+                document.body.appendChild(tempDiv);
+                
+                // Capture content as image
+                const canvas = await html2canvas(tempDiv, {
+                    scale: 2,
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                document.body.removeChild(tempDiv);
+                
+                // Calculate dimensions
+                let imgWidth, imgHeight;
+                if (pageSize === 'a4') {
+                    imgWidth = 210 - (margin * 2);
+                    imgHeight = (canvas.height * imgWidth) / canvas.width;
+                } else if (pageSize === 'a6') {
+                    imgWidth = 105 - (margin * 2);
+                    imgHeight = (canvas.height * imgWidth) / canvas.width;
+                } else {
+                    imgWidth = 210 - (margin * 2);
+                    imgHeight = (canvas.height * imgWidth) / canvas.width;
+                }
+                
+                // Add new page if not first item
+                if (rowIndex > 0) {
+                    pdf.addPage();
+                }
+                
+                // Add image to PDF
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgWidth, imgHeight);
+                
+                // Update progress
+                const progress = Math.floor((rowIndex + 1) / tableData.rows.length * 100);
+                button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating (${progress}%)...`;
             }
             
-            alert(`Downloaded ${tableData.rows.length} PDF files.`);
+            // Save combined PDF
+            pdf.save('all_documents_combined.pdf');
+        } else {
+            // Download separate PDFs (using our existing function)
+            for (let rowIndex = 0; rowIndex < tableData.rows.length; rowIndex++) {
+                await downloadSingleAsPDF(rowIndex);
+                const progress = Math.floor((rowIndex + 1) / tableData.rows.length * 100);
+                button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating (${progress}%)...`;
+                await new Promise(resolve => setTimeout(resolve, 500)); // Small delay between generations
+            }
         }
+        
+        // Show completion message
+        await Swal.fire({
+            title: 'Download Complete',
+            text: downloadCombined 
+                ? 'All items have been combined into one PDF file.' 
+                : `${tableData.rows.length} PDF files have been downloaded.`,
+            icon: 'success'
+        });
+        
+    } catch (error) {
+        console.error('Error generating PDFs:', error);
+        await Swal.fire({
+            title: 'Error',
+            text: 'An error occurred while generating PDFs. Please try again.',
+            icon: 'error'
+        });
+    } finally {
+        // Restore button state
+        button.innerHTML = originalButtonText;
+        button.disabled = false;
+    }
+}
 
         function formatText(command, value = null) {
             document.execCommand(command, false, value);
