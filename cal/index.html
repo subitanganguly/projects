@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Converter</title>
+    <link rel="icon" type="image/png" href="../sumadhu.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+    <style>
+
+        body {
+            padding: 20px;
+            
+            font-family: "Josefin Sans", serif;
+            font-optical-sizing: auto;
+            overflow: auto;
+            background: linear-gradient(315deg, rgba(101, 0, 94, 0.368) 3%, rgba(60, 133, 206, 0.434) 38%, rgba(48, 238, 225, 0.39) 68%, rgba(255, 25, 25, 0.336) 98%);
+            animation: gradient 15s ease infinite;
+            background-size: 400% 400%;
+            background-attachment: fixed;
+        }
+        .container {
+        max-width: 600px;
+        margin: auto;
+        background: rgba(241, 255, 253, 0.17);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.368), inset 0 0 20px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px); /* Adds the blur effect */
+        -webkit-backdrop-filter: blur(10px); /* Safari support */
+        border: 1px solid rgba(255, 255, 255, 0.3); /* Optional: subtle border for glassmorphism */
+    }
+
+        .btn-cos {
+            background-color: rgba(5, 53, 0, 0.89);
+            width: 100%;
+            color: antiquewhite;
+            font-weight: bold;
+            border-radius: 10px;
+        }
+        .btn-cos:hover {
+            background-color: rgba(12, 143, 0, 0.89);
+            color: antiquewhite;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.397);
+        }
+
+        .wave {
+        background: rgb(255 255 255 / 25%);
+        border-radius: 1000% 1000% 0 0;
+        position: fixed;
+        width: 200%;
+        height: 12em;
+        animation: wave 10s -3s linear infinite;
+        transform: translate3d(0, 0, 0);
+        opacity: 0.8;
+        bottom: 0;
+        left: 0;
+        z-index: -1;
+        }
+
+        .wave:nth-of-type(2) {
+        bottom: -1.25em;
+        animation: wave 18s linear reverse infinite;
+        opacity: 0.8;
+        }
+
+        .wave:nth-of-type(3) {
+        bottom: -2.5em;
+        animation: wave 20s -1s reverse infinite;
+        opacity: 0.9;
+        }
+
+        @keyframes wave {
+        2% {
+        transform: translateX(1);
+        }
+
+        25% {
+        transform: translateX(-25%);
+        }
+
+        50% {
+        transform: translateX(-50%);
+        }
+
+        75% {
+        transform: translateX(-25%);
+        }
+
+        100% {
+        transform: translateX(1);
+        }
+        }
+
+    </style>
+</head>
+<body>
+    <div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+    <div class="container">
+        <div class="text-center bg-dark text-light p-1 rounded shadow-sm">
+            <h6>Weight to Price and Unit Converter</h6>
+        </div>
+        <p id="result" class="fw-bold mt-2 text-center text-success"></p>
+        <div class="mb-3 mt-3">
+            <label for="rate" class="form-label">Conversion rate:</label>
+            <input type="number" class="form-control" id="rate" placeholder="(1 kg = ? Rs)">
+        </div>
+        <div class="mb-3">
+            <label for="weight" class="form-label">Enter weight in grams:</label>
+            <input type="number" class="form-control" id="weight" placeholder="Enter weight in grams">
+        </div>
+        <button type="button" class="btn btn-cos" onclick="calculatePrice()">Calculate</button>
+
+        <hr class="my-4">
+
+        <div class="text-center bg-dark text-light p-1 rounded shadow-sm">
+            <h6>Length Converter</h6>
+        </div>
+        <div class="mb-3 mt-3">
+            <label for="unitInput" class="form-label">Enter value:</label>
+            <input type="number" class="form-control" id="unitInput" placeholder="Enter value">
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="inputUnit" class="form-label">From:</label>
+                <select class="form-select" id="inputUnit">
+                    <option value="centimeter">Centimeter</option>
+                    <option value="inch">Inch</option>
+                    <option value="meter">Meter</option>
+                    <option value="feet">Feet</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="outputUnit" class="form-label">To:</label>
+                <select class="form-select" id="outputUnit">
+                    <option value="centimeter">Centimeter</option>
+                    <option value="inch">Inch</option>
+                    <option value="meter">Meter</option>
+                    <option value="feet">Feet</option>
+                </select>
+            </div>
+        </div>
+        
+        <button type="button" class="btn btn-cos" onclick="convertUnit()">Convert</button>
+        <p id="unitResult" class="fw-bold mt-2 text-center text-success"></p>
+    </div>
+
+    <script>
+        // Function to calculate price
+        function calculatePrice() {
+            const rate = document.getElementById('rate').value;
+            const weight = document.getElementById('weight').value;
+
+            if (rate <= 0 || weight <= 0) {
+                document.getElementById('result').innerText = 'Please enter valid values for rate and weight.';
+                return;
+            }
+
+            const weightInKg = weight / 1000;
+            const price = weightInKg * rate;
+            document.getElementById('result').innerText = `${weight} grams = ${price} Rs`;
+        }
+
+        // Function to convert units
+        function convertUnit() {
+            const inputValue = parseFloat(document.getElementById('unitInput').value);
+            const inputUnit = document.getElementById('inputUnit').value;
+            const outputUnit = document.getElementById('outputUnit').value;
+
+            if (isNaN(inputValue)) {
+                document.getElementById('unitResult').innerText = 'Please enter a valid number.';
+                return;
+            }
+
+            // Conversion factors (relative to centimeters)
+            const conversionFactors = {
+                centimeter: 1, // 1 cm = 1 cm
+                inch: 2.54,     // 1 inch = 2.54 cm
+                meter: 100,     // 1 meter = 100 cm
+                feet: 30.48     // 1 foot = 30.48 cm
+            };
+
+            // Convert input value to centimeters first
+            const valueInCentimeters = inputValue * conversionFactors[inputUnit];
+
+            // Convert to the desired output unit
+            const convertedValue = valueInCentimeters / conversionFactors[outputUnit];
+
+            document.getElementById('unitResult').innerText = `${inputValue} ${inputUnit} = ${convertedValue.toFixed(4)} ${outputUnit}`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Management</title>
+    <link rel="icon" type="image/png" href="../sumadhu.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+    <!-- Add jsPDF and html2canvas libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Josefin Sans', sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .text-editor {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        #editableText {
+            min-height: 300px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+            outline: none;
+            background-color: white;
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+        .tool-btn {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .tool-btn:hover {
+            background-color: #e9ecef;
+        }
+        .active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .color-picker {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: 1px solid #ddd;
+        }
+        .font-selector {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        /* Page size styles */
+        .page-a4 {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 20mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        .page-a6 {
+            width: 105mm;
+            min-height: 148mm;
+            margin: 0 auto;
+            padding: 10mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        .page-whatsapp {
+            max-width: 400px;
+            min-height: 200px;
+            margin: 0 auto;
+            padding: 15px;
+            background-color: #e5ddd5;
+            position: relative;
+        }
+        .page-whatsapp::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABeSURBVDhP7dDBCYAwDETR6CZO4hbu5Fbu5FZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZu4RZ+4Q3iXQd2n5d2FQAAAABJRU5ErkJggg==');
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        /* Add these new styles */
+        .variables-toolbar {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+        .variable-select {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            margin-right: 10px;
+        }
+        .preview-area {
+            margin-top: 20px;
+            border: 1px dashed #ccc;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        .preview-item {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        /* Add consistent font styling */
+        .preview-content {
+            font-family: inherit;
+            font-size: inherit;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">  
+        <div class="text-editor">
+            <div class="variables-toolbar">
+                <label for="variableSelect">Variables:</label>
+                <select id="variableSelect" class="variable-select" onchange="updateVariablePreview()">
+                    <option value="">Select a variable</option>
+                    <!-- Options will be added dynamically -->
+                </select>
+                
+                <button class="btn btn-sm btn-primary" onclick="insertSelectedVariable()">
+                    <i class="fas fa-plus"></i> Insert
+                </button>
+                
+                <button class="btn btn-sm btn-success" onclick="generateAllPreviews()">
+                    <i class="fas fa-file-alt"></i> Generate
+                </button>
+                
+                <button class="btn btn-sm btn-danger" onclick="downloadAllAsPDF()">
+                    <i class="fas fa-file-pdf"></i> Download All
+                </button>
+            </div>
+
+            <div class="toolbar">
+                <select id="pageSize" class="font-selector" onchange="changePageSize()">
+                    <option value="default">Default Size</option>
+                    <option value="a4">A4 Page (210×297mm)</option>
+                    <option value="a6">A6 Page (105×148mm)</option>
+                    <option value="whatsapp">WhatsApp Message</option>
+                </select>
+                <!-- Add this to your toolbar div -->
+                <select id="marginSize" class="font-selector" title="Margin">
+                    <option value="0">No Margin</option>
+                    <option value="10" selected>Small Margin</option>
+                    <option value="20">Medium Margin</option>
+                    <option value="30">Large Margin</option>
+                </select>
+                <select id="fontFamily" class="font-selector">
+                    <option value="Arial">Arial</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="'Josefin Sans', sans-serif" selected>Josefin Sans</option>
+                </select>
+                
+                <select id="fontSize" class="font-selector">
+                    <option value="1">8px</option>
+                    <option value="2">10px</option>
+                    <option value="3">12px</option>
+                    <option value="4">14px</option>
+                    <option value="5" selected>16px</option>
+                    <option value="6">18px</option>
+                    <option value="7">24px</option>
+                </select>
+                
+                <button class="tool-btn" onclick="formatText('bold')"><i class="fas fa-bold"></i></button>
+                <button class="tool-btn" onclick="formatText('italic')"><i class="fas fa-italic"></i></button>
+                <button class="tool-btn" onclick="formatText('underline')"><i class="fas fa-underline"></i></button>
+                
+                <input type="color" id="textColor" class="color-picker" value="#000000" onchange="changeColor('foreColor')" title="Text Color">
+                <input type="color" id="bgColor" class="color-picker" value="#ffffff" onchange="changeColor('hiliteColor')" title="Background Color">
+                
+                <button class="tool-btn" onclick="formatText('justifyLeft')"><i class="fas fa-align-left"></i></button>
+                <button class="tool-btn" onclick="formatText('justifyCenter')"><i class="fas fa-align-center"></i></button>
+                <button class="tool-btn" onclick="formatText('justifyRight')"><i class="fas fa-align-right"></i></button>
+                <button class="tool-btn" onclick="formatText('justifyFull')"><i class="fas fa-align-justify"></i></button>
+                
+                <button class="tool-btn" onclick="formatText('insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
+                <button class="tool-btn" onclick="formatText('insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+
+                <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="insertImageFromFile(this)">
+                <button class="tool-btn" onclick="document.getElementById('imageInput').click()">
+                <i class="fas fa-image"></i>
+                </button>
+
+                
+                <button class="tool-btn" onclick="clearFormatting()"><i class="fas fa-eraser"></i> Clear Format</button>
+            </div>
+            
+            <div id="editableText" contenteditable="true">
+                Start typing here... You can select text and apply formatting using the toolbar above.
+            </div>
+
+             <!-- Preview Area -->
+             <div class="preview-area" id="previewArea" style="display: none;">
+                <h4>Preview:</h4>
+                <div id="previewContainer"></div>
+            </div>
+            
+            <div class="mt-3">
+                <button class="btn btn-primary" onclick="saveText()"><i class="fas fa-save"></i> Save Text</button>
+                <button class="btn btn-secondary" onclick="printText()"><i class="fas fa-print"></i> Print Text</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        // Global variable to store table data
+        let tableData = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load data from localStorage
+            const filteredData = JSON.parse(localStorage.getItem('filteredTableData'));
+            const savedText = localStorage.getItem('savedTextContent');
+            
+            if (filteredData) {
+                tableData = filteredData;
+                populateVariableSelect();
+            }
+            
+            if (savedText) {
+                document.getElementById('editableText').innerHTML = savedText;
+            }
+        });
+        
+        function populateVariableSelect() {
+            const select = document.getElementById('variableSelect');
+            
+            // Clear existing options except the first one
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            
+            // Add header options
+            if (tableData && tableData.headers) {
+                tableData.headers.forEach((header, index) => {
+                    const option = document.createElement('option');
+                    option.value = `header_${index}`;
+                    option.textContent = header;
+                    select.appendChild(option);
+                });
+            }
+        }
+        
+        function updateVariablePreview() {
+            const select = document.getElementById('variableSelect');
+            const selectedValue = select.value;
+            
+            if (!selectedValue) {
+                document.getElementById('previewArea').style.display = 'none';
+                return;
+            }
+            
+            const previewContainer = document.getElementById('previewContainer');
+            previewContainer.innerHTML = '';
+            
+            const parts = selectedValue.split('_');
+            if (parts[0] === 'header' && tableData) {
+                const headerIndex = parseInt(parts[1]);
+                const headerName = tableData.headers[headerIndex];
+                
+                tableData.rows.forEach((row, rowIndex) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    
+                    const value = row[headerIndex] || '';
+                    previewItem.innerHTML = `
+                    <h5>Item ${rowIndex + 1}</h5>
+                    <div>${value}</div>
+                    <button class="btn btn-sm btn-success mt-2" onclick="downloadSingleAsPDF(${rowIndex})">
+                        <i class="fas fa-download"></i> Download This as PDF
+                    </button>
+                    <button class="btn btn-sm btn-info mt-2" onclick="copyPreviewText(${rowIndex}, event)" title="Copy to clipboard">
+                        <i class="fas fa-copy"></i> Copy Text
+                    </button>
+                `;                 
+                    previewContainer.appendChild(previewItem);
+                });
+                
+                document.getElementById('previewArea').style.display = 'block';
+            }
+        }
+        
+        function insertSelectedVariable() {
+            const select = document.getElementById('variableSelect');
+            const selectedValue = select.value;
+            
+            if (!selectedValue) {
+                alert('Please select a variable first');
+                return;
+            }
+            
+            const parts = selectedValue.split('_');
+            if (parts[0] === 'header' && tableData) {
+                const headerIndex = parseInt(parts[1]);
+                const headerName = tableData.headers[headerIndex];
+                
+                // Insert variable placeholder (like {{Name}})
+                insertAtCursor(`{{${headerName}}}`);
+            }
+        }
+        
+        function insertAtCursor(text) {
+            const editable = document.getElementById('editableText');
+            const selection = window.getSelection();
+            
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(document.createTextNode(text));
+                
+                // Move cursor after inserted text
+                const newRange = document.createRange();
+                newRange.setStartAfter(range.endContainer);
+                newRange.setEndAfter(range.endContainer);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            } else {
+                editable.textContent += text;
+            }
+            
+            editable.focus();
+        }
+        
+        function generateAllPreviews() {
+            const previewContainer = document.getElementById('previewContainer');
+            previewContainer.innerHTML = '';
+            
+            if (!tableData) return;
+            
+            const template = document.getElementById('editableText').innerHTML;
+            const currentFontFamily = document.getElementById('fontFamily').value;
+            const currentFontSize = getFontSizeFromSelect();
+            
+            tableData.rows.forEach((row, rowIndex) => {
+                let processedContent = template;
+                
+                // Replace all variables in the template
+                tableData.headers.forEach((header, headerIndex) => {
+                    const value = row[headerIndex] || '';
+                    processedContent = processedContent.replace(
+                        new RegExp(`\\{\\{${header}\\}\\}`, 'g'), 
+                        value
+                    );
+                });
+                
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                
+                // Create a div to hold the styled content
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'preview-content';
+                contentDiv.style.fontFamily = currentFontFamily;
+                contentDiv.style.fontSize = currentFontSize;
+                contentDiv.innerHTML = processedContent;
+                
+                previewItem.innerHTML = `
+                    <h5>Item ${rowIndex + 1}</h5>
+                `;
+                previewItem.appendChild(contentDiv);
+                previewItem.innerHTML += `
+                    <button class="btn btn-sm btn-success mt-2" onclick="downloadSingleAsPDF(${rowIndex})">
+                        <i class="fas fa-download"></i> Download This as PDF
+                    </button>
+                    <button class="btn btn-sm btn-info mt-2" onclick="copyPreviewText(${rowIndex}, event)" title="Copy to clipboard">
+                        <i class="fas fa-copy"></i> Copy Text
+                    </button>
+                `;
+                
+                previewContainer.appendChild(previewItem);
+            });
+            
+            document.getElementById('previewArea').style.display = 'block';
+        }
+        
+        function copyPreviewText(rowIndex, event) {
+            if (!tableData || !tableData.rows[rowIndex]) return;
+            
+            // Get the button element from the event
+            const button = event ? event.currentTarget : window.event.srcElement;
+            
+            const template = document.getElementById('editableText').innerHTML;
+            let processedContent = template;
+            
+            // Replace all variables in the template
+            tableData.headers.forEach((header, headerIndex) => {
+                const value = tableData.rows[rowIndex][headerIndex] || '';
+                processedContent = processedContent.replace(
+                    new RegExp(`\\{\\{${header}\\}\\}`, 'g'), 
+                    value
+                );
+            });
+            
+            // Create a temporary element to get the text content
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = processedContent;
+            const textToCopy = tempDiv.textContent || tempDiv.innerText || '';
+            
+            // Show copying feedback
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Copying...';
+            button.disabled = true;
+            
+            // Modern clipboard API method
+            const copyWithModernAPI = () => {
+                return navigator.clipboard.writeText(textToCopy).then(() => {
+                    return true;
+                }).catch(err => {
+                    console.error('Modern Clipboard API failed:', err);
+                    return false;
+                });
+            };
+            
+            // Fallback method for older browsers
+            const copyWithFallback = () => {
+                try {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = textToCopy;
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    
+                    const success = document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    
+                    if (!success) throw new Error('Fallback copy failed');
+                    return true;
+                } catch (err) {
+                    console.error('Fallback copy failed:', err);
+                    return false;
+                }
+            };
+            
+            // Try both methods
+            Promise.resolve()
+                .then(() => copyWithModernAPI())
+                .then(success => success ? success : copyWithFallback())
+                .then(success => {
+                    if (success) {
+                        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                        button.classList.remove('btn-info');
+                        button.classList.add('btn-success');
+                    } else {
+                        throw new Error('All copy methods failed');
+                    }
+                })
+                .catch(err => {
+                    console.error('Copy failed:', err);
+                    button.innerHTML = '<i class="fas fa-times"></i> Failed!';
+                    button.classList.remove('btn-info');
+                    button.classList.add('btn-danger');
+                    
+                    // Fallback: Show the text in a prompt
+                    setTimeout(() => {
+                        prompt('Please copy this text manually:', textToCopy);
+                    }, 100);
+                })
+                .finally(() => {
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.classList.remove('btn-success', 'btn-danger');
+                        button.classList.add('btn-info');
+                        button.disabled = false;
+                    }, 2000);
+                });
+        }
+        
+        async function downloadSingleAsPDF(rowIndex) {
+    if (!tableData || !tableData.rows[rowIndex]) return;
+    
+    const template = document.getElementById('editableText').innerHTML;
+    let processedContent = template;
+    
+    // Replace all variables in the template
+    tableData.headers.forEach((header, headerIndex) => {
+        const value = tableData.rows[rowIndex][headerIndex] || '';
+        processedContent = processedContent.replace(
+            new RegExp(`\\{\\{${header}\\}\\}`, 'g'), 
+            value
+        );
+    });
+    
+    // Create a temporary div to hold the styled content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = processedContent;
+    
+    // Apply current editor styling
+    const currentFontFamily = document.getElementById('fontFamily').value;
+    const currentFontSize = getFontSizeFromSelect();
+    
+    // Apply base styles for PDF - this will override any inline styles
+    tempDiv.style.width = document.getElementById('editableText').style.width || '100%';
+    tempDiv.style.padding = '20px';
+    tempDiv.style.fontFamily = currentFontFamily;
+    tempDiv.style.fontSize = increaseFontSize(currentFontSize);
+    tempDiv.style.lineHeight = '1.6';
+    
+    // IMPORTANT: Reset all child elements' styles
+    const allElements = tempDiv.querySelectorAll('*');
+    allElements.forEach(el => {
+        el.style.margin = '0';
+        el.style.padding = '0';
+        el.style.lineHeight = 'inherit';
+        el.style.fontSize = 'inherit';
+        el.style.fontFamily = 'inherit';
+    });
+    
+    // Add page size class if any
+    const pageSize = document.getElementById('pageSize').value;
+    if (pageSize === 'a4') {
+        tempDiv.classList.add('page-a4');
+    } else if (pageSize === 'a6') {
+        tempDiv.classList.add('page-a6');
+    } else if (pageSize === 'whatsapp') {
+        tempDiv.classList.add('page-whatsapp');
+    }
+    
+    // Add to document body but hide it
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    document.body.appendChild(tempDiv);
+    
+    try {
+                // Get selected margin
+                const margin = parseInt(document.getElementById('marginSize').value) || 10;
+                
+                // Use higher scale for better quality
+                const scale = 3;
+                
+                // Use html2canvas to capture the styled content
+                const canvas = await html2canvas(tempDiv, {
+                    scale: scale,
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true,
+                    letterRendering: true,
+                    dpi: 300
+                });
+                
+                // Create PDF
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: pageSize === 'a6' ? 'portrait' : 'portrait',
+                    unit: 'mm'
+                });
+                
+                // Calculate dimensions with margin
+                let width, height;
+                if (pageSize === 'a4') {
+                    width = 210 - (margin * 2);
+                    height = 297 - (margin * 2);
+                } else if (pageSize === 'a6') {
+                    width = 105 - (margin * 2);
+                    height = 148 - (margin * 2);
+                } else {
+                    // Default to A4 but scale based on content
+                    const ratio = canvas.height / canvas.width;
+                    width = 210 - (margin * 2);
+                    height = width * ratio;
+                    if (height > (297 - (margin * 2))) {
+                        width = (210 - (margin * 2)) * ((297 - (margin * 2)) / height);
+                        height = 297 - (margin * 2);
+                    }
+                }
+                
+                // Calculate image dimensions maintaining aspect ratio
+                const imgWidth = width;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // Add image with margin
+                pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+                pdf.save(`document_${rowIndex + 1}.pdf`);
+                
+            } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF. Please try again.');
+    } finally {
+        // Remove the temporary div
+        document.body.removeChild(tempDiv);
+    }
+}
+        
+        function getFontSizeFromSelect() {
+    const sizes = {
+        '1': '8px',
+        '2': '10px',
+        '3': '12px',
+        '4': '14px',
+        '5': '16px',
+        '6': '18px',
+        '7': '24px'
+    };
+    return sizes[document.getElementById('fontSize').value] || '16px';
+}
+
+        
+        // async function downloadAllAsPDF() {
+        //     if (!tableData) return;
+            
+        //     // Create a zip file containing all documents
+        //     // Note: For actual zip functionality, you'd need a library like JSZip
+        //     // This is a simplified version that downloads them one by one
+            
+        //     for (let rowIndex = 0; rowIndex < tableData.rows.length; rowIndex++) {
+        //         await downloadSingleAsPDF(rowIndex);
+        //         await new Promise(resolve => setTimeout(resolve, 1000)); // Delay between downloads
+        //     }
+            
+        //     alert(`Downloaded ${tableData.rows.length} PDF files.`);
+        // }
+        async function downloadAllAsPDF() {
+    if (!tableData) return;
+    
+    // Get user preference
+    const downloadOption = await Swal.fire({
+        title: 'Download Options',
+        text: 'Do you want to download all items as separate PDFs or combined into one PDF?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Combined PDF',
+        cancelButtonText: 'Separate PDFs',
+        reverseButtons: true
+    });
+    
+    const downloadCombined = downloadOption.isConfirmed;
+    const button = document.querySelector('.btn-danger[onclick="downloadAllAsPDF()"]');
+    const originalButtonText = button.innerHTML;
+    
+    try {
+        // Show loading spinner
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF(s)...';
+        button.disabled = true;
+        
+        // Pre-calculate common values
+        const pageSize = document.getElementById('pageSize').value;
+        const margin = parseInt(document.getElementById('marginSize').value) || 10;
+        const fontFamily = document.getElementById('fontFamily').value;
+        const fontSize = increaseFontSize(getFontSizeFromSelect());
+        const template = document.getElementById('editableText').innerHTML;
+        const originalWidth = document.getElementById('editableText').style.width || '100%';
+        
+        if (downloadCombined) {
+            // Create a single PDF with all items
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm'
+            });
+            
+            // Process all rows in parallel
+            const canvasPromises = tableData.rows.map(async (row, rowIndex) => {
+                // Process template with current row data
+                let processedContent = template;
+                tableData.headers.forEach((header, headerIndex) => {
+                    const value = row[headerIndex] || '';
+                    processedContent = processedContent.replace(
+                        new RegExp(`\\{\\{${header}\\}\\}`, 'g'), 
+                        value
+                    );
+                });
+
+                // Create temporary div for html2canvas
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = processedContent;
+                
+                // Apply consistent styling
+                tempDiv.style.width = originalWidth;
+                tempDiv.style.padding = '20px';
+                tempDiv.style.fontFamily = fontFamily;
+                tempDiv.style.fontSize = fontSize;
+                tempDiv.style.lineHeight = '1.6';
+                
+                // Reset all child elements' styles to prevent alignment issues
+                const allElements = tempDiv.querySelectorAll('*');
+                allElements.forEach(el => {
+                    el.style.margin = '0';
+                    el.style.padding = '0';
+                    el.style.lineHeight = 'inherit';
+                    el.style.fontSize = 'inherit';
+                    el.style.fontFamily = 'inherit';
+                });
+                
+                // Apply page size class
+                if (pageSize === 'a4') {
+                    tempDiv.classList.add('page-a4');
+                } else if (pageSize === 'a6') {
+                    tempDiv.classList.add('page-a6');
+                } else if (pageSize === 'whatsapp') {
+                    tempDiv.classList.add('page-whatsapp');
+                }
+                
+                tempDiv.style.position = 'absolute';
+                tempDiv.style.left = '-9999px';
+                document.body.appendChild(tempDiv);
+                
+                // Capture content as image
+                const canvas = await html2canvas(tempDiv, {
+                    scale: 2,
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true,
+                    async: true,
+                    removeContainer: true
+                });
+                
+                // Clean up
+                document.body.removeChild(tempDiv);
+                return { canvas, rowIndex };
+            });
+
+            // Process all canvases in sequence to add to PDF
+            for (let i = 0; i < canvasPromises.length; i++) {
+                const { canvas, rowIndex } = await canvasPromises[i];
+                
+                // Calculate dimensions
+                let imgWidth, imgHeight;
+                if (pageSize === 'a4') {
+                    imgWidth = 210 - (margin * 2);
+                    imgHeight = (canvas.height * imgWidth) / canvas.width;
+                } else if (pageSize === 'a6') {
+                    imgWidth = 105 - (margin * 2);
+                    imgHeight = (canvas.height * imgWidth) / canvas.width;
+                } else {
+                    imgWidth = 210 - (margin * 2);
+                    imgHeight = (canvas.height * imgWidth) / canvas.width;
+                }
+                
+                // Add new page if not first item
+                if (rowIndex > 0) {
+                    pdf.addPage();
+                }
+                
+                // Add image to PDF
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgWidth, imgHeight);
+                
+                // Update progress
+                const progress = Math.floor((rowIndex + 1) / tableData.rows.length * 100);
+                button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating (${progress}%)...`;
+            }
+            
+            // Save combined PDF
+            pdf.save('all_documents_combined.pdf');
+        } else {
+            // Download separate PDFs in batches to prevent browser freezing
+            const batchSize = 5;
+            for (let i = 0; i < tableData.rows.length; i += batchSize) {
+                const batch = tableData.rows.slice(i, i + batchSize);
+                await Promise.all(batch.map(async (_, index) => {
+                    const rowIndex = i + index;
+                    
+                    // Create a modified version of downloadSingleAsPDF that works with our batch process
+                    await generateSinglePDF(rowIndex, {
+                        template,
+                        fontFamily,
+                        fontSize,
+                        pageSize,
+                        originalWidth
+                    });
+                    
+                    const progress = Math.floor((rowIndex + 1) / tableData.rows.length * 100);
+                    button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating (${progress}%)...`;
+                }));
+            }
+        }
+        
+        // Show completion message
+        await Swal.fire({
+            title: 'Download Complete',
+            text: downloadCombined 
+                ? 'All items have been combined into one PDF file.' 
+                : `${tableData.rows.length} PDF files have been downloaded.`,
+            icon: 'success'
+        });
+        
+    } catch (error) {
+        console.error('Error generating PDFs:', error);
+        await Swal.fire({
+            title: 'Error',
+            text: 'An error occurred while generating PDFs. Please try again.',
+            icon: 'error'
+        });
+    } finally {
+        // Restore button state
+        button.innerHTML = originalButtonText;
+        button.disabled = false;
+    }
+}
+
+// Helper function for batch processing
+async function generateSinglePDF(rowIndex, options) {
+    const { template, fontFamily, fontSize, pageSize, originalWidth } = options;
+    
+    let processedContent = template;
+    tableData.headers.forEach((header, headerIndex) => {
+        const value = tableData.rows[rowIndex][headerIndex] || '';
+        processedContent = processedContent.replace(
+            new RegExp(`\\{\\{${header}\\}\\}`, 'g'), 
+            value
+        );
+    });
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = processedContent;
+    
+    // Apply consistent styling
+    tempDiv.style.width = originalWidth;
+    tempDiv.style.padding = '20px';
+    tempDiv.style.fontFamily = fontFamily;
+    tempDiv.style.fontSize = fontSize;
+    tempDiv.style.lineHeight = '1.6';
+    
+    // Reset all child elements' styles
+    const allElements = tempDiv.querySelectorAll('*');
+    allElements.forEach(el => {
+        el.style.margin = '0';
+        el.style.padding = '0';
+        el.style.lineHeight = 'inherit';
+        el.style.fontSize = 'inherit';
+        el.style.fontFamily = 'inherit';
+    });
+    
+    // Apply page size class
+    if (pageSize === 'a4') {
+        tempDiv.classList.add('page-a4');
+    } else if (pageSize === 'a6') {
+        tempDiv.classList.add('page-a6');
+    } else if (pageSize === 'whatsapp') {
+        tempDiv.classList.add('page-whatsapp');
+    }
+    
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    document.body.appendChild(tempDiv);
+    
+    try {
+        const margin = parseInt(document.getElementById('marginSize').value) || 10;
+        const canvas = await html2canvas(tempDiv, {
+            scale: 2,
+            logging: false,
+            useCORS: true,
+            allowTaint: true
+        });
+        
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm'
+        });
+        
+        let imgWidth, imgHeight;
+        if (pageSize === 'a4') {
+            imgWidth = 210 - (margin * 2);
+            imgHeight = (canvas.height * imgWidth) / canvas.width;
+        } else if (pageSize === 'a6') {
+            imgWidth = 105 - (margin * 2);
+            imgHeight = (canvas.height * imgWidth) / canvas.width;
+        } else {
+            imgWidth = 210 - (margin * 2);
+            imgHeight = (canvas.height * imgWidth) / canvas.width;
+        }
+        
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgWidth, imgHeight);
+        pdf.save(`document_${rowIndex + 1}.pdf`);
+    } catch (error) {
+        console.error(`Error generating PDF for row ${rowIndex}:`, error);
+    } finally {
+        document.body.removeChild(tempDiv);
+    }
+}
+
+        function formatText(command, value = null) {
+            document.execCommand(command, false, value);
+            document.getElementById('editableText').focus();
+        }
+        
+        function changeColor(type) {
+            const color = type === 'foreColor' 
+                ? document.getElementById('textColor').value 
+                : document.getElementById('bgColor').value;
+            formatText(type, color);
+        }
+        
+        function clearFormatting() {
+            formatText('removeFormat');
+            formatText('unlink');
+        }
+        
+        function saveText() {
+            const textContent = document.getElementById('editableText').innerHTML;
+            localStorage.setItem('savedTextContent', textContent);
+            
+            alert('Text saved to local storage');
+        }
+        
+        function printText() {
+            const printContent = document.getElementById('editableText').innerHTML;
+            const originalContent = document.body.innerHTML;
+            
+            document.body.innerHTML = printContent;
+            window.print();
+            document.body.innerHTML = originalContent;
+            location.reload();
+        }
+        
+        function changePageSize() {
+            const editable = document.getElementById('editableText');
+            const size = document.getElementById('pageSize').value;
+            
+            // Reset all classes
+            editable.className = '';
+            
+            // Apply selected class
+            switch(size) {
+                case 'a4':
+                    editable.classList.add('page-a4');
+                    break;
+                case 'a6':
+                    editable.classList.add('page-a6');
+                    break;
+                case 'whatsapp':
+                    editable.classList.add('page-whatsapp');
+                    break;
+                default:
+                    // No additional class for default size
+                    break;
+            }
+        }
+        
+        // Update font family and size
+        document.getElementById('fontFamily').addEventListener('change', function() {
+            formatText('fontName', this.value);
+        });
+        
+        document.getElementById('fontSize').addEventListener('change', function() {
+            formatText('fontSize', this.value);
+        });
+        
+        // Keep focus on editable area
+        document.getElementById('editableText').addEventListener('click', function() {
+            this.focus();
+        });
+
+        function increaseFontSize(originalSize) {
+        const pxValue = parseInt(originalSize.replace('px', ''));
+        const adjusted = Math.round(pxValue * 2.2); //  boost PDF Image Size from Here
+        return adjusted + 'px';
+}
+
+
+function insertImageFromFile(input) {
+    const file = input.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            insertNodeAtCursor(img);
+        };
+        reader.readAsDataURL(file);
+    }
+    input.value = ''; // Reset for next upload
+}
+
+function insertNodeAtCursor(node) {
+    const sel = window.getSelection();
+    if (sel && sel.getRangeAt && sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(node);
+        range.collapse(false);
+
+        // Move cursor after the inserted image
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+}
+
+
+const previewArea = document.querySelector('.preview-area');
+previewArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+});
+previewArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            insertNodeAtCursor(img);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+
+    </script>
+</body>
+</html>
