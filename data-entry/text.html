@@ -149,15 +149,15 @@
                 </select>
                 
                 <button class="btn btn-sm btn-primary" onclick="insertSelectedVariable()">
-                    <i class="fas fa-plus"></i> Insert to Editor
+                    <i class="fas fa-plus"></i> Insert
                 </button>
                 
                 <button class="btn btn-sm btn-success" onclick="generateAllPreviews()">
-                    <i class="fas fa-file-alt"></i> Generate All
+                    <i class="fas fa-file-alt"></i> Generate
                 </button>
                 
                 <button class="btn btn-sm btn-danger" onclick="downloadAllAsPDF()">
-                    <i class="fas fa-file-pdf"></i> Download All as PDF
+                    <i class="fas fa-file-pdf"></i> Download All
                 </button>
             </div>
 
@@ -208,6 +208,12 @@
                 
                 <button class="tool-btn" onclick="formatText('insertUnorderedList')"><i class="fas fa-list-ul"></i></button>
                 <button class="tool-btn" onclick="formatText('insertOrderedList')"><i class="fas fa-list-ol"></i></button>
+
+                <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="insertImageFromFile(this)">
+                <button class="tool-btn" onclick="document.getElementById('imageInput').click()">
+                <i class="fas fa-image"></i>
+                </button>
+
                 
                 <button class="tool-btn" onclick="clearFormatting()"><i class="fas fa-eraser"></i> Clear Format</button>
             </div>
@@ -495,51 +501,61 @@
         }
         
         async function downloadSingleAsPDF(rowIndex) {
-            if (!tableData || !tableData.rows[rowIndex]) return;
-            
-            const template = document.getElementById('editableText').innerHTML;
-            let processedContent = template;
-            
-            // Replace all variables in the template
-            tableData.headers.forEach((header, headerIndex) => {
-                const value = tableData.rows[rowIndex][headerIndex] || '';
-                processedContent = processedContent.replace(
-                    new RegExp(`\\{\\{${header}\\}\\}`, 'g'), 
-                    value
-                );
-            });
-            
-            // Create a temporary div to hold the styled content
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = processedContent;
-            
-            // Apply current editor styling
-            const currentFontFamily = document.getElementById('fontFamily').value;
-            const currentFontSize = getFontSizeFromSelect();
-            
-            // Apply base styles for PDF
-            tempDiv.style.width = document.getElementById('editableText').style.width || '100%';
-            tempDiv.style.padding = '20px';
-            tempDiv.style.fontFamily = currentFontFamily;
-            tempDiv.style.fontSize = currentFontSize;
-            tempDiv.style.lineHeight = '1.6';
-            
-            // Add page size class if any
-            const pageSize = document.getElementById('pageSize').value;
-            if (pageSize === 'a4') {
-                tempDiv.classList.add('page-a4');
-            } else if (pageSize === 'a6') {
-                tempDiv.classList.add('page-a6');
-            } else if (pageSize === 'whatsapp') {
-                tempDiv.classList.add('page-whatsapp');
-            }
-            
-            // Add to document body but hide it
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.left = '-9999px';
-            document.body.appendChild(tempDiv);
-            
-            try {
+    if (!tableData || !tableData.rows[rowIndex]) return;
+    
+    const template = document.getElementById('editableText').innerHTML;
+    let processedContent = template;
+    
+    // Replace all variables in the template
+    tableData.headers.forEach((header, headerIndex) => {
+        const value = tableData.rows[rowIndex][headerIndex] || '';
+        processedContent = processedContent.replace(
+            new RegExp(`\\{\\{${header}\\}\\}`, 'g'), 
+            value
+        );
+    });
+    
+    // Create a temporary div to hold the styled content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = processedContent;
+    
+    // Apply current editor styling
+    const currentFontFamily = document.getElementById('fontFamily').value;
+    const currentFontSize = getFontSizeFromSelect();
+    
+    // Apply base styles for PDF - this will override any inline styles
+    tempDiv.style.width = document.getElementById('editableText').style.width || '100%';
+    tempDiv.style.padding = '20px';
+    tempDiv.style.fontFamily = currentFontFamily;
+    tempDiv.style.fontSize = increaseFontSize(currentFontSize);
+    tempDiv.style.lineHeight = '1.6';
+    
+    // IMPORTANT: Reset all child elements' styles
+    const allElements = tempDiv.querySelectorAll('*');
+    allElements.forEach(el => {
+        el.style.margin = '0';
+        el.style.padding = '0';
+        el.style.lineHeight = 'inherit';
+        el.style.fontSize = 'inherit';
+        el.style.fontFamily = 'inherit';
+    });
+    
+    // Add page size class if any
+    const pageSize = document.getElementById('pageSize').value;
+    if (pageSize === 'a4') {
+        tempDiv.classList.add('page-a4');
+    } else if (pageSize === 'a6') {
+        tempDiv.classList.add('page-a6');
+    } else if (pageSize === 'whatsapp') {
+        tempDiv.classList.add('page-whatsapp');
+    }
+    
+    // Add to document body but hide it
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    document.body.appendChild(tempDiv);
+    
+    try {
                 // Get selected margin
                 const margin = parseInt(document.getElementById('marginSize').value) || 10;
                 
@@ -591,26 +607,27 @@
                 pdf.save(`document_${rowIndex + 1}.pdf`);
                 
             } catch (error) {
-                console.error('Error generating PDF:', error);
-                alert('Error generating PDF. Please try again.');
-            } finally {
-                // Remove the temporary div
-                document.body.removeChild(tempDiv);
-            }
-        }
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF. Please try again.');
+    } finally {
+        // Remove the temporary div
+        document.body.removeChild(tempDiv);
+    }
+}
         
         function getFontSizeFromSelect() {
-            const sizes = {
-                '1': '12px',
-                '2': '14px',
-                '3': '16px',
-                '4': '18px',
-                '5': '20px',
-                '6': '24px',
-                '7': '32px'
-            };
-            return sizes[document.getElementById('fontSize').value] || '20px';
-        }
+    const sizes = {
+        '1': '8px',
+        '2': '10px',
+        '3': '12px',
+        '4': '14px',
+        '5': '16px',
+        '6': '18px',
+        '7': '24px'
+    };
+    return sizes[document.getElementById('fontSize').value] || '16px';
+}
+
         
         // async function downloadAllAsPDF() {
         //     if (!tableData) return;
@@ -649,6 +666,14 @@
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF(s)...';
         button.disabled = true;
         
+        // Pre-calculate common values
+        const pageSize = document.getElementById('pageSize').value;
+        const margin = parseInt(document.getElementById('marginSize').value) || 10;
+        const fontFamily = document.getElementById('fontFamily').value;
+        const fontSize = increaseFontSize(getFontSizeFromSelect());
+        const template = document.getElementById('editableText').innerHTML;
+        const originalWidth = document.getElementById('editableText').style.width || '100%';
+        
         if (downloadCombined) {
             // Create a single PDF with all items
             const pdf = new jsPDF({
@@ -656,31 +681,40 @@
                 unit: 'mm'
             });
             
-            const pageSize = document.getElementById('pageSize').value;
-            const margin = parseInt(document.getElementById('marginSize').value) || 10;
-            
-            for (let rowIndex = 0; rowIndex < tableData.rows.length; rowIndex++) {
+            // Process all rows in parallel
+            const canvasPromises = tableData.rows.map(async (row, rowIndex) => {
                 // Process template with current row data
-                const template = document.getElementById('editableText').innerHTML;
                 let processedContent = template;
-                
                 tableData.headers.forEach((header, headerIndex) => {
-                    const value = tableData.rows[rowIndex][headerIndex] || '';
+                    const value = row[headerIndex] || '';
                     processedContent = processedContent.replace(
                         new RegExp(`\\{\\{${header}\\}\\}`, 'g'), 
                         value
                     );
                 });
-                
+
                 // Create temporary div for html2canvas
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = processedContent;
-                tempDiv.style.width = document.getElementById('editableText').style.width || '100%';
+                
+                // Apply consistent styling
+                tempDiv.style.width = originalWidth;
                 tempDiv.style.padding = '20px';
-                tempDiv.style.fontFamily = document.getElementById('fontFamily').value;
-                tempDiv.style.fontSize = getFontSizeFromSelect();
+                tempDiv.style.fontFamily = fontFamily;
+                tempDiv.style.fontSize = fontSize;
                 tempDiv.style.lineHeight = '1.6';
                 
+                // Reset all child elements' styles to prevent alignment issues
+                const allElements = tempDiv.querySelectorAll('*');
+                allElements.forEach(el => {
+                    el.style.margin = '0';
+                    el.style.padding = '0';
+                    el.style.lineHeight = 'inherit';
+                    el.style.fontSize = 'inherit';
+                    el.style.fontFamily = 'inherit';
+                });
+                
+                // Apply page size class
                 if (pageSize === 'a4') {
                     tempDiv.classList.add('page-a4');
                 } else if (pageSize === 'a6') {
@@ -698,10 +732,19 @@
                     scale: 2,
                     logging: false,
                     useCORS: true,
-                    allowTaint: true
+                    allowTaint: true,
+                    async: true,
+                    removeContainer: true
                 });
                 
+                // Clean up
                 document.body.removeChild(tempDiv);
+                return { canvas, rowIndex };
+            });
+
+            // Process all canvases in sequence to add to PDF
+            for (let i = 0; i < canvasPromises.length; i++) {
+                const { canvas, rowIndex } = await canvasPromises[i];
                 
                 // Calculate dimensions
                 let imgWidth, imgHeight;
@@ -732,12 +775,25 @@
             // Save combined PDF
             pdf.save('all_documents_combined.pdf');
         } else {
-            // Download separate PDFs (using our existing function)
-            for (let rowIndex = 0; rowIndex < tableData.rows.length; rowIndex++) {
-                await downloadSingleAsPDF(rowIndex);
-                const progress = Math.floor((rowIndex + 1) / tableData.rows.length * 100);
-                button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating (${progress}%)...`;
-                await new Promise(resolve => setTimeout(resolve, 500)); // Small delay between generations
+            // Download separate PDFs in batches to prevent browser freezing
+            const batchSize = 5;
+            for (let i = 0; i < tableData.rows.length; i += batchSize) {
+                const batch = tableData.rows.slice(i, i + batchSize);
+                await Promise.all(batch.map(async (_, index) => {
+                    const rowIndex = i + index;
+                    
+                    // Create a modified version of downloadSingleAsPDF that works with our batch process
+                    await generateSinglePDF(rowIndex, {
+                        template,
+                        fontFamily,
+                        fontSize,
+                        pageSize,
+                        originalWidth
+                    });
+                    
+                    const progress = Math.floor((rowIndex + 1) / tableData.rows.length * 100);
+                    button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating (${progress}%)...`;
+                }));
             }
         }
         
@@ -761,6 +817,87 @@
         // Restore button state
         button.innerHTML = originalButtonText;
         button.disabled = false;
+    }
+}
+
+// Helper function for batch processing
+async function generateSinglePDF(rowIndex, options) {
+    const { template, fontFamily, fontSize, pageSize, originalWidth } = options;
+    
+    let processedContent = template;
+    tableData.headers.forEach((header, headerIndex) => {
+        const value = tableData.rows[rowIndex][headerIndex] || '';
+        processedContent = processedContent.replace(
+            new RegExp(`\\{\\{${header}\\}\\}`, 'g'), 
+            value
+        );
+    });
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = processedContent;
+    
+    // Apply consistent styling
+    tempDiv.style.width = originalWidth;
+    tempDiv.style.padding = '20px';
+    tempDiv.style.fontFamily = fontFamily;
+    tempDiv.style.fontSize = fontSize;
+    tempDiv.style.lineHeight = '1.6';
+    
+    // Reset all child elements' styles
+    const allElements = tempDiv.querySelectorAll('*');
+    allElements.forEach(el => {
+        el.style.margin = '0';
+        el.style.padding = '0';
+        el.style.lineHeight = 'inherit';
+        el.style.fontSize = 'inherit';
+        el.style.fontFamily = 'inherit';
+    });
+    
+    // Apply page size class
+    if (pageSize === 'a4') {
+        tempDiv.classList.add('page-a4');
+    } else if (pageSize === 'a6') {
+        tempDiv.classList.add('page-a6');
+    } else if (pageSize === 'whatsapp') {
+        tempDiv.classList.add('page-whatsapp');
+    }
+    
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    document.body.appendChild(tempDiv);
+    
+    try {
+        const margin = parseInt(document.getElementById('marginSize').value) || 10;
+        const canvas = await html2canvas(tempDiv, {
+            scale: 2,
+            logging: false,
+            useCORS: true,
+            allowTaint: true
+        });
+        
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm'
+        });
+        
+        let imgWidth, imgHeight;
+        if (pageSize === 'a4') {
+            imgWidth = 210 - (margin * 2);
+            imgHeight = (canvas.height * imgWidth) / canvas.width;
+        } else if (pageSize === 'a6') {
+            imgWidth = 105 - (margin * 2);
+            imgHeight = (canvas.height * imgWidth) / canvas.width;
+        } else {
+            imgWidth = 210 - (margin * 2);
+            imgHeight = (canvas.height * imgWidth) / canvas.width;
+        }
+        
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgWidth, imgHeight);
+        pdf.save(`document_${rowIndex + 1}.pdf`);
+    } catch (error) {
+        console.error(`Error generating PDF for row ${rowIndex}:`, error);
+    } finally {
+        document.body.removeChild(tempDiv);
     }
 }
 
@@ -835,6 +972,66 @@
         document.getElementById('editableText').addEventListener('click', function() {
             this.focus();
         });
+
+        function increaseFontSize(originalSize) {
+        const pxValue = parseInt(originalSize.replace('px', ''));
+        const adjusted = Math.round(pxValue * 2.2); //  boost PDF Image Size from Here
+        return adjusted + 'px';
+}
+
+
+function insertImageFromFile(input) {
+    const file = input.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            insertNodeAtCursor(img);
+        };
+        reader.readAsDataURL(file);
+    }
+    input.value = ''; // Reset for next upload
+}
+
+function insertNodeAtCursor(node) {
+    const sel = window.getSelection();
+    if (sel && sel.getRangeAt && sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(node);
+        range.collapse(false);
+
+        // Move cursor after the inserted image
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+}
+
+
+const previewArea = document.querySelector('.preview-area');
+previewArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+});
+previewArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            insertNodeAtCursor(img);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+
     </script>
 </body>
 </html>
