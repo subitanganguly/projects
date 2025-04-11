@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi Converter Calculator</title>
+    <link rel="icon" type="image/png" href="../sumadhu.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+    <link href="../background-all.css" rel="stylesheet">
+    <script src="../particles.js"></script>
+    <style>
+        .btn-cos {
+            background-color: rgba(5, 53, 0, 0.89);
+            width: 100%;
+            color: antiquewhite;
+            font-weight: bold;
+            border-radius: 10px;
+        }
+        .btn-cos:hover {
+            background-color: rgba(12, 143, 0, 0.89);
+            color: antiquewhite;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.397);
+        }
+     
+        .converter-selector {
+            margin-bottom: 20px;
+        }
+        .hidden-converter {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="particles" id="particles"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+
+    <nav class="navbar">
+        <div class="container-md">
+            <a class="navbar-brand d-flex align-items-center text-light" href="../index.html">
+                <img src="../sumadhu.png" alt="Logo" class="logo me-2">
+                SG Projects
+            </a>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <div class="converter-selector">
+            <label for="converterType" class="form-label">Select Converter:</label>
+            <select class="form-select" id="converterType" onchange="showSelectedConverter()">
+                <option value="all">Show All Converters</option>
+                <option value="weight">Weight to Price</option>
+                <option value="length">Length</option>
+                <option value="temperature">Temperature</option>
+                <option value="area">Area</option>
+            </select>
+        </div>
+
+        <div class="row g-4">
+            <!-- Weight to Price Calculator Card -->
+            <div class="col-md-6 converter-card" id="weight-converter">
+                <div class="calculator-card card">
+                    <div class="text-center bg-dark text-light p-1 rounded shadow-sm mb-3">
+                        <h6>Weight to Price Converter</h6>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rate" class="form-label">Conversion rate:</label>
+                        <input type="number" class="form-control" id="rate" placeholder="(1 kg = ? Rs)">
+                    </div>
+                    <div class="mb-3">
+                        <label for="weight" class="form-label">Enter weight in grams:</label>
+                        <input type="number" class="form-control" id="weight" placeholder="Enter weight in grams">
+                    </div>
+                    <button type="button" class="btn btn-cos" onclick="calculatePrice()">Calculate</button>
+                    <p id="result" class="fw-bold mt-2 text-center text-light bg-dark p-2"> Result ?</p>
+                </div>
+            </div>
+            
+            <!-- Length Converter Card -->
+            <div class="col-md-6 converter-card" id="length-converter">
+                <div class="calculator-card card">
+                    <div class="text-center bg-dark text-light p-1 rounded shadow-sm mb-3">
+                        <h6>Length Converter</h6>
+                    </div>
+                    <div class="mb-3">
+                        <label for="unitInput" class="form-label">Enter value:</label>
+                        <input type="number" class="form-control" id="unitInput" placeholder="Enter value">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="inputUnit" class="form-label">From:</label>
+                            <select class="form-select" id="inputUnit">
+                                <option value="centimeter">Centimeter</option>
+                                <option value="inch">Inch</option>
+                                <option value="meter">Meter</option>
+                                <option value="feet">Feet</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="outputUnit" class="form-label">To:</label>
+                            <select class="form-select" id="outputUnit">
+                                <option value="centimeter">Centimeter</option>
+                                <option value="inch">Inch</option>
+                                <option value="meter">Meter</option>
+                                <option value="feet">Feet</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-cos" onclick="convertUnit()">Convert</button>
+                    <p id="unitResult" class="fw-bold mt-2 text-center text-light bg-dark p-2"> Result ?</p>
+                </div>
+            </div>
+
+            <!-- Temperature Converter Card -->
+            <div class="col-md-6 converter-card" id="temperature-converter">
+                <div class="calculator-card card">
+                    <div class="text-center bg-dark text-light p-1 rounded shadow-sm mb-3">
+                        <h6>Temperature Converter</h6>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tempInput" class="form-label">Enter temperature:</label>
+                        <input type="number" class="form-control" id="tempInput" placeholder="Enter temperature">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="tempFrom" class="form-label">From:</label>
+                            <select class="form-select" id="tempFrom">
+                                <option value="celsius">Celsius (°C)</option>
+                                <option value="fahrenheit">Fahrenheit (°F)</option>
+                                <option value="kelvin">Kelvin (K)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="tempTo" class="form-label">To:</label>
+                            <select class="form-select" id="tempTo">
+                                <option value="celsius">Celsius (°C)</option>
+                                <option value="fahrenheit">Fahrenheit (°F)</option>
+                                <option value="kelvin">Kelvin (K)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-cos" onclick="convertTemperature()">Convert</button>
+                    <p id="tempResult" class="fw-bold mt-2 text-center text-light bg-dark p-2"> Result ?</p>
+                </div>
+            </div>
+
+            <!-- Area Converter Card -->
+            <div class="col-md-6 converter-card" id="area-converter">
+                <div class="calculator-card card">
+                    <div class="text-center bg-dark text-light p-1 rounded shadow-sm mb-3">
+                        <h6>Area Converter</h6>
+                    </div>
+                    <div class="mb-3">
+                        <label for="areaInput" class="form-label">Enter area:</label>
+                        <input type="number" class="form-control" id="areaInput" placeholder="Enter area">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="areaFrom" class="form-label">From:</label>
+                            <select class="form-select" id="areaFrom">
+                                <option value="sqmeter">Square Meter</option>
+                                <option value="sqfeet">Square Feet</option>
+                                <option value="acre">Acre</option>
+                                <option value="hectare">Hectare</option>
+                                <option value="decimal">Decimal</option>
+                                <option value="katha">Katha</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="areaTo" class="form-label">To:</label>
+                            <select class="form-select" id="areaTo">
+                                <option value="sqmeter">Square Meter</option>
+                                <option value="sqfeet">Square Feet</option>
+                                <option value="acre">Acre</option>
+                                <option value="hectare">Hectare</option>
+                                <option value="decimal">Decimal</option>
+                                <option value="katha">Katha</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-cos" onclick="convertArea()">Convert</button>
+                    <p id="areaResult" class="fw-bold mt-2 text-center text-light bg-dark p-2"> Result ?</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to show selected converter
+        function showSelectedConverter() {
+            const selected = document.getElementById('converterType').value;
+            const converters = document.querySelectorAll('.converter-card');
+            
+            if (selected === 'all') {
+                converters.forEach(converter => {
+                    converter.classList.remove('hidden-converter');
+                });
+            } else {
+                converters.forEach(converter => {
+                    converter.classList.add('hidden-converter');
+                });
+                document.getElementById(`${selected}-converter`).classList.remove('hidden-converter');
+            }
+        }
+
+        // Function to calculate price
+        function calculatePrice() {
+            const rate = document.getElementById('rate').value;
+            const weight = document.getElementById('weight').value;
+
+            if (rate <= 0 || weight <= 0) {
+                document.getElementById('result').innerText = 'Please enter valid values for rate and weight.';
+                return;
+            }
+
+            const weightInKg = weight / 1000;
+            const price = weightInKg * rate;
+            document.getElementById('result').innerText = `${weight} grams = ${price.toFixed(2)} Rs`;
+        }
+
+        // Function to convert units
+        function convertUnit() {
+            const inputValue = parseFloat(document.getElementById('unitInput').value);
+            const inputUnit = document.getElementById('inputUnit').value;
+            const outputUnit = document.getElementById('outputUnit').value;
+
+            if (isNaN(inputValue)) {
+                document.getElementById('unitResult').innerText = 'Please enter a valid number.';
+                return;
+            }
+
+            // Conversion factors (relative to centimeters)
+            const conversionFactors = {
+                centimeter: 1,     // 1 cm = 1 cm
+                inch: 2.54,        // 1 inch = 2.54 cm
+                meter: 100,        // 1 meter = 100 cm
+                feet: 30.48        // 1 foot = 30.48 cm
+            };
+
+            // Convert input value to centimeters first
+            const valueInCentimeters = inputValue * conversionFactors[inputUnit];
+
+            // Convert to the desired output unit
+            const convertedValue = valueInCentimeters / conversionFactors[outputUnit];
+
+            document.getElementById('unitResult').innerText = `${inputValue} ${inputUnit} = ${convertedValue.toFixed(4)} ${outputUnit}`;
+        }
+
+        // Function to convert temperature
+        function convertTemperature() {
+            const tempInput = parseFloat(document.getElementById('tempInput').value);
+            const tempFrom = document.getElementById('tempFrom').value;
+            const tempTo = document.getElementById('tempTo').value;
+
+            if (isNaN(tempInput)) {
+                document.getElementById('tempResult').innerText = 'Please enter a valid number.';
+                return;
+            }
+
+            let tempInCelsius;
+            
+            // Convert to Celsius first
+            switch(tempFrom) {
+                case 'celsius':
+                    tempInCelsius = tempInput;
+                    break;
+                case 'fahrenheit':
+                    tempInCelsius = (tempInput - 32) * 5/9;
+                    break;
+                case 'kelvin':
+                    tempInCelsius = tempInput - 273.15;
+                    break;
+            }
+
+            let convertedTemp;
+            
+            // Convert from Celsius to desired unit
+            switch(tempTo) {
+                case 'celsius':
+                    convertedTemp = tempInCelsius;
+                    break;
+                case 'fahrenheit':
+                    convertedTemp = (tempInCelsius * 9/5) + 32;
+                    break;
+                case 'kelvin':
+                    convertedTemp = tempInCelsius + 273.15;
+                    break;
+            }
+
+            document.getElementById('tempResult').innerText = `${tempInput} °${tempFrom.charAt(0).toUpperCase()} = ${convertedTemp.toFixed(2)} °${tempTo.charAt(0).toUpperCase()}`;
+        }
+
+        // Function to convert area
+        function convertArea() {
+            const areaInput = parseFloat(document.getElementById('areaInput').value);
+            const areaFrom = document.getElementById('areaFrom').value;
+            const areaTo = document.getElementById('areaTo').value;
+
+            if (isNaN(areaInput)) {
+                document.getElementById('areaResult').innerText = 'Please enter a valid number.';
+                return;
+            }
+
+            // Conversion factors (relative to square meters)
+            const conversionFactors = {
+                sqmeter: 1,          // 1 sq m = 1 sq m
+                sqfeet: 0.092903,    // 1 sq ft = 0.092903 sq m
+                acre: 4046.86,        // 1 acre = 4046.86 sq m
+                hectare: 10000,       // 1 hectare = 10000 sq m
+                decimal: 40.46,       // 1 decimal = 40.46 sq m (common in West Bengal, Bangladesh)
+                katha: 66.89          // 1 katha = 66.89 sq m (varies by region, this is West Bengal standard)
+            };
+
+            // Convert input value to square meters first
+            const valueInSqMeters = areaInput * conversionFactors[areaFrom];
+
+            // Convert to the desired output unit
+            const convertedValue = valueInSqMeters / conversionFactors[areaTo];
+
+            document.getElementById('areaResult').innerText = `${areaInput} ${areaFrom} = ${convertedValue.toFixed(4)} ${areaTo}`;
+        }
+    </script>
+</body>
+</html>
