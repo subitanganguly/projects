@@ -1,0 +1,18 @@
+{
+  "name": "data-entry-app",
+  "version": "1.0.0",
+  "description": "Data entry form with JSON storage",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "bootstrap": "^5.3.0",
+    "jquery": "^3.6.4",
+    "@popperjs/core": "^2.11.8"
+  }
+}
