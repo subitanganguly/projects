@@ -102,8 +102,8 @@ transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth effect */
 tr:nth-child(even):hover,
 tr:nth-child(odd):nth-child(n+2):hover,.cstr:hover {
 transform: scale(1.01); /* Zoom in */
-box-shadow: inset 1px 1px 15px 7px rgba(2, 27, 255, 0.53); /* Stronger shadow */
-color: #f70088;
+box-shadow: inset 1px 1px 10px 7px rgba(242, 247, 1, 0.795); /* Stronger shadow */
+color: #8a0012;
 }
 
 
@@ -140,20 +140,23 @@ font-size: 10px;
 width: 100%;
 padding: 7px;
 font-size: 16px;
-border: 2px solid #ddd;
+background-color: #e6fdfd;
+border: 3px solid #00c9c9;
 border-radius: 15px;
 transition: all 0.3s ease-in-out;
 outline: none;
 }
 
 #searchInput:hover {
-border-color: #007bff;
+background-color: #d5ffeb;
+border-color: #00ff88;
 box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
 }
 
 #searchInput:focus {
-border-color: #1d0056;
-box-shadow: 0 0 12px rgba(0, 86, 179, 0.4), inset 1px 1px 15px 7px rgba(2, 27, 255, 0.777);;
+background-color: #d4ffd7;
+border-color: #00ff22;
+box-shadow: 0 0 12px rgba(3, 216, 49, 0.637), inset 1px 1px 15px 7px rgba(2, 255, 15, 0.777);;
 }
 
 .fade-in-logo {
@@ -210,10 +213,19 @@ transform: translateY(0);
 #tableSelect{
     border-radius: 15px;
     box-shadow: inset 2px 4px 10px aqua;
+    background-color: #e6fdfd;
+    border: 3px solid #00c9c9;
+}
+
+#tableSelect:hover {
+background-color: #d5ffeb;
+border-color: #00ff88;
+box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
 }
 
 #tableSelect:focus {
-    border-color: #1d0056;
+    background-color: #d4ffd7;
+    border-color: #00ff22;
     }
 
     #tableTitle{
