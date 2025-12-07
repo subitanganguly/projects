@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Add DUTR</title>
+    <link rel="icon" type="image/png" href="https://subitanganguly.github.io/projects/sumadhu.png">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+      /* Additional styles for auth modal */
+      .auth-modal .modal-content {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        border: none;
+      }
+      
+      .auth-modal .modal-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      .auth-modal .modal-body {
+        padding: 2rem;
+      }
+      
+      .auth-input {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        border-radius: 10px;
+        padding: 12px 15px;
+        font-size: 1.1rem;
+      }
+      
+      .auth-input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+      }
+      
+      .auth-input:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
+        box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+      }
+      
+      .auth-btn {
+        background: white;
+        color: #667eea;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+      }
+      
+      .auth-btn:hover {
+        background: rgba(255, 255, 255, 0.9);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+      
+      .auth-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+      
+      /* Prevent scrolling when auth modal is open */
+      body.auth-modal-open {
+        overflow: hidden;
+      }
+      
+      /* Auth test message */
+      .auth-test-message {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        margin-top: 10px;
+      }
+      /* Logout button styles */
+.btn-logout {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.btn-logout:hover {
+  background: #ff2222;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+}
+
+/* Adjust settings button position */
+.settings-btn {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  /* ... keep your existing settings-btn styles ... */
+}
+
+/* Make sure card title is centered properly */
+.card-header.text-center {
+  position: relative;
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+
+.card-title {
+  display: inline-block;
+  margin: 0 auto;
+}
+    </style>
+  </head>
+  <body>
+
+    <!-- Auth Modal -->
+    <div class="modal fade auth-modal" id="authModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header border-0">
+            <h5 class="modal-title">Authentication Required</h5>
+          </div>
+          <div class="modal-body text-center">
+            <div class="auth-icon">
+              <i class="bi bi-shield-lock"></i>
+            </div>
+            <h4 class="mb-3">Enter Authentication Code</h4>
+            <p class="mb-4">Please enter your authentication code to access the form.</p>
+            
+            <div class="mb-3">
+              <input type="password" 
+                     id="authCodeInput" 
+                     class="form-control auth-input" 
+                     placeholder="Enter your auth code" 
+                     autocomplete="off">
+              <div class="invalid-feedback" id="authError" style="display: none;">
+                Invalid authentication code. Please try again.
+              </div>
+              <div id="authTestResult" class="auth-test-message" style="display: none;"></div>
+            </div>
+            
+            <button type="button" class="btn auth-btn w-100" id="submitAuthBtn">
+              <span id="authBtnText">Verify & Continue</span>
+              <div id="authSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status"></div>
+            </button>
+            
+            <div class="mt-3 text-muted small">
+              <i class="bi bi-info-circle"></i> Code will be saved locally for future access
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header border-0">
+            <h5 class="modal-title">Required Fields Settings</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <table class="settings-table">
+              <thead>
+                <tr>
+                  <th>Field Name</th>
+                  <th>Required</th>
+                  <th>Hide Field</th>
+                </tr>
+              </thead>
+              <tbody id="settingsTableBody">
+                <!-- Fields will be populated by JavaScript -->
+              </tbody>
+            </table>
+            <div class="settings-actions">
+              <button type="button" class="settings-btn-default" id="resetToDefaultBtn">Reset to Default (All Required)</button>
+              <button type="button" class="settings-btn-save" id="saveSettingsBtn">Save Settings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header border-0">
+            <h5 class="modal-title" id="modalTitle">Message</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center">
+            <div class="message-icon">
+              <i id="modalIcon" class="bi bi-check-circle-fill"></i>
+            </div>
+            <p id="modalMessage" class="message-text"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm" id="mainForm" style="display: none;">
+      <div class="card-header text-center">
+        <h4 class="card-title mb-0">Add DUTR Record</h4>
+        <!-- Settings Button -->
+        <!-- Logout Button (top left) -->
+        <button class="btn-logout" onclick="logout()" title="Logout">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+
+        <button class="settings-btn" id="openSettingsBtn" title="Settings">
+          <i class="bi bi-gear-fill"></i>
+        </button>
+      </div>
+
+      <div class="card-body">
+        <form id="caseForm" class="row g-3">
+          <!-- Your existing form fields here (unchanged) -->
+          <div class="col-md-4 required-field" id="activityTypeField">
+            <label class="form-label" id="activityTypeLabel">Activity Type<span class="required">*</span></label>
+            <select name="activityType" class="form-select" aria-label="Default select example">
+                <option selected disabled value="">Activity Type</option>
+                <option value="Bail Opposed">Bail Opposed</option>
+                <option value="Charge Framed / Discharged">Charge Framed / Discharged</option>
+                <option value="Witness Examination">Witness Examination</option>
+                <option value="Final Argument">Final Argument</option>
+                <option value="Judgement Delivered">Judgement Delivered</option>
+                <option value="Application for Adjournment">Application for Adjournment</option>
+                <option value="Legal Opinion">Legal Opinion</option>
+                <option value="Miscellaneous">Miscellaneous</option>
+                <option value="Others">Others</option>
+                <option value="Appeal">Appeal</option>
+                <option value="Revision">Revision</option>
+                <option value="Preparation of Acquittal Report">Preparation of Acquittal Report</option>
+            </select>
+          </div>
+
+          <div class="col-md-4 required-field" id="activityDateField">
+            <label class="form-label" id="activityDateLabel">Activity Date <span class="required">*</span></label>
+            <input name="activityDate" type="date" class="form-control">
+          </div>
+
+          <div class="col-md-4 optional-field" id="subActivityTypeField">
+            <label class="form-label" id="subActivityTypeLabel">Sub Activity Type<span class="required">*</span></label>
+            <input name="subActivityType" class="form-control" placeholder="e.g., Registration">
+          </div>
+
+          <div class="col-md-4 required-field" id="stageField">
+            <label class="form-label" id="stageLabel">Stage <span class="required">*</span></label>
+            <select name="stage" class="form-select" aria-label="Default select example">
+                <option selected disabled value="">Stage</option>
+                <option value="Pre CS">Pre Chargesheet</option>
+                <option value="Post CS">Post Chargesheet</option>
+            </select>
+          </div>
+
+          <div class="col-md-4 required-field" id="caseTypeField">
+            <label class="form-label" id="caseTypeLabel">Case Type <span class="required">*</span></label>
+            <select name="caseType" class="form-select" aria-label="Default select example">
+                <option selected disabled value="">Case Type</option>
+                <option value="IPC">IPC</option>
+                <option value="BNS">BNS</option>
+                <option value="BNSS">BNSS</option>
+            </select>
+          </div>
+
+          <div class="col-md-4 required-field" id="courtField">
+            <label class="form-label" id="courtLabel">Court <span class="required">*</span></label>
+            <select name="court" class="form-select" aria-label="Default select example">
+                <option selected disabled value="">Court</option>
+                <option value="District Court">District Court</option>
+                <option value="Ad Dist sessions judge">Addl District sessions judge Court</option>
+                <option value="CGM">CGM</option>
+                <option value="ACJM 1">ACJM 1</option>
+                <option value="ACJM 2">ACJM 2</option>
+                <option value="POCSO">POCSO</option>
+            </select>
+          </div>
+
+          <div class="col-md-4  optional-field" id="grNoField">
+            <label class="form-label" id="grNoLabel">GR No <span class="required">*</span></label>
+            <input name="grNo" class="form-control" placeholder="GR No">
+          </div>
+
+          <div class="col-md-4 optional-field" id="firNoField">
+            <label class="form-label" id="firNoLabel">FIR No <span class="required">*</span></label>
+            <input name="firNo" class="form-control" placeholder="FIR Number">
+          </div>
+
+          <div class="col-md-4 optional-field" id="firYearField">
+            <label class="form-label" id="firYearLabel">FIR Year <span class="required">*</span></label>
+            <select name="firYear" class="form-control" id="firYearSelect">
+            </select>
+            </div>
+
+          <div class="col-md-4 optional-field" id="psNameField">
+            <label class="form-label" id="psNameLabel">PS Name<span class="required">*</span></label>
+            <select name="psName" class="form-select" aria-label="Default select example">
+                <option selected disabled value="">Police Station Name</option>
+                <option value="Alipurduar">Alipurduar</option>
+                <option value="Alipurduar Women">Alipurduar Women</option>
+                <option value="Samuktala">Samuktala</option>
+                <option value="Kumargram">Kumargram</option>
+                <option value="Kalchini">Kalchini</option>
+                <option value="Birpara">Birpara</option>
+                <option value="Falakata">Falakata</option>
+                <option value="Madarihat">Madarihat</option>
+                <option value="Cyber Crime">Cyber Crime</option>
+                <option value="Alipurduar GRPS">Alipurduar GRPS</option>
+                <option value="Jaigaon">Jaigaon</option>
+                <option value="Birpara">Birpara</option>
+            </select>
+          </div>
+
+          <div class="col-md-4 optional-field" id="actSectionField">
+            <label class="form-label" id="actSectionLabel">Act &amp; Section<span class="required">*</span></label>
+            <input name="actSection" class="form-control" placeholder="e.g., IPC 420">
+          </div>
+
+          <div class="col-md-4 optional-field" id="judgementDeliveryField">
+            <label class="form-label" id="judgementDeliveryLabel">Judgement Delivery<span class="required">*</span></label>
+            <select name="judgementDelivery" class="form-select" aria-label="Default select example">
+                <option selected disabled value="">Judgement Delivery</option>
+                <option value="Acquittal">Acquittal</option>
+                <option value="Convicted">Convicted</option>
+                <option value="Others">Others</option>
+            </select>
+          </div>
+
+          <div class="col-md-4 optional-field" id="noOfAccusedField">
+            <label class="form-label" id="noOfAccusedLabel">No of Accused<span class="required">*</span></label>
+            <input name="noOfAccused" type="number" min="0" class="form-control" placeholder="0">
+          </div>
+
+          <div class="col-md-4 optional-field" id="accusedNameField">
+            <label class="form-label" id="accusedNameLabel">Do you want to add Accused Name ?<span class="required">*</span></label>
+            <select name="accusedName" class="form-select" aria-label="Default select example">
+                <option value="Yes">Yes</option>
+                <option selected value="No">No</option>
+            </select>
+          </div>
+
+          <div class="col-12" id="remarksContainer" style="display:none;">
+            <label class="form-label" id="remarksLabel">Remarks</label>
+            <textarea name="remarks" rows="3" class="form-control" placeholder="Any notes..."></textarea>
+          </div>
+
+          <div class="col-12 d-flex gap-2 justify-content-center mt-3">
+            <button type="reset" class="reset-btn">Reset</button>
+            <button id="submitBtn" type="submit" class="btn-submit flex-fill">
+            <span id="btnText">Submit</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 66 43">
+            <polygon
+              points="39.58,4.46 44.11,0 66,21.5 44.11,43 39.58,38.54 56.94,21.5"
+            ></polygon>
+            <polygon
+              points="19.79,4.46 24.32,0 46.21,21.5 24.32,43 19.79,38.54 37.15,21.5"
+            ></polygon>
+            <polygon
+              points="0,4.46 4.53,0 26.42,21.5 4.53,43 0,38.54 17.36,21.5"
+            ></polygon>
+            </svg>
+            <div id="btnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status"></div>
+            </button>
+          </div>
+
+          <div class="col-12">
+            <div id="alertPlaceholder"></div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwQY31BwTlDkyZOzT9ARp1sKk-oitaBcKUU8B6Z_1sFR9fKNgTyheoMVPlxvyicD_1SDg/exec';
+
+// Initialize modals
+const form = document.getElementById('caseForm');
+const messageModal = new bootstrap.Modal(document.getElementById('messageModal'));
+const settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+const authModal = new bootstrap.Modal(document.getElementById('authModal'), {
+  backdrop: 'static',
+  keyboard: false
+});
+const modalTitle = document.getElementById('modalTitle');
+const modalIcon = document.getElementById('modalIcon');
+const modalMessage = document.getElementById('modalMessage');
+
+// Authentication Functions
+function checkAuth() {
+  const savedAuthCode = localStorage.getItem('dutr_auth_code');
+  const isAuthenticated = !!savedAuthCode; // Check if any auth code exists
+  
+  if (!isAuthenticated) {
+    // Show auth modal
+    document.body.classList.add('auth-modal-open');
+    authModal.show();
+  } else {
+    // Test the saved auth code first
+    testAuthCode(savedAuthCode).then(isValid => {
+      if (isValid) {
+        // Show main form
+        document.getElementById('mainForm').style.display = 'block';
+        applyFieldConfig(); // Apply field configuration
+      } else {
+        // Invalid code, show auth modal
+        clearAuthCode();
+        document.body.classList.add('auth-modal-open');
+        authModal.show();
+        showModalMessage('Session Expired', 'Your authentication has expired. Please enter the code again.', 'error', true, 3000);
+      }
+    }).catch(error => {
+      console.error('Auth test failed:', error);
+      clearAuthCode();
+      document.body.classList.add('auth-modal-open');
+      authModal.show();
+    });
+  }
+}
+
+// Function to test auth code by making a test request to Google Apps Script
+async function testAuthCode(authCode) {
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'testAuth');
+    params.append('authCode', authCode);
+    
+    const urlWithParams = `${WEB_APP_URL}?${params.toString()}`;
+    const res = await fetch(urlWithParams);
+    const text = await res.text();
+    
+    return res.ok && text === "Auth test successful";
+  } catch (error) {
+    console.error('Auth test error:', error);
+    return false;
+  }
+}
+
+function saveAuthCode(code) {
+  localStorage.setItem('dutr_auth_code', code);
+}
+
+function clearAuthCode() {
+  localStorage.removeItem('dutr_auth_code');
+}
+
+// Auth Modal Event Listeners
+document.getElementById('submitAuthBtn').addEventListener('click', async function() {
+  const authInput = document.getElementById('authCodeInput');
+  const authError = document.getElementById('authError');
+  const authTestResult = document.getElementById('authTestResult');
+  const authBtn = this;
+  const authBtnText = document.getElementById('authBtnText');
+  const authSpinner = document.getElementById('authSpinner');
+  
+  const code = authInput.value.trim();
+  
+  if (!code) {
+    authInput.classList.add('is-invalid');
+    authError.textContent = 'Please enter an authentication code';
+    authError.style.display = 'block';
+    return;
+  }
+  
+  // Show loading state
+  authBtn.disabled = true;
+  authBtnText.textContent = 'Verifying...';
+  authSpinner.classList.remove('d-none');
+  authTestResult.style.display = 'none';
+  
+  try {
+    // Test the auth code with Google Apps Script
+    const isValid = await testAuthCode(code);
+    
+    if (isValid) {
+      // Save auth code to localStorage
+      saveAuthCode(code);
+      
+      // Hide auth modal
+      authModal.hide();
+      document.body.classList.remove('auth-modal-open');
+      
+      // Show main form
+      document.getElementById('mainForm').style.display = 'block';
+      applyFieldConfig(); // Apply field configuration
+      
+      // Show success message
+      showModalMessage('Authentication Successful', 'You can now access the form.', 'success', true, 2000);
+    } else {
+      // Show error
+      authInput.classList.add('is-invalid');
+      authError.textContent = 'Invalid authentication code. Please try again.';
+      authError.style.display = 'block';
+      authTestResult.textContent = 'Server rejected the authentication code.';
+      authTestResult.style.display = 'block';
+      authTestResult.style.color = '#ff6b6b';
+      
+      // Reset button state
+      authBtn.disabled = false;
+      authBtnText.textContent = 'Verify & Continue';
+      authSpinner.classList.add('d-none');
+    }
+  } catch (error) {
+    console.error('Auth verification error:', error);
+    
+    // Show connection error
+    authInput.classList.add('is-invalid');
+    authError.textContent = 'Connection error. Please check your internet and try again.';
+    authError.style.display = 'block';
+    authTestResult.textContent = 'Unable to reach the server.';
+    authTestResult.style.display = 'block';
+    authTestResult.style.color = '#ff6b6b';
+    
+    // Reset button state
+    authBtn.disabled = false;
+    authBtnText.textContent = 'Verify & Continue';
+    authSpinner.classList.add('d-none');
+  }
+});
+
+// Allow Enter key in auth input
+document.getElementById('authCodeInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    document.getElementById('submitAuthBtn').click();
+  }
+});
+
+// Clear error when user starts typing
+document.getElementById('authCodeInput').addEventListener('input', function() {
+  this.classList.remove('is-invalid');
+  document.getElementById('authError').style.display = 'none';
+  document.getElementById('authTestResult').style.display = 'none';
+});
+
+// Field configuration - DEFAULT: ALL FIELDS ARE REQUIRED and NOT HIDDEN
+const defaultFieldConfig = {
+  'activityType': { name: 'Activity Type', required: true, hidden: false },
+  'activityDate': { name: 'Activity Date', required: true, hidden: false },
+  'subActivityType': { name: 'Sub Activity Type', required: true, hidden: false },
+  'stage': { name: 'Stage', required: true, hidden: false },
+  'caseType': { name: 'Case Type', required: true, hidden: false },
+  'court': { name: 'Court', required: true, hidden: false },
+  'grNo': { name: 'grNo', required: true, hidden: false },
+  'firNo': { name: 'FIR No', required: true, hidden: false },
+  'firYear': { name: 'FIR Year', required: true, hidden: false },
+  'psName': { name: 'PS Name', required: true, hidden: false },
+  'actSection': { name: 'Act & Section', required: true, hidden: false },
+  'judgementDelivery': { name: 'Judgement Delivery', required: true, hidden: false },
+  'noOfAccused': { name: 'No of Accused', required: true, hidden: false },
+  'accusedName': { name: 'Accused Name', required: true, hidden: false }
+  // Remarks is excluded as per your requirement
+};
+
+// Load field configuration from localStorage or use defaults
+let fieldConfig = JSON.parse(localStorage.getItem('fieldConfig')) || defaultFieldConfig;
+
+// Function to save configuration to localStorage
+function saveFieldConfig() {
+  localStorage.setItem('fieldConfig', JSON.stringify(fieldConfig));
+  applyFieldConfig(); // Apply the new configuration
+  showModalMessage('Settings Saved', 'Field requirements and visibility have been updated.', 'success', true, 2000);
+}
+
+// Function to reset to default configuration - ALL FIELDS REQUIRED and VISIBLE
+function resetToDefaultConfig() {
+  // Reset ALL fields to required and visible
+  Object.keys(defaultFieldConfig).forEach(fieldName => {
+    defaultFieldConfig[fieldName].required = true;
+    defaultFieldConfig[fieldName].hidden = false;
+  });
+  fieldConfig = JSON.parse(JSON.stringify(defaultFieldConfig)); // Deep copy
+  saveFieldConfig();
+  populateSettingsTable(); // Refresh the settings table
+  showModalMessage('Settings Reset', 'All fields have been set to required and visible.', 'success', true, 2000);
+}
+
+// Function to apply field configuration to the form
+function applyFieldConfig() {
+  let visibleFieldCount = 0;
+  
+  Object.keys(fieldConfig).forEach(fieldName => {
+    const config = fieldConfig[fieldName];
+    const labelElement = document.getElementById(`${fieldName}Label`);
+    const inputElement = document.querySelector(`[name="${fieldName}"]`);
+    const fieldContainer = document.getElementById(`${fieldName}Field`);
+    
+    if (labelElement && inputElement && fieldContainer) {
+      if (config.hidden) {
+        // Hidden field - completely hide it
+        fieldContainer.classList.add('field-hidden');
+        fieldContainer.style.display = 'none';
+        inputElement.required = false; // Hidden fields shouldn't be required
+      } else if (config.required) {
+        // Required field - show it as required
+        labelElement.classList.add('required-field');
+        inputElement.required = true;
+        fieldContainer.classList.remove('optional-field', 'field-hidden');
+        fieldContainer.classList.add('required-field');
+        fieldContainer.style.display = 'block';
+        visibleFieldCount++;
+      } else {
+        // Optional field - show it as optional
+        labelElement.classList.remove('required-field');
+        inputElement.required = false;
+        fieldContainer.classList.remove('required-field', 'field-hidden');
+        fieldContainer.classList.add('optional-field');
+        fieldContainer.style.display = 'block';
+        visibleFieldCount++;
+      }
+    }
+  });
+  
+  console.log(`Visible fields: ${visibleFieldCount}`);
+}
+
+// Function to populate settings table
+function populateSettingsTable() {
+  const tableBody = document.getElementById('settingsTableBody');
+  tableBody.innerHTML = '';
+  
+  Object.keys(fieldConfig).forEach(fieldName => {
+    const config = fieldConfig[fieldName];
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="field-name" data-label="Field Name">${config.name}</td>
+      <td data-label="Required">
+        <div class="required-option" id="${fieldName}_required_container">
+          <input type="radio" 
+                 name="${fieldName}_required" 
+                 id="${fieldName}_required" 
+                 value="required" 
+                 ${config.required ? 'checked' : ''}
+                 ${config.hidden ? 'disabled' : ''}>
+          <label for="${fieldName}_required">Required</label>
+          
+          <input type="radio" 
+                 name="${fieldName}_required" 
+                 id="${fieldName}_optional" 
+                 value="optional" 
+                 ${!config.required ? 'checked' : ''}
+                 ${config.hidden ? 'disabled' : ''}>
+          <label for="${fieldName}_optional">Optional</label>
+        </div>
+      </td>
+      <td data-label="Hide Field">
+        <div class="hide-option">
+          <input type="checkbox" 
+                 id="${fieldName}_hide" 
+                 ${config.hidden ? 'checked' : ''}>
+          <label for="${fieldName}_hide">Hide Field</label>
+        </div>
+      </td>
+    `;
+    tableBody.appendChild(row);
+    
+    // Add event listener for hide checkbox
+    const hideCheckbox = document.getElementById(`${fieldName}_hide`);
+    const requiredContainer = document.getElementById(`${fieldName}_required_container`);
+    
+    hideCheckbox.addEventListener('change', function() {
+      const requiredRadios = requiredContainer.querySelectorAll('input[type="radio"]');
+      const requiredLabels = requiredContainer.querySelectorAll('label');
+      
+      if (this.checked) {
+        // Disable required/optional radios when field is hidden
+        requiredRadios.forEach(radio => {
+          radio.disabled = true;
+        });
+        requiredLabels.forEach(label => {
+          label.style.opacity = '0.5';
+        });
+      } else {
+        // Enable required/optional radios when field is visible
+        requiredRadios.forEach(radio => {
+          radio.disabled = false;
+        });
+        requiredLabels.forEach(label => {
+          label.style.opacity = '1';
+        });
+      }
+    });
+  });
+}
+
+// Function to save settings from modal
+function saveSettingsFromModal() {
+  Object.keys(fieldConfig).forEach(fieldName => {
+    const hideCheckbox = document.getElementById(`${fieldName}_hide`);
+    const requiredRadio = document.querySelector(`input[name="${fieldName}_required"]:checked`);
+    
+    if (hideCheckbox) {
+      fieldConfig[fieldName].hidden = hideCheckbox.checked;
+    }
+    
+    if (requiredRadio && !hideCheckbox.checked) {
+      fieldConfig[fieldName].required = requiredRadio.value === 'required';
+    }
+  });
+  
+  saveFieldConfig();
+  settingsModal.hide();
+}
+
+// Function to show modal message
+function showModalMessage(title, message, type = 'success', autoHide = true, hideTime = 3000) {
+  if (type === 'success') {
+    modalIcon.className = 'bi bi-check-circle-fill success-icon';
+    modalIcon.style.color = '#00ff88';
+    modalTitle.textContent = title || 'Success!';
+    modalMessage.textContent = message;
+    modalMessage.className = 'message-text success-text';
+    document.querySelector('#messageModal .modal-content').classList.add('success-modal');
+    document.querySelector('#messageModal .modal-content').classList.remove('error-modal');
+  } else {
+    modalIcon.className = 'bi bi-x-circle-fill error-icon';
+    modalIcon.style.color = '#ff3300';
+    modalTitle.textContent = title || 'Error!';
+    modalMessage.textContent = message;
+    modalMessage.className = 'message-text error-text';
+    document.querySelector('#messageModal .modal-content').classList.add('error-modal');
+    document.querySelector('#messageModal .modal-content').classList.remove('success-modal');
+  }
+  
+  messageModal.show();
+  
+  if (autoHide) {
+    setTimeout(() => {
+      if (messageModal._isShown) {
+        messageModal.hide();
+      }
+    }, hideTime);
+  }
+}
+
+// Modified Form submission handler - includes auth code
+form.addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  
+  // Check authentication
+  const savedAuthCode = localStorage.getItem('dutr_auth_code');
+  if (!savedAuthCode) {
+    showModalMessage('Authentication Required', 'Your session has expired. Please authenticate again.', 'error', true, 4000);
+    
+    // Show auth modal again
+    setTimeout(() => {
+      authModal.show();
+      document.getElementById('mainForm').style.display = 'none';
+      document.body.classList.add('auth-modal-open');
+    }, 2000);
+    
+    return;
+  }
+  
+  // Validate only visible required fields
+  let isValid = true;
+  let errorMessage = '';
+  
+  Object.keys(fieldConfig).forEach(fieldName => {
+    const config = fieldConfig[fieldName];
+    const fieldContainer = document.getElementById(`${fieldName}Field`);
+    
+    // Only validate if field is required AND not hidden AND visible
+    if (config.required && !config.hidden && fieldContainer && fieldContainer.style.display !== 'none') {
+      const input = document.querySelector(`[name="${fieldName}"]`);
+      if (input && !input.value.trim()) {
+        isValid = false;
+        errorMessage += `${config.name} is required.<br>`;
+        input.style.borderColor = '#ff3300';
+        input.style.boxShadow = '0 0 10px #ff3300';
+        
+        // Reset styling after 2 seconds
+        setTimeout(() => {
+          if (input) {
+            input.style.borderColor = '';
+            input.style.boxShadow = '';
+          }
+        }, 2000);
+      }
+    }
+  });
+  
+  if (!isValid) {
+    showModalMessage('Validation Error', errorMessage, 'error', true, 5000);
+    return;
+  }
+  
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  document.getElementById('btnText').textContent = 'Submitting...';
+  document.getElementById('btnSpinner').classList.remove('d-none');
+
+  // Get form data - only include visible and non-hidden fields
+  const params = new URLSearchParams();
+  
+  params.append('action', 'addCaseRecord');
+  params.append('authCode', savedAuthCode); // Add auth code to the request
+  
+  // Only include non-hidden fields in submission
+  Object.keys(fieldConfig).forEach(fieldName => {
+    const config = fieldConfig[fieldName];
+    if (!config.hidden) {
+      const input = document.querySelector(`[name="${fieldName}"]`);
+      if (input && input.value) {
+        params.append(fieldName, input.value);
+      } else if (input) {
+        params.append(fieldName, '');
+      }
+    }
+  });
+
+  // Also include remarks if visible
+  const remarksInput = document.querySelector('[name="remarks"]');
+  if (remarksInput) {
+    params.append('remarks', remarksInput.value || '');
+  }
+
+  try {
+    const urlWithParams = `${WEB_APP_URL}?${params.toString()}`;
+    const res = await fetch(urlWithParams);
+    
+    const text = await res.text();
+    
+    if (res.ok && !text.includes("Unauthorized")) {
+      showModalMessage('Success!', text || 'Record added successfully', 'success', true, 3000);
+      form.reset();
+      
+      const currentYear = new Date().getFullYear();
+      document.getElementById('firYearSelect').value = currentYear;
+      
+    } else {
+      if (text.includes("Unauthorized")) {
+        showModalMessage('Authentication Error', 'Your authentication code is invalid or expired. Please re-authenticate.', 'error', true, 4000);
+        clearAuthCode();
+        
+        // Show auth modal again
+        setTimeout(() => {
+          authModal.show();
+          document.getElementById('mainForm').style.display = 'none';
+          document.body.classList.add('auth-modal-open');
+        }, 2000);
+      } else {
+        showModalMessage('Error!', text || 'Failed to add record', 'error', true, 4000);
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    showModalMessage('Connection Error', 'Failed to connect to server. Please check your internet connection.', 'error', true, 5000);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('btnText').textContent = 'Submit';
+    document.getElementById('btnSpinner').classList.add('d-none');
+  }
+});
+
+// Event Listeners
+document.getElementById('openSettingsBtn').addEventListener('click', () => {
+  populateSettingsTable();
+  settingsModal.show();
+});
+
+document.getElementById('saveSettingsBtn').addEventListener('click', saveSettingsFromModal);
+
+document.getElementById('resetToDefaultBtn').addEventListener('click', resetToDefaultConfig);
+
+// Close modal on escape key (but not for auth modal)
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    if (messageModal._isShown) messageModal.hide();
+    if (settingsModal._isShown) settingsModal.hide();
+    // Don't allow escape to close auth modal
+  }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+  // Check authentication first
+  checkAuth();
+  
+  // Set current year as default
+  const currentYear = new Date().getFullYear();
+  document.getElementById('firYearSelect').value = currentYear;
+});
+
+// Auto-generate years from 1900 to 2100
+const select = document.getElementById("firYearSelect");
+for (let year = 2025; year >= 1900; year--) {
+  let option = document.createElement("option");
+  option.value = year;
+  option.textContent = year;
+  if (year === new Date().getFullYear()) {
+    option.selected = true;
+  }
+  select.appendChild(option);
+}
+
+// Remarks logic
+document.querySelector('select[name="accusedName"]').addEventListener('change', function () {
+    const remarksDiv = document.getElementById('remarksContainer');
+    if (this.value === 'Yes') {
+        remarksDiv.style.display = 'block';
+    } else {
+        remarksDiv.style.display = 'none';
+    }
+});
+
+// Reset button functionality
+document.querySelector('button[type="reset"]').addEventListener('click', function() {
+  showModalMessage('Form Reset', 'Form has been reset to default values.', 'success', true, 2000);
+  const currentYear = new Date().getFullYear();
+  document.getElementById('firYearSelect').value = currentYear;
+  document.getElementById('remarksContainer').style.display = 'none';
+});
+
+// Logout functionality (optional - you can add a logout button)
+function logout() {
+  clearAuthCode();
+  authModal.show();
+  document.getElementById('mainForm').style.display = 'none';
+  document.getElementById('authCodeInput').value = '';
+  document.getElementById('authCodeInput').classList.remove('is-invalid');
+  document.getElementById('authError').style.display = 'none';
+  document.getElementById('authTestResult').style.display = 'none';
+  document.body.classList.add('auth-modal-open');
+}
+    </script>
+  </body>
+</html>
