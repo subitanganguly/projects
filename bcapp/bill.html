@@ -96,7 +96,7 @@
             }
             
             /* Delivery Challan specific footer layout */
-            body[data-document-type*="delivery challan"] .footer-section .footer-row {
+            /* body[data-document-type*="delivery challan"] .footer-section .footer-row {
                 display: flex !important;
                 flex-wrap: nowrap !important;
             }
@@ -108,6 +108,26 @@
             }
             
             body[data-document-type*="delivery challan"] .footer-section .col-8 {
+                width: 25% !important;
+                flex: 0 0 25% !important;
+                display: block !important;
+            } */
+             /* Delivery Challan specific footer layout */
+            body[data-document-type*="delivery challan"] .footer-section .footer-row,
+            body[data-document-type*="ewaybill"] .footer-section .footer-row {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+            }
+
+            body[data-document-type*="delivery challan"] .footer-section .col-3,
+            body[data-document-type*="ewaybill"] .footer-section .col-3 {
+                width: 25% !important;
+                flex: 0 0 25% !important;
+                display: block !important;
+            }
+
+            body[data-document-type*="delivery challan"] .footer-section .col-8,
+            body[data-document-type*="ewaybill"] .footer-section .col-8 {
                 width: 25% !important;
                 flex: 0 0 25% !important;
                 display: block !important;
@@ -425,8 +445,9 @@
                 </div>
                 <div class="col-md-2 text-center">
                         <p class="mb-1" style="font-size: 9px;"><strong>Generated On:</strong> <span id="generatedDate">Loading...</span></p>
-                        <img class="mt-1 d-none" src="${qrUrl}" style="width:80px;">
-                        <div class="bold mb-1 qr-text d-none">Scan to View Bill</div>
+                        <img class="mt-1" src="${qrUrl}" style="width:80px; display: none;">
+                        <img class="" src="img/qrcode_site.png" style="width:90px; display: none;">
+                        <div class="bold mb-1 qr-text" style="display: none;">Scan to View Bill</div>
                 </div>
             </div>
 
@@ -975,6 +996,79 @@ async function displayDocumentDetails(data, docTypeKey) {
 }
 
 // Handle different document types
+// function handleDocumentType(docType) {
+//     const termsCol = document.querySelector('.terms-section');
+//     const receivedByCol = document.querySelector('.received-by-section');
+//     const deliveredByCol = document.querySelector('.delivered-by-section');
+//     const authorizedCol = document.querySelector('.authorized-col');
+//     const footerSection = document.querySelector('.footer-section');
+//     const companyHeader = document.querySelector('.company-header');
+    
+//     // Check for Delivery Challan
+//     if (docType.includes('delivery challan')) {
+//         // Remove d-none from Received By and Delivered By columns
+//         if (receivedByCol) {
+//             receivedByCol.classList.remove('d-none');
+//         }
+//         if (deliveredByCol) {
+//             deliveredByCol.classList.remove('d-none');
+//         }
+        
+//         // Change col-8 to col-3 for Terms & Conditions
+//         if (termsCol) {
+//             termsCol.classList.remove('col-8');
+//             termsCol.classList.add('col-3');
+//         }
+        
+//         // Ensure authorized column is col-3
+//         if (authorizedCol) {
+//             authorizedCol.classList.remove('col-3');
+//             authorizedCol.classList.add('col-3');
+//         }
+//     } else {
+//         // For non-Delivery Challan documents
+//         // Ensure Terms & Conditions is col-8
+//         if (termsCol) {
+//             termsCol.classList.remove('col-3');
+//             termsCol.classList.add('col-8');
+//         }
+        
+//         // Ensure authorized column is col-3
+//         if (authorizedCol) {
+//             authorizedCol.classList.remove('col-3');
+//             authorizedCol.classList.add('col-3');
+//         }
+        
+//         // Keep Received By and Delivered By hidden
+//         if (receivedByCol) {
+//             receivedByCol.classList.add('d-none');
+//         }
+//         if (deliveredByCol) {
+//             deliveredByCol.classList.add('d-none');
+//         }
+//     }
+    
+//     // Check for Cash Memo
+//     if (docType.includes('cash memo')) {
+//         // Hide footer section and company header
+//         if (footerSection) {
+//             footerSection.style.display = 'none';
+//         }
+//         if (companyHeader) {
+//             companyHeader.style.display = 'none';
+//         }
+//     } else {
+//         // Show footer section and company header for non-Cash Memo
+//         if (footerSection) {
+//             footerSection.style.display = '';
+//         }
+//         if (companyHeader) {
+//             companyHeader.style.display = '';
+//         }
+//     }
+// }
+
+// Handle different document types
 function handleDocumentType(docType) {
     const termsCol = document.querySelector('.terms-section');
     const receivedByCol = document.querySelector('.received-by-section');
@@ -1004,7 +1098,31 @@ function handleDocumentType(docType) {
             authorizedCol.classList.remove('col-3');
             authorizedCol.classList.add('col-3');
         }
-    } else {
+    } 
+    // Check for E-Way Bill
+    else if (docType.includes('ewaybill')) {
+        // Similar to Delivery Challan but with specific styling
+        if (receivedByCol) {
+            receivedByCol.classList.remove('d-none');
+        }
+        if (deliveredByCol) {
+            deliveredByCol.classList.remove('d-none');
+        }
+        
+        if (termsCol) {
+            termsCol.classList.remove('col-8');
+            termsCol.classList.add('col-3');
+        }
+        
+        if (authorizedCol) {
+            authorizedCol.classList.remove('col-3');
+            authorizedCol.classList.add('col-3');
+        }
+        
+        // Add E-Way Bill specific class
+        document.body.classList.add('ewaybill-document');
+    }
+    else {
         // For non-Delivery Challan documents
         // Ensure Terms & Conditions is col-8
         if (termsCol) {

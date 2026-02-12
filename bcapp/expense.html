@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expenses - Barman Construction</title>
+    <title>Barman Construction</title>
+    <link rel="icon" type="image/png" href="img/tab-logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="style/style.css" rel="stylesheet">
@@ -134,7 +135,7 @@
         <!-- Filters Section -->
         <div class="fix-card mb-2 p-2">
                 <div class="card-header">
-                <h5 class="card-title mb-3">Filters</h5>
+                <h5 class="card-title mb-1">Filters</h5>
                 </div>
                 <div class="card-body">
                 <div class="row g-3">
@@ -145,7 +146,7 @@
                         </select>
                     </div>
                     
-                    <div class="col-md-3">
+                    <div class="col-md-3 d-none">
                         <label for="filterCategory" class="form-label">Category</label>
                         <select class="form-select form-select-sm form-select-md" id="filterCategory">
                             <option value="">All Categories</option>
@@ -160,21 +161,21 @@
                         </select>
                     </div>
                     
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="filterDateFrom" class="form-label">Date From</label>
                         <input type="date" class="form-control form-control-sm form-control-md" id="filterDateFrom">
                     </div>
                     
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="filterDateTo" class="form-label">Date To</label>
                         <input type="date" class="form-control form-control-sm form-control-md" id="filterDateTo">
                     </div>
                     
-                    <div class="col-md-12 d-flex align-items-end">
-                        <button class="btn btn-primary me-2" onclick="applyFilters()">
+                    <div class="col-md-5 d-flex align-items-end">
+                        <button class="btn btn-primary btn-sm me-2" onclick="applyFilters()">
                             <i class="fas fa-filter me-1"></i>Apply Filters
                         </button>
-                        <button class="btn btn-outline-secondary" onclick="resetFilters()">
+                        <button class="btn btn-outline-secondary  btn-sm" onclick="resetFilters()">
                             <i class="fas fa-redo me-1"></i>Reset
                         </button>
                     </div>
@@ -187,9 +188,6 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <p class="mb-0">Expenses List</p>
                 <div>
-                    <button class="btn btn-outline-success btn-sm me-2" onclick="exportToExcel()">
-                        <i class="fas fa-file-excel me-1"></i>Export
-                    </button>
                     <button class="btn btn-outline-info btn-sm" onclick="refreshExpenses()">
                         <i class="fas fa-sync-alt me-1"></i>Refresh
                     </button>
@@ -233,6 +231,8 @@
     let expenses = [];
     let filteredExpenses = [];
     let currentFilters = {};
+    let ITEM_SUGGESTIONS = [];
+
 
     // Check authentication
     auth.onAuthStateChanged(async (user) => {
@@ -264,6 +264,11 @@
             
             // Setup event listeners
             setupEventListeners();
+
+            attachItemAutocomplete(
+            document.getElementById("expenseTitle")
+             );
+
             
             // Update stats
             updateStats();
@@ -396,6 +401,19 @@
                     console.warn(`Error loading expenses for project ${project.id}:`, error);
                 }
             }
+
+
+            // Build unique title suggestions
+                const titleSet = new Set();
+
+                expenses.forEach(exp => {
+                    if (exp.title) {
+                        titleSet.add(exp.title.trim());
+                    }
+                });
+
+                ITEM_SUGGESTIONS = Array.from(titleSet).sort();
+
             
             // Sort by date (newest first)
             expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -434,13 +452,14 @@
             return;
         }
 
-        let html = '';
+        let html = '<div class="row g-2">';
+
         
         filteredExpenses.forEach(expense => {
             const date = new Date(expense.date).toLocaleDateString('en-IN');
             
             html += `
-                <div class="card col-md-4 col-lg-3 mb-2 mt-2">
+                <div class="card col-md-3 col-lg-3 mb-2 mt-2">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
@@ -448,13 +467,10 @@
                                 <h6 class="text-primary mb-2">₹ ${formatCurrency(expense.amount)}</h6>
                             </div>
                         </div>
-                        
-                        <div class="row mb-0">
-                            <div class="col-md-6">
+  
                                 <p class="mb-1"><i class="fas fa-calendar text-muted me-2"></i>Date: ${date}</p>
-                                <p class="mb-1"><i class="fas fa-project-diagram text-muted me-2"></i>Project: ${escapeHtml(expense.projectName || 'N/A')}</p>
-                            </div>
-                        </div>
+                                <p class="mb-1"><i class="fas fa-project-diagram text-muted me-2"></i>${escapeHtml(expense.projectName || 'N/A')}</p>
+                      
                         
                         ${expense.remarks ? `
                         <div class="mb-0">
@@ -734,44 +750,6 @@
         document.getElementById('monthlyExpenses').textContent = '₹ ' + formatCurrency(monthTotal);
     }
 
-    // Export to Excel
-    function exportToExcel() {
-        if (filteredExpenses.length === 0) {
-            showNotification('No expenses to export', 'warning');
-            return;
-        }
-        
-        // Create CSV content
-        let csv = 'Date,Title,Project,Category,Amount,Receipt No,Remarks\n';
-        
-        filteredExpenses.forEach(expense => {
-            const date = new Date(expense.date).toLocaleDateString('en-IN');
-            
-            csv += `"${date}",`;
-            csv += `"${expense.title.replace(/"/g, '""')}",`;
-            csv += `"${(expense.projectName || '').replace(/"/g, '""')}",`;
-            csv += `"${getCategoryText(expense.category)}",`;
-            csv += `"${formatCurrency(expense.amount)}",`;
-            csv += `"${expense.receiptNo || ''}",`;
-            csv += `"${(expense.remarks || '').replace(/"/g, '""')}"\n`;
-        });
-        
-        // Create download link
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        
-        link.setAttribute('href', url);
-        link.setAttribute('download', `expenses_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showNotification('Export started successfully', 'success');
-    }
-
     // Refresh expenses
     async function refreshExpenses() {
         await loadExpenses();
@@ -815,6 +793,92 @@
             }
         }, 3000);
     }
+
+
+
+
+
+
+
+
+    function attachItemAutocomplete(input) {
+  const wrapper = input.parentElement;
+  wrapper.style.position = "relative";
+
+  const box = document.createElement("div");
+  box.className = "item-suggest-box";
+  wrapper.appendChild(box);
+
+  if (!document.getElementById("itemAutoCSS")) {
+    const style = document.createElement("style");
+    style.id = "itemAutoCSS";
+    style.innerHTML = `
+      .item-suggest-box {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        z-index: 9999;
+      }
+      .item-suggest-list {
+        background: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        max-height: 180px;
+        overflow-y: auto;
+        box-shadow: 0 4px 12px rgba(0,0,0,.1);
+      }
+      .item-suggest-item {
+        padding: 6px 10px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .item-suggest-item:hover {
+        background: #0d6efd;
+        color: #fff;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  input.addEventListener("input", () => {
+    const val = input.value.trim().toLowerCase();
+    box.innerHTML = "";
+
+    if (!val) return;
+
+    const matches = ITEM_SUGGESTIONS.filter(item =>
+      item.toLowerCase().startsWith(val)
+    );
+
+    if (!matches.length) return;
+
+    const list = document.createElement("div");
+    list.className = "item-suggest-list";
+
+    matches.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "item-suggest-item";
+      div.textContent = item;
+
+      div.onclick = () => {
+        input.value = item;
+        box.innerHTML = "";
+      };
+
+      list.appendChild(div);
+    });
+
+    box.appendChild(list);
+  });
+
+  document.addEventListener("click", e => {
+    if (!wrapper.contains(e.target)) {
+      box.innerHTML = "";
+    }
+  });
+}
+
 </script>
 
 <!-- Bootstrap JS Bundle -->

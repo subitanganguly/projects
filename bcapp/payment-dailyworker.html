@@ -75,8 +75,8 @@
                         <button class="btn btn-success" onclick="calculatePayment()" id="calculateBtn" disabled>
                             <i class="fas fa-calculator"></i> Calculate
                         </button>
-                        <button class="btn btn-danger ms-2 d-none" onclick="downloadPDF()" id="pdfBtn" disabled>
-                            <i class="fas fa-file-pdf"></i> Download PDF
+                        <button class="btn btn-danger ms-2" onclick="downloadPDF()" id="pdfBtn" disabled>
+                            <i class="fas fa-file-pdf"></i> Generate Report
                         </button>
                     </div>
                 </div>
@@ -162,7 +162,7 @@
                         <i class="fas fa-file-excel"></i> Export to Excel
                     </button>
                     <button class="btn btn-outline-danger btn-sm" onclick="downloadPDF()" id="pdfBtn2" disabled>
-                        <i class="fas fa-file-pdf"></i> Download PDF
+                        <i class="fas fa-file-pdf"></i> Generate Report
                     </button>
                 </div>
             </div>
@@ -900,14 +900,6 @@ function generatePDF(logoBase64) {
             ];
         });
 
-        // Add TOTAL row
-    //     tableData.push([
-    // { content: 'TOTAL', styles: { fontStyle: 'bold' } },
-    // '',
-    // '',
-    // { content: totalDaysWorked.toFixed(1), styles: { fontStyle: 'bold' } },
-    // { content: `Rs. ${formatCurrency(totalPayment)}`, styles: { fontStyle: 'bold' } }
-    //     ]);
 
     tableData.push([
     { content: 'TOTAL', styles: { fontStyle: 'bold' } },
@@ -917,61 +909,6 @@ function generatePDF(logoBase64) {
     { content: `Rs. ${formatCurrency(totalPayment)}`, styles: { fontStyle: 'bold' } },
     '' // Signature
 ]);
-
-
-
-//    const usableWidth = pageWidth - 40;
-
-// doc.autoTable({
-//     startY: startY + 30,
-//     head: [[
-//         'Employee Name',
-//         'Salary/Day',
-//         'Total Days',
-//         'Present Days',
-//         'Payment',
-//         'Signature'
-//     ]],
-//     body: tableData,
-//     theme: 'grid',
-//     margin: { left: 20, right: 20 },
-
-//     styles: {
-//         fontSize: 11,
-//         lineWidth: 0.3,
-//         lineColor: [0, 0, 0],
-//         textColor: 0
-//     },
-
-//     headStyles: {
-//         fillColor: [255, 255, 255],
-//         textColor: 0,
-//         fontStyle: 'bold',
-//         lineWidth: 0.3,
-//         lineColor: [0, 0, 0]
-//     },
-
-//     // 👇 ADD THIS BLOCK
-//     columnStyles: {
-//         0: { cellWidth: usableWidth * 0.25 },                 // Employee Name
-//         1: { cellWidth: usableWidth * 0.14 },                 // Salary/Day
-//         2: { cellWidth: usableWidth * 0.12, halign: 'center' }, // Total Days
-//         3: { cellWidth: usableWidth * 0.12, halign: 'center' }, // Present Days
-//         4: { cellWidth: usableWidth * 0.17 },                 // Payment
-//         5: { cellWidth: usableWidth * 0.20, halign: 'center' }  // Signature
-//     },
-
-//     didDrawPage: () => {
-//         doc.setFontSize(8);
-//         doc.text(
-//             `Page ${doc.internal.getNumberOfPages()}`,
-//             pageWidth / 2,
-//             pageHeight - 10,
-//             { align: 'center' }
-//         );
-//     }
-// });
-
 
 
         doc.autoTable({
@@ -1063,9 +1000,38 @@ function generatePDF(logoBase64) {
         doc.save(
             `Payment_Report_${projectName}_${fromDate}_to_${toDate}.pdf`
         );
+        // 🔥 SAVE EXPENSE AFTER PDF DOWNLOAD
+        saveDailyWorkerExpense(totalPayment);
     } catch (err) {
         console.error(err);
         alert('PDF generation failed.');
+    }
+}
+
+
+async function saveDailyWorkerExpense(totalPayment) {
+    try {
+        if (!selectedProjectId) return;
+
+        const today = new Date().toISOString().split('T')[0];
+
+        const expenseData = {
+            amount: totalPayment,
+            date: today,
+            remarks: `${formatDate(fromDate)} to ${formatDate(toDate)}`,
+            title: "Payments Of Daily Worker",
+            createdAt: new Date().toISOString(),
+            createdBy: currentUser.uid
+        };
+
+        await database
+            .ref(`projects/${selectedProjectId}/expenses`)
+            .push(expenseData);
+
+        console.log("✅ Expense saved successfully");
+    } catch (error) {
+        console.error("❌ Error saving expense:", error);
+        alert("PDF downloaded but expense save failed!");
     }
 }
 
