@@ -298,8 +298,58 @@
       "saveBankDetails": false,
       "saveShipTo": false,
       "PaymentStatusFunctionality": true
+    },
+        "ewaybill": {
+      "name": "E-Way Bill",
+      "billToTitle": "Consignor Details",
+      "invoiceDetailsTitle": "E-Way Bill Details",
+      "clientNameLabel": "Consignor Name",
+      "documentNumberLabel": "E-Way Bill Number",
+      "documentDateLabel": "E-Way Bill Date",
+      
+      "showClientGST": true,
+      "showClientAddress": true,
+      "showClientState": true,
+      "showPlaceOfSupply": true,
+      "showInvoiceNo": true,
+      "showInvoiceDate": true,
+      "showShipTo": true,
+      "showTransportation": true,
+      "showTaxRates": false,
+      "showBankDetails": false,
+      "showAdditionalInfo": false,
+      
+      "requireClientName": true,
+      "requireClientGST": true,
+      "requireClientAddress": true,
+      "requireClientState": true,
+      "requireInvoiceNo": true,
+      "requireInvoiceDate": true,
+      "requirePlaceOfSupply": true,
+      "requireShipTo": true,
+      "requireTransportName": false,
+      "requireVehicleNumber": false,
+      "requireDeliveryDate": false,
+      "requireDeliveryLocation": false,
+      "requireField5": false,
+      "requireCgstRate": false,
+      "requireSgstRate": false,
+      "requireIgstRate": false,
+      "requireBankName": false,
+      "requireAccountNo": false,
+      "requireIfscCode": false,
+      "requireAccountHolder": false,
+      
+      "infoMessage": "For E-Way Bill: Transportation details, vehicle number, and consignee address are required.",
+      
+      "saveTransportation": true,
+      "saveTaxRates": true,
+      "saveBankDetails": false,
+      "saveShipTo": true,
+      "PaymentStatusFunctionality": false
     }
   },
+
 
     "bank_details": {
     "bank_name": "Axis Bank, Jalpaiguri (West Bengal)",
