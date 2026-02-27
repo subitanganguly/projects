@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dorja | Manage Services</title>
+<link rel="icon" type="image/png" href="img/logo.png">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="style/style.css" rel="stylesheet">
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+<div class="container-fluid mt-1">
+        <a href="index.html" class="btn btn-secondary">Back</a>
+<div class="card shadow">
+<div class="card-header bg-primary text-light d-flex justify-content-between align-items-center">
+<h4 class="mb-0">Services</h4>
+<div>
+  <button class="btn btn-light btn-sm me-2" onclick="openFilterSidebar()">
+    <i class="fas fa-filter"></i> Filter
+  </button>
+  <button class="btn btn-success btn-sm" onclick="openAddModal()">
+    <i class="fas fa-plus"></i> Add Service
+  </button>
+</div>
+</div>
+
+<div class="card-body">
+
+<!-- Search Bar (Quick Search) -->
+<div class="row mb-3">
+<div class="col-8 col-sm-9 col-md-6">
+<div class="input-group">
+<span class="input-group-text"><i class="fas fa-search"></i></span>
+<input type="text" id="quickSearch" class="form-control" placeholder="Quick search..." onkeyup="quickSearch()">
+</div>
+</div>
+<div class="col-4 col-sm-3 col-md-6 text-end">
+<div class="d-inline-block bg-info text-white px-3 py-2 rounded" id="totalServicesCount" style="min-width: 50px; text-align: center;">
+<strong>0</strong>
+</div>
+</div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="text-center my-4">
+<div class="spinner-border text-primary"></div>
+<p class="mt-2">Loading services...</p>
+</div>
+
+<!-- Services List -->
+<div class="row" id="serviceContainer"></div>
+
+</div>
+</div>
+</div>
+
+<!-- Filter Sidebar (Offcanvas) -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="filterSidebar" aria-labelledby="filterSidebarLabel">
+<div class="offcanvas-header bg-primary text-white">
+<h5 class="offcanvas-title" id="filterSidebarLabel">
+<i class="fas fa-filter"></i> Filter Services
+</h5>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+</div>
+<div class="offcanvas-body">
+<div class="mb-3">
+<label class="form-label fw-bold">🔍 Search by Service Name</label>
+<input type="text" id="searchService" class="form-control" placeholder="Type to search..." onkeyup="filterServices()">
+</div>
+
+<div class="mb-3">
+<label class="form-label fw-bold">📋 Filter by Type</label>
+<select id="filterType" class="form-select" onchange="filterServices()">
+<option value="all">All Types</option>
+<option>Web Services</option>
+<option>Media Services</option>
+<option>Social Media Services</option>
+<option>Printing</option>
+</select>
+</div>
+
+<div class="d-grid gap-2">
+<button class="btn btn-outline-secondary" onclick="clearFilters()">
+<i class="fas fa-times"></i> Clear Filters
+</button>
+<button class="btn btn-primary" data-bs-dismiss="offcanvas">
+<i class="fas fa-check"></i> Apply & Close
+</button>
+</div>
+</div>
+</div>
+
+<!-- Add/Edit Service Modal -->
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-labelledby="serviceModalLabel" aria-hidden="true">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+<div class="modal-header bg-primary text-white">
+<h5 class="modal-title" id="serviceModalLabel">
+<i class="fas fa-plus-circle"></i> <span id="modalTitle">Add New Service</span>
+</h5>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+<div class="row g-3">
+<div class="col-md-6">
+<label class="form-label">Service Name <span class="text-danger">*</span></label>
+<input type="text" id="serviceName" class="form-control" placeholder="Enter service name">
+</div>
+
+<div class="col-md-6">
+<label class="form-label">Service Type <span class="text-danger">*</span></label>
+<select id="serviceType" class="form-select">
+<option value="">Select Type</option>
+<option>Web Services</option>
+<option>Media Services</option>
+<option>Social Media Services</option>
+<option>Printing</option>
+</select>
+</div>
+
+<div class="col-md-6">
+<label class="form-label">Amount (₹)</label>
+<input type="number" id="serviceAmount" class="form-control" placeholder="Enter amount">
+</div>
+
+<div class="col-md-6">
+<label class="form-label">Remarks</label>
+<input type="text" id="serviceRemarks" class="form-control" placeholder="Enter remarks">
+</div>
+</div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="cancelEdit()">
+<i class="fas fa-times"></i> Cancel
+</button>
+<button type="button" class="btn btn-success" id="submitBtn" onclick="addOrUpdateService()">
+<i class="fas fa-save"></i> <span id="btnText">Save Service</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/firebaseconfig.js"></script>
+
+<script>
+
+let serviceRef;
+let editId = null;
+let currentUser = null;
+let allServices = []; // Store all services for filtering
+let serviceModal; // Bootstrap modal instance
+let filterOffcanvas; // Bootstrap offcanvas instance
+
+// ================= INITIALIZE MODAL AND OFFCANVAS =================
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize modal
+  const modalElement = document.getElementById('serviceModal');
+  serviceModal = new bootstrap.Modal(modalElement);
+  
+  // Initialize offcanvas
+  const offcanvasElement = document.getElementById('filterSidebar');
+  filterOffcanvas = new bootstrap.Offcanvas(offcanvasElement);
+  
+  // Reset form when modal is closed
+  modalElement.addEventListener('hidden.bs.modal', function() {
+    if (editId) {
+      cancelEdit();
+    } else {
+      clearForm();
+    }
+  });
+});
+
+// ================= OPEN ADD MODAL =================
+function openAddModal() {
+  document.getElementById('modalTitle').innerText = 'Add New Service';
+  document.getElementById('submitBtn').classList.remove('btn-warning');
+  document.getElementById('submitBtn').classList.add('btn-success');
+  document.getElementById('btnText').innerText = 'Save Service';
+  clearForm();
+  editId = null;
+  serviceModal.show();
+}
+
+// ================= OPEN FILTER SIDEBAR =================
+function openFilterSidebar() {
+  filterOffcanvas.show();
+}
+
+// ================= AUTH CHECK =================
+firebase.auth().onAuthStateChanged(function(user){
+  if(user){
+    currentUser = user;
+    serviceRef = firebase.database().ref("services/" + user.uid);
+    loadServices();
+  } else {
+    window.location.href = "login.html";
+  }
+});
+
+// ================= ADD OR UPDATE =================
+function addOrUpdateService(){
+  
+  if(!currentUser){
+    alert("Please login first!");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const name = document.getElementById("serviceName").value.trim();
+  const type = document.getElementById("serviceType").value;
+  const amount = document.getElementById("serviceAmount").value;
+  const remarks = document.getElementById("serviceRemarks").value;
+
+  // Only require name and type
+  if(!name || !type){
+    alert("Service Name and Service Type are required!");
+    return;
+  }
+
+  const data = {
+    name,
+    type,
+    amount: amount ? parseFloat(amount) : 0,
+    remarks
+  };
+
+  if(editId){
+    // Update existing service
+    serviceRef.child(editId).update(data)
+      .then(() => {
+        serviceModal.hide();
+        cancelEdit(); // Reset form and button
+        alert("Service updated successfully!");
+      })
+      .catch(error => {
+        console.error("Error updating:", error);
+        alert("Error updating: " + error.message);
+      });
+  } else {
+    // Add new service
+    serviceRef.push(data)
+      .then(() => {
+        serviceModal.hide();
+        clearForm();
+        alert("Service added successfully!");
+      })
+      .catch(error => {
+        console.error("Error adding:", error);
+        alert("Error adding: " + error.message);
+      });
+  }
+}
+
+// ================= LOAD SERVICES =================
+function loadServices(){
+  
+  if(!serviceRef) return;
+
+  serviceRef.on("value", function(snapshot){
+    const spinner = document.getElementById("loadingSpinner");
+
+    if(!snapshot.exists()){
+      spinner.style.display = "none";
+      allServices = [];
+      displayServices([]);
+      updateTotalCount(0);
+      return;
+    }
+
+    spinner.style.display = "none";
+    
+    // Store all services in array
+    allServices = [];
+    snapshot.forEach(function(child){
+      const data = child.val();
+      const key = child.key;
+      allServices.push({
+        key: key,
+        ...data
+      });
+    });
+    
+    // Display filtered services
+    filterServices();
+    
+  }, function(error) {
+    console.error("Error loading services:", error);
+    document.getElementById("loadingSpinner").style.display = "none";
+    document.getElementById("serviceContainer").innerHTML = 
+      "<p class='text-center text-danger'>Error loading services. Please refresh the page.</p>";
+  });
+}
+
+// ================= FILTER SERVICES =================
+function filterServices(){
+  const searchText = document.getElementById("searchService").value.toLowerCase().trim();
+  const filterType = document.getElementById("filterType").value;
+  
+  let filteredServices = allServices;
+  
+  // Filter by search text (service name)
+  if(searchText !== ""){
+    filteredServices = filteredServices.filter(service => 
+      service.name.toLowerCase().includes(searchText)
+    );
+  }
+  
+  // Filter by type
+  if(filterType !== "all"){
+    filteredServices = filteredServices.filter(service => 
+      service.type === filterType
+    );
+  }
+  
+  // Display filtered services
+  displayServices(filteredServices);
+  updateTotalCount(filteredServices.length);
+  
+  // Update quick search field to match filter search
+  document.getElementById("quickSearch").value = searchText;
+}
+
+// ================= QUICK SEARCH =================
+function quickSearch() {
+  const quickSearchText = document.getElementById("quickSearch").value;
+  document.getElementById("searchService").value = quickSearchText;
+  filterServices();
+}
+
+// ================= DISPLAY SERVICES =================
+function displayServices(services){
+  const container = document.getElementById("serviceContainer");
+  container.innerHTML = "";
+  
+  if(services.length === 0){
+    container.innerHTML = "<p class='text-center'>No services match your filters.</p>";
+    return;
+  }
+  
+  services.forEach(function(data){
+    
+    // Escape special characters for safe JavaScript string passing
+    const escapedName = data.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const escapedType = data.type.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const escapedRemarks = (data.remarks || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+    const card = document.createElement('div');
+    card.className = 'col-md-4 mb-3';
+    card.innerHTML = `
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <h6 class="my-text mb-0">${escapeHtml(data.name)} ₹ ${data.amount || 0}</h6>
+            
+            <!-- Three dots dropdown menu -->
+            <div class="dropdown">
+              <button class="btn btn-link text-dark p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <strong>⋮</strong>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <button class="dropdown-item" 
+                    onclick='editService("${data.key}", "${escapedName}", "${escapedType}", ${data.amount || 0}, "${escapedRemarks}")'>
+                    <i class="fas fa-edit"></i> Edit
+                  </button>
+                </li>
+                <li>
+                  <button class="dropdown-item text-danger" 
+                    onclick="deleteService('${data.key}')">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <span class="mb-1">
+            <small>
+              <strong>Type:</strong> ${escapeHtml(data.type)} <br>
+              <strong>Remarks:</strong> ${escapeHtml(data.remarks || "-")}
+            </small>
+          </span>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+
+// ================= UPDATE TOTAL COUNT =================
+function updateTotalCount(count){
+  document.getElementById("totalServicesCount").innerHTML = `<strong>${count}</strong>`;
+}
+
+// ================= CLEAR FILTERS =================
+function clearFilters(){
+  document.getElementById("searchService").value = "";
+  document.getElementById("filterType").value = "all";
+  document.getElementById("quickSearch").value = "";
+  filterServices();
+}
+
+// Helper function to escape HTML special characters
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ================= EDIT =================
+function editService(id, name, type, amount, remarks){
+  // Fill the form with service data
+  document.getElementById("serviceName").value = name;
+  document.getElementById("serviceType").value = type;
+  document.getElementById("serviceAmount").value = amount;
+  document.getElementById("serviceRemarks").value = remarks;
+  editId = id;
+  
+  // Update modal title and button
+  document.getElementById('modalTitle').innerText = 'Edit Service';
+  document.getElementById('submitBtn').classList.remove('btn-success');
+  document.getElementById('submitBtn').classList.add('btn-warning');
+  document.getElementById('btnText').innerText = 'Update Service';
+  
+  // Show the modal
+  serviceModal.show();
+}
+
+// ================= CANCEL EDIT =================
+function cancelEdit(){
+  clearForm();
+  editId = null;
+}
+
+// ================= DELETE =================
+function deleteService(id){
+  
+  if(!currentUser){
+    alert("Please login first!");
+    window.location.href = "login.html";
+    return;
+  }
+
+  if(confirm("Are you sure you want to delete this service?")){
+    serviceRef.child(id).remove()
+      .then(() => {
+        if(editId === id) {
+          cancelEdit();
+          serviceModal.hide();
+        }
+        alert("Service deleted successfully!");
+      })
+      .catch(error => {
+        console.error("Error deleting:", error);
+        alert("Error deleting: " + error.message);
+      });
+  }
+}
+
+// ================= CLEAR FORM =================
+function clearForm(){
+  document.getElementById("serviceName").value = "";
+  document.getElementById("serviceType").value = "";
+  document.getElementById("serviceAmount").value = "";
+  document.getElementById("serviceRemarks").value = "";
+}
+
+</script>
+
+</body>
+</html>

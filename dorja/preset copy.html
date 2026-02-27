@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dorja | Package Presets</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="style/style.css" rel="stylesheet">
+<style>
+.package-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.package-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.package-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.package-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.package-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+.package-body {
+    padding: 15px;
+    background: white;
+}
+
+.package-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    min-height: 40px;
+}
+
+.package-services-list {
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.service-item {
+    padding: 3px 0;
+    border-bottom: 1px dashed #dee2e6;
+}
+
+.service-item:last-child {
+    border-bottom: none;
+}
+
+.service-badge {
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
+
+.package-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.package-duration {
+    background: #e9ecef;
+    padding: 4px 10px;
+    border-radius: 15px;
+}
+
+.package-actions {
+    display: flex;
+    gap: 5px;
+    justify-content: flex-end;
+    border-top: 1px solid #dee2e6;
+    padding-top: 15px;
+    margin-top: 5px;
+}
+
+.package-actions .btn {
+    flex: 1;
+    padding: 5px;
+    font-size: 0.85rem;
+}
+
+.preview-modal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.preview-section {
+    margin-bottom: 20px;
+}
+
+.preview-section h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.preview-service-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.preview-service-name {
+    font-weight: 500;
+}
+
+.preview-service-qty {
+    background: #6c757d;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+}
+
+.preview-service-remarks {
+    color: #6c757d;
+    font-size: 0.85rem;
+    font-style: italic;
+    margin-left: 10px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 50px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.packages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<div class="container-fluid mt-2">
+<div class="card shadow-lg">
+<div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+<h4 class="mb-0">Package Presets</h4>
+
+<div class="dropdown">
+<button class="btn btn-light text-dark py-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+<strong>⋮</strong>
+</button>
+<ul class="dropdown-menu dropdown-menu-end">
+<li>
+<a href="estimate-list.html" class="dropdown-item">
+👁 View Estimates
+</a>
+</li>
+<li>
+<a href="index.html" class="dropdown-item">
+📝 New Estimate
+</a>
+</li>
+<li>
+<a href="services.html" class="dropdown-item">
+👨🏻‍💻 Services
+</a>
+</li>
+</ul>
+</div>
+</div>
+
+<div class="card-body">
+
+<!-- Package Form -->
+<div class="row g-3 mb-4">
+<div class="col-md-4">
+<label class="form-label">Package Name</label>
+<input type="text" id="packageName" class="form-control" placeholder="e.g., Basic Website Package">
+</div>
+
+<div class="col-md-4">
+<label class="form-label">Package Amount (₹)</label>
+<input type="number" id="packageAmount" class="form-control" placeholder="Total package price">
+</div>
+
+<div class="col-md-4">
+<label class="form-label">Duration</label>
+<select id="packageDuration" class="form-select">
+<option value="">Select Duration</option>
+<option value="⏳ Duration: One Week">One Week</option>
+<option value="⏳ Duration: One Month">One Month</option>
+<option value="⏳ Duration: One Year">One Year</option>
+<option value="⏳ Duration: Not Needed">Not Needed</option>
+</select>
+</div>
+
+<div class="col-12">
+<label class="form-label">Description</label>
+<textarea id="packageDescription" class="form-control" rows="2" placeholder="Package description..."></textarea>
+</div>
+</div>
+
+<hr>
+
+<!-- Add Services to Package -->
+<h5 class="mb-3">Add Services to Package</h5>
+
+<div class="row g-2 mb-3">
+<div class="col-md-4">
+<label class="form-label">Service Type</label>
+<select id="serviceType" class="form-select" onchange="loadServicesByType()">
+<option value="">Select Service Type</option>
+<option value="Web Services">Web Services</option>
+<option value="Media Services">Media Services</option>
+<option value="Social Media Services">Social Media Services</option>
+<option value="Printing">Printing</option>
+</select>
+</div>
+
+<div class="col-md-4">
+<label class="form-label">Service</label>
+<select id="service" class="form-select" disabled onchange="setServiceDetails()">
+<option value="">Select Service Type First</option>
+</select>
+</div>
+
+<div class="col-md-2">
+<label class="form-label">Quantity</label>
+<input type="number" id="quantity" class="form-control" value="1" min="1">
+</div>
+
+<div class="col-md-2 d-flex align-items-end">
+<button class="btn btn-success w-100" onclick="addServiceToPackage()">Add to Package</button>
+</div>
+</div>
+
+<!-- Package Services Table (without amount columns) -->
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead class="table-dark">
+<tr>
+<th>Service</th>
+<th>Quantity</th>
+<th>Remarks</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="packageServicesTable"></tbody>
+</table>
+</div>
+
+<!-- Package Amount Display -->
+<div class="text-end mb-3">
+<h5>Package Amount: ₹ <span id="packageAmountDisplay">0</span></h5>
+<small class="text-muted">(Enter total package amount in the form above)</small>
+</div>
+
+<!-- Save/Cancel Buttons -->
+<div class="text-center mt-4">
+<button class="btn btn-success me-2" onclick="savePackagePreset()">
+💾 Save Package
+</button>
+<button class="btn btn-secondary" onclick="clearForm()">
+🔄 Clear
+</button>
+</div>
+
+<hr>
+
+<!-- Saved Packages Grid -->
+<h5 class="mb-3">Saved Packages</h5>
+<div id="packagesLoader" class="text-center py-5 d-none">
+    <div class="spinner-border text-primary" role="status"></div>
+    <div class="mt-2 text-muted">Loading packages...</div>
+</div>
+<div id="packagesGrid" class="packages-grid">
+<!-- Packages will be loaded here -->
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+<div class="modal-header bg-primary text-white">
+<h5 class="modal-title" id="previewModalLabel">Package Preview</h5>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body" id="previewModalBody">
+<!-- Preview content will be loaded here -->
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+<button type="button" class="btn btn-success" onclick="usePackageFromPreview()">🚀 Use This Package</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/firebaseconfig.js"></script>
+
+<script>
+const database = firebase.database();
+
+let currentUser = null;
+let servicesByType = {};
+let packageServices = [];
+let editingPackageId = null;
+let previewPackageId = null;
+
+// ================= AUTH CHECK =================
+firebase.auth().onAuthStateChanged(function(user){
+if(user){
+currentUser = user;
+loadAllServices();
+loadSavedPackages();
+} else {
+window.location.href = "login.html";
+}
+});
+
+// ================= LOAD ALL SERVICES =================
+function loadAllServices(){
+const servicesRef = database.ref("services/" + currentUser.uid);
+
+servicesRef.once("value", function(snapshot){
+if(snapshot.exists()){
+servicesByType = {};
+
+snapshot.forEach(function(child){
+const service = child.val();
+const type = service.type;
+
+if(!servicesByType[type]){
+servicesByType[type] = [];
+}
+
+servicesByType[type].push({
+id: child.key,
+name: service.name,
+amount: service.amount || 0,
+remarks: service.remarks || ""
+});
+});
+
+console.log("Services loaded:", servicesByType);
+}
+});
+}
+
+// ================= LOAD SERVICES BY TYPE =================
+function loadServicesByType(){
+const serviceType = document.getElementById("serviceType").value;
+const serviceSelect = document.getElementById("service");
+
+if(!serviceType){
+serviceSelect.innerHTML = '<option value="">Select Service Type First</option>';
+serviceSelect.disabled = true;
+return;
+}
+
+const services = servicesByType[serviceType] || [];
+
+let options = '<option value="">Select Service</option>';
+services.forEach(service => {
+options += `<option value="${service.name}" data-id="${service.id}" data-remarks="${service.remarks}">${service.name}</option>`;
+});
+
+serviceSelect.innerHTML = options;
+serviceSelect.disabled = false;
+}
+
+// ================= SET SERVICE DETAILS =================
+function setServiceDetails(){
+// No amount needed anymore, just for consistency
+}
+
+// ================= ADD SERVICE TO PACKAGE =================
+function addServiceToPackage(){
+const serviceType = document.getElementById("serviceType").value;
+const serviceSelect = document.getElementById("service");
+const service = serviceSelect.value;
+const quantity = parseInt(document.getElementById("quantity").value);
+const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+
+if(!serviceType || !service || !quantity){
+alert("Please select service type, service and enter quantity!");
+return;
+}
+
+const remarks = selectedOption.getAttribute("data-remarks") || "";
+
+packageServices.push({
+serviceType: serviceType,
+service: service,
+quantity: quantity,
+remarks: remarks
+});
+
+updatePackageTable();
+
+// Clear service selection but keep type
+document.getElementById("service").value = "";
+document.getElementById("quantity").value = "1";
+}
+
+// ================= UPDATE PACKAGE TABLE =================
+function updatePackageTable(){
+const table = document.getElementById("packageServicesTable");
+table.innerHTML = "";
+
+packageServices.forEach((item, index) => {
+const row = table.insertRow();
+row.innerHTML = `
+<td>${item.service}</td>
+<td>${item.quantity}</td>
+<td>${item.remarks || ''}</td>
+<td>
+<button class="btn btn-danger btn-sm" onclick="removePackageService(${index})">Delete</button>
+</td>
+`;
+});
+}
+
+// ================= REMOVE SERVICE FROM PACKAGE =================
+function removePackageService(index){
+packageServices.splice(index, 1);
+updatePackageTable();
+}
+
+// ================= UPDATE PACKAGE AMOUNT DISPLAY =================
+function updatePackageAmountDisplay(){
+const amount = document.getElementById("packageAmount").value || 0;
+document.getElementById("packageAmountDisplay").innerText = amount;
+}
+
+// ================= SAVE PACKAGE PRESET =================
+function savePackagePreset(){
+const packageName = document.getElementById("packageName").value.trim();
+const packageAmount = document.getElementById("packageAmount").value;
+const packageDuration = document.getElementById("packageDuration").value;
+const packageDescription = document.getElementById("packageDescription").value.trim();
+
+if(!packageName){
+alert("Please enter package name!");
+return;
+}
+
+if(!packageAmount || packageAmount <= 0){
+alert("Please enter valid package amount!");
+return;
+}
+
+if(packageServices.length === 0){
+alert("Please add at least one service to the package!");
+return;
+}
+
+const packageData = {
+name: packageName,
+amount: parseFloat(packageAmount),
+duration: packageDuration || "⏳ Duration: Not Needed",
+description: packageDescription,
+services: packageServices,
+totalServices: packageServices.length,
+createdAt: new Date().toISOString(),
+updatedAt: new Date().toISOString()
+};
+
+const packagesRef = database.ref("packages/" + currentUser.uid);
+
+if(editingPackageId){
+// Update existing package
+packagesRef.child(editingPackageId).update(packageData)
+.then(() => {
+alert("Package updated successfully!");
+clearForm();
+loadSavedPackages();
+})
+.catch(error => {
+console.error("Error updating package:", error);
+alert("Error updating package: " + error.message);
+});
+} else {
+// Create new package
+packagesRef.push(packageData)
+.then(() => {
+alert("Package saved successfully!");
+clearForm();
+loadSavedPackages();
+})
+.catch(error => {
+console.error("Error saving package:", error);
+alert("Error saving package: " + error.message);
+});
+}
+}
+
+// ================= LOAD SAVED PACKAGES =================
+function loadSavedPackages(){
+
+    const packagesRef = database.ref("packages/" + currentUser.uid);
+    const grid = document.getElementById("packagesGrid");
+    const loader = document.getElementById("packagesLoader");
+
+    // Show loader
+    loader.classList.remove("d-none");
+    grid.innerHTML = "";
+
+    packagesRef.once("value", function(snapshot){
+
+        // Hide loader
+        loader.classList.add("d-none");
+
+        if(!snapshot.exists()){
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <i>📦</i><br>
+                    No packages saved yet<br>
+                    <small>Create your first package above</small>
+                </div>`;
+            return;
+        }
+
+        snapshot.forEach(function(child){
+            const pkg = child.val();
+            const packageId = child.key;
+            createPackageCard(grid, packageId, pkg);
+        });
+
+    }, function(error){
+        loader.classList.add("d-none");
+        grid.innerHTML = `
+            <div class="text-danger text-center py-5">
+                Error loading packages
+            </div>`;
+    });
+
+}
+
+// ================= CREATE PACKAGE CARD =================
+function createPackageCard(grid, packageId, pkg){
+const col = document.createElement('div');
+col.className = 'package-card';
+
+// Create services list HTML
+let servicesHtml = '';
+if(pkg.services && pkg.services.length > 0){
+pkg.services.slice(0, 3).forEach(service => {
+servicesHtml += `<div class="service-item">📌 ${service.service} x${service.quantity} <span class="service-badge">${service.remarks || 'No remarks'}</span></div>`;
+});
+if(pkg.services.length > 3){
+servicesHtml += `<div class="service-item text-muted">+${pkg.services.length - 3} more services...</div>`;
+}
+} else {
+servicesHtml = '<div class="service-item text-muted">No services added</div>';
+}
+
+col.innerHTML = `
+<div class="package-header">
+<div class="package-title" title="${pkg.name}">${pkg.name} ₹${pkg.amount}</div>
+</div>
+<div class="package-body">
+<div class="package-services-list">
+${servicesHtml}
+</div>
+<div class="package-meta">
+<span>📊 ${pkg.totalServices || pkg.services.length} services</span>
+<span class="package-duration">${pkg.duration}</span>
+</div>
+<div class="package-actions">
+<button class="btn btn-sm btn-outline-primary" onclick="editPackage('${packageId}')" title="Edit">✏️</button>
+<button class="btn btn-sm btn-outline-danger" onclick="deletePackage('${packageId}')" title="Delete">🗑️</button>
+<button class="btn btn-sm btn-outline-success" onclick="usePackage('${packageId}')" title="Use">🚀</button>
+<button class="btn btn-sm btn-outline-info" onclick="previewPackage('${packageId}')" title="Preview">👁️</button>
+</div>
+</div>
+`;
+
+grid.appendChild(col);
+}
+
+// ================= PREVIEW PACKAGE =================
+function previewPackage(packageId){
+const packagesRef = database.ref("packages/" + currentUser.uid + "/" + packageId);
+
+packagesRef.once("value", function(snapshot){
+const pkg = snapshot.val();
+if(!pkg) return;
+
+previewPackageId = packageId;
+
+let servicesHtml = '';
+if(pkg.services && pkg.services.length > 0){
+pkg.services.forEach((service, index) => {
+servicesHtml += `
+<div class="preview-service-item">
+<div>
+<span class="preview-service-name">${service.service}</span>
+${service.remarks ? `<span class="preview-service-remarks">- ${service.remarks}</span>` : ''}
+</div>
+<div>
+<span class="preview-service-qty">x${service.quantity}</span>
+</div>
+</div>
+`;
+});
+} else {
+servicesHtml = '<p class="text-muted">No services in this package</p>';
+}
+
+const modalBody = document.getElementById('previewModalBody');
+modalBody.innerHTML = `
+<div class="preview-section">
+<h6>📦 Package Details</h6>
+<p><strong>Name:</strong> ${pkg.name}</p>
+<p><strong>Amount:</strong> ₹${pkg.amount}</p>
+<p><strong>Duration:</strong> ${pkg.duration}</p>
+${pkg.description ? `<p><strong>Description:</strong> ${pkg.description}</p>` : ''}
+</div>
+<div class="preview-section">
+<h6>🛠️ Services Included</h6>
+${servicesHtml}
+</div>
+<div class="preview-section">
+<h6>📊 Summary</h6>
+<p><strong>Total Services:</strong> ${pkg.services.length}</p>
+<p><strong>Created:</strong> ${new Date(pkg.createdAt).toLocaleDateString()}</p>
+</div>
+`;
+
+const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+previewModal.show();
+});
+}
+
+// ================= USE PACKAGE FROM PREVIEW =================
+function usePackageFromPreview(){
+if(previewPackageId){
+usePackage(previewPackageId);
+}
+}
+
+// ================= EDIT PACKAGE =================
+function editPackage(packageId){
+const packagesRef = database.ref("packages/" + currentUser.uid + "/" + packageId);
+
+packagesRef.once("value", function(snapshot){
+const pkg = snapshot.val();
+
+// Fill form
+document.getElementById("packageName").value = pkg.name;
+document.getElementById("packageAmount").value = pkg.amount;
+document.getElementById("packageDuration").value = pkg.duration;
+document.getElementById("packageDescription").value = pkg.description || "";
+
+// Update amount display
+updatePackageAmountDisplay();
+
+// Load services
+packageServices = pkg.services || [];
+updatePackageTable();
+
+// Set editing mode
+editingPackageId = packageId;
+
+// Scroll to top
+window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+}
+
+// ================= DELETE PACKAGE =================
+function deletePackage(packageId){
+if(confirm("Are you sure you want to delete this package?")){
+const packagesRef = database.ref("packages/" + currentUser.uid + "/" + packageId);
+
+packagesRef.remove()
+.then(() => {
+alert("Package deleted successfully!");
+if(editingPackageId === packageId){
+clearForm();
+}
+loadSavedPackages();
+})
+.catch(error => {
+console.error("Error deleting package:", error);
+alert("Error deleting package: " + error.message);
+});
+}
+}
+
+// ================= USE PACKAGE (redirect to estimate with package data) =================
+function usePackage(packageId){
+const packagesRef = database.ref("packages/" + currentUser.uid + "/" + packageId);
+
+packagesRef.once("value", function(snapshot){
+const pkg = snapshot.val();
+
+// Store package data in sessionStorage to use in estimate page
+sessionStorage.setItem('selectedPackage', JSON.stringify({
+id: packageId,
+...pkg
+}));
+
+// Redirect to estimate page
+window.location.href = "index.html?usePackage=" + packageId;
+});
+}
+
+// ================= CLEAR FORM =================
+function clearForm(){
+document.getElementById("packageName").value = "";
+document.getElementById("packageAmount").value = "";
+document.getElementById("packageDuration").value = "";
+document.getElementById("packageDescription").value = "";
+document.getElementById("serviceType").value = "";
+document.getElementById("service").innerHTML = '<option value="">Select Service Type First</option>';
+document.getElementById("service").disabled = true;
+document.getElementById("quantity").value = "1";
+
+// Update amount display
+updatePackageAmountDisplay();
+
+packageServices = [];
+updatePackageTable();
+editingPackageId = null;
+}
+
+// ================= CHECK FOR PACKAGE DATA FROM ESTIMATE =================
+window.addEventListener('load', function() {
+// Check if we're coming from estimate with package data
+const urlParams = new URLSearchParams(window.location.search);
+const packageId = urlParams.get("edit");
+
+if(packageId && currentUser){
+editPackage(packageId);
+}
+
+// Add event listener for package amount input
+document.getElementById("packageAmount").addEventListener('input', updatePackageAmountDisplay);
+});
+
+</script>
+</body>
+</html>

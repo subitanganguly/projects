@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dorja | Estimate </title>
+<link rel="icon" type="image/png" href="img/logo.png">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Optional custom style (kept for compatibility) -->
+<link href="style/style.css" rel="stylesheet">
+<style>
+
+  .card-badge {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 30px;
+  }
+
+  /* subtle background for empty state */
+  .empty-state-icon {
+    opacity: 0.5;
+    font-size: 3rem;
+  }
+</style>
+</head>
+
+<body class="bg-light">
+
+<div class="container-fluid mt-2">
+  <div class="card shadow">
+    <!-- Header: same as original, just changed title to "Estimates" (optional) -->
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">📋 All Estimates</h4>
+      <a href="index.html" class="btn btn-light btn-sm">
+        ✚ Create Estimate
+      </a>
+    </div>
+
+    <div class="card-body">
+      <!-- Card grid replaces the table -->
+      <div id="estimateCardsContainer" class="row g-3">
+        <!-- loader inside container -->
+        <div id="loader" class="text-center my-5 w-100">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 text-muted">Loading estimates...</p>
+        </div>
+        <!-- cards will be injected here by JavaScript -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<!-- make sure firebaseconfig.js sets up firebase (initializeApp) -->
+<script src="js/firebaseconfig.js"></script>
+
+<script>
+  // Ensure Firebase is already initialized in firebaseconfig.js
+  // If not, we add a safety check, but assume it's done.
+  const database = firebase.database();
+
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      const ref = database.ref("estimate/" + user.uid);
+
+      ref.once("value", function(snapshot) {
+        const loader = document.getElementById("loader");
+        const container = document.getElementById("estimateCardsContainer");
+
+        const data = snapshot.val();
+
+        // Hide loader regardless of data presence
+        if (loader) loader.style.display = "none";
+
+        // Clear any previous content (like loader placeholder)
+        // but keep container for cards
+        container.innerHTML = ''; 
+
+        if (!data) {
+          // Show empty state with a nice card-like message
+          container.innerHTML = `
+            <div class="col-12">
+              <div class="card bg-light border-0 text-center py-5">
+                <div class="card-body">
+                  <span class="empty-state-icon d-block mb-3">📭</span>
+                  <h5 class="text-muted">No estimates found</h5>
+                  <p class="text-secondary">Create your first estimate using the button above.</p>
+                  <a href="index.html" class="btn btn-outline-primary btn-sm">➕ Create Estimate</a>
+                </div>
+              </div>
+            </div>`;
+          return;
+        }
+
+        // Convert object to array for easier sorting (optional: sort by updatedAt desc)
+        const entries = Object.entries(data).map(([id, item]) => ({ id, ...item }));
+        // Sort by updatedAt descending (most recent first)
+        entries.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+        // Loop and create cards
+        entries.forEach((item, index) => {
+          const id = item.id;
+          const clientName = item.client || 'Untitled Client';
+          const duration = item.duration || '—';
+          const grandTotal = item.grandTotal || '0';
+          const updatedAtRaw = item.updatedAt;
+          let formattedDate = 'Unknown';
+          if (updatedAtRaw) {
+            try {
+              formattedDate = new Date(updatedAtRaw).toLocaleString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric', 
+                hour: '2-digit', minute: '2-digit'
+              });
+            } catch (e) {
+              formattedDate = 'Invalid date';
+            }
+          }
+
+          // create a simple initials for avatar (first letter of client)
+          const initials = clientName.trim().charAt(0).toUpperCase() || '?';
+
+          // Build card column
+          const cardCol = document.createElement('div');
+          cardCol.className = 'col-12 col-md-6 col-lg-4';
+          cardCol.id = `card-col-${id}`;
+
+          cardCol.innerHTML = `
+            <div class="card h-100">
+              <div class="card-body d-flex flex-column">
+                <!-- top row with avatar and client name -->
+                <div class="d-flex align-items-center mb-1">
+                  <div class="flex-grow-1">
+                    <h5 class="card-title mb-0 my-text">${escapeHtml(clientName)}</h5>
+                    <small class="text-muted">ID: ${id.substring(0,6)}…</small>
+                  </div>
+                </div>
+
+                <!-- details grid (2 columns) -->
+                <div class="row g-1 mb-1">
+                  <div class="col-6">
+                    <div class="bg-light p-2 rounded text-center">
+                      <small class="text-secondary d-block">⏱️ Duration</small>
+                      <span class="fw-semibold">${escapeHtml(duration)}</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="bg-light p-2 rounded text-center">
+                      <small class="text-secondary d-block">💰 Total</small>
+                      <span class="fw-semibold">₹ ${escapeHtml(grandTotal)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- footer with date and actions -->
+                <div class="d-flex justify-content-between align-items-center mt-auto">
+                  <small class="text-muted"><span class="opacity-75">📅</span> ${formattedDate}</small>
+                  <div>
+                    <button class="btn btn-sm btn-outline-primary me-1" 
+                      onclick="openEstimate('${id}')">
+                      Open
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" 
+                      onclick="deleteEstimate('${id}')">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          container.appendChild(cardCol);
+        });
+      });
+
+    } else {
+      // Not logged in: redirect
+      window.location.href = "login.html";
+    }
+  });
+
+  // Helper to escape HTML (avoid XSS from client name)
+  function escapeHtml(unsafe) {
+    if (!unsafe) return unsafe;
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Open estimate (same as original)
+  function openEstimate(id) {
+    window.location.href = "index.html?id=" + id;
+  }
+
+  // Delete estimate with visual removal
+  function deleteEstimate(id) {
+    if (!confirm("Are you sure you want to delete this estimate?")) return;
+
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      alert("You must be logged in.");
+      return;
+    }
+
+    database.ref("estimate/" + user.uid + "/" + id)
+      .remove()
+      .then(() => {
+        // remove the card column
+        const cardCol = document.getElementById("card-col-" + id);
+        if (cardCol) cardCol.remove();
+
+        // If no cards left, show empty state message
+        const container = document.getElementById("estimateCardsContainer");
+        if (container.children.length === 0) {
+          container.innerHTML = `
+            <div class="col-12">
+              <div class="card bg-light border-0 text-center py-5">
+                <div class="card-body">
+                  <span class="empty-state-icon d-block mb-3">📭</span>
+                  <h5 class="text-muted">All estimates gone</h5>
+                  <p class="text-secondary">Create a new estimate to get started.</p>
+                  <a href="index.html" class="btn btn-outline-primary btn-sm">➕ Create Estimate</a>
+                </div>
+              </div>
+            </div>`;
+        }
+      })
+      .catch(error => {
+        alert("Delete failed: " + error.message);
+      });
+  }
+</script>
+
+<!-- make functions global for onclick handlers -->
+</body>
+</html>
