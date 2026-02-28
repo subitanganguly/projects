@@ -52,112 +52,127 @@
 
 <div class="card-body">
 
-<!-- Client -->
-<div class="mb-3">
-<label class="form-label">Estimate For (Mr/Ms)</label>
-<input type="text" id="clientName" class="form-control">
-</div>
-
-<!-- Duration + Toggle -->
+<!-- Client + Package Toggle -->
 <div class="row align-items-end">
-<div class="col-md-4">
-<label class="form-label">Duration</label>
-<select id="duration" class="form-select">
-<option>⏳ Duration: One Week</option>
-<option>⏳ Duration: One Month</option>
-<option>⏳ Duration: One Year</option>
-<option>⏳ Duration: Not Needed</option>
-</select>
+
+  <!-- Client Name -->
+  <div class="col-8 col-md-6">
+    <label class="form-label">Estimate For (Mr/Ms)</label>
+    <input type="text" id="clientName" class="form-control" placeholder="Client Name">
+  </div>
+
+  <!-- Package Toggle -->
+  <div class="col-4 col-md-3 d-flex align-items-end">
+    <div class="form-check form-switch ms-auto">
+      <input class="form-check-input" type="checkbox" id="packageToggle" onchange="toggleMode()">
+      <!-- Hide text on small screens -->
+      <label class="form-check-label d-none d-md-inline">
+        Enable Package Mode
+      </label>
+    </div>
+  </div>
+
+  <!-- Package Amount -->
+  <div class="col-12 col-md-3 mt-2 mt-md-0" id="packageAmountBox" style="display: none;">
+    <label class="form-label">Package Amount (₹)</label>
+    <input type="number" id="packageAmount" class="form-control" oninput="updatePackageTotal()">
+  </div>
+
 </div>
 
-<div class="col-md-4">
-<div class="form-check form-switch mt-4">
-<input class="form-check-input" type="checkbox" id="packageToggle" onchange="toggleMode()">
-<label class="form-check-label">Enable Package Mode</label>
-</div>
-</div>
-
-<div class="col-md-4" id="packageAmountBox" style="display: none;">
-<label class="form-label">Package Amount (₹)</label>
-<input type="number" id="packageAmount" class="form-control" oninput="updatePackageTotal()">
-</div>
+<!-- Duration -->
+<div class="row mt-3">
+  <div class="col-12 col-md-4">
+    <label class="form-label d-none d-md-inline">Duration</label>
+    <select id="duration" class="form-select">
+      <option>⏳ Duration: One Week</option>
+      <option>⏳ Duration: One Month</option>
+      <option>⏳ Duration: One Year</option>
+      <option>⏳ Duration: Not Needed</option>
+    </select>
+  </div>
 </div>
 
 <hr>
 
 <!-- Add Service Section -->
-<div class="row g-1">
-<div class="col-md-3">
-<label class="form-label">Service Type</label>
-<select id="serviceType" class="form-select" onchange="loadServicesByType()">
-<option value="">Select Service Type</option>
-<option value="Web Services">Web Services</option>
-<option value="Media Services">Media Services</option>
-<option value="Social Media Services">Social Media Services</option>
-<option value="Printing">Printing</option>
-</select>
-</div>
+<div class="row g-2">
 
-<div class="col-md-3">
-<label class="form-label">Service</label>
-<select id="service" class="form-select" disabled onchange="setServiceAmount()">
-<option value="">Select Service Type First</option>
-</select>
-</div>
+  <!-- Service Type -->
+  <div class="col-12 col-md-3">
+    <label class="form-label d-none d-md-inline">Service Type</label>
+    <select id="serviceType" class="form-select" onchange="loadServicesByType()">
+      <option value="">Select Service Type</option>
+      <option value="Web Services">Web Services</option>
+      <option value="Media Services">Media Services</option>
+      <option value="Social Media Services">Social Media Services</option>
+      <option value="Printing">Printing</option>
+    </select>
+  </div>
 
-<div class="col-md-1">
-<label class="form-label">Quantity</label>
-<input type="number" id="quantity" class="form-control">
-</div>
+  <!-- Service -->
+  <div class="col-12 col-md-3">
+    <label class="form-label d-none d-md-inline">Service</label>
+    <select id="service" class="form-select" disabled onchange="setServiceAmount()">
+      <option value="">Select Service Type First</option>
+    </select>
+  </div>
 
-<div class="col-md-2" id="amountBox">
-<label class="form-label">Amount (₹)</label>
-<input type="number" id="amount" class="form-control" readonly>
-</div>
+  <!-- Quantity -->
+  <div class="col-6 col-md-1 ">
+    <label class="form-label d-none d-md-inline">Quantity</label>
+    <input type="number" id="quantity" class="form-control" placeholder="Quantity">
+  </div>
 
-<div class="col-md-2">
-<label class="form-label">Remarks</label>
-<input type="text" id="remarks" class="form-control">
-</div>
+  <!-- Amount -->
+  <div class="col-6 col-md-2" id="amountBox">
+    <label class="form-label d-none d-md-inline" >Amount (₹)</label>
+    <input type="number" id="amount" class="form-control" placeholder="Amount" readonly>
+  </div>
 
-<div class="col-md-1 d-flex align-items-end mt-2">
-<button class="btn btn-success w-100" onclick="addService()">✚</button>
-</div>
+  <!-- Remarks -->
+  <div class="col-12 col-md-2">
+    <label class="form-label d-none d-md-inline">Remarks</label>
+    <input type="text" id="remarks" class="form-control" placeholder="Remarks">
+  </div>
+
+  <!-- Add Button -->
+  <div class="col-12 col-md-1 d-flex align-items-end">
+    <button class="btn btn-success w-100" onclick="addService()">✚</button>
+  </div>
+
 </div>
 
 <hr>
 
-<!-- Table -->
-<div class="table-responsive">
-<table class="table table-bordered mt-3">
-<thead class="table-dark">
-<tr id="tableHead">
-<th>Service</th>
-<th>Quantity</th>
-<th>Amount</th>
-<th>Total</th>
-<th>Remarks</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody id="estimateTable"></tbody>
-</table>
+
+<!-- Services Card List -->
+<div id="estimateTable" class="mt-3"></div>
+
+<!-- Grand Total -->
+<div class="text-end bg-primary text-white p-2 rounded">
+  <h6 class="fw-bold mb-0">
+    Grand Total: ₹ <span id="grandTotal">0</span>
+  </h6>
 </div>
 
-<div class="text-end bg-primary text-white p-1">
-<h6 class="fw-bold">Grand Total: ₹ <span id="grandTotal">0</span></h6>
-</div>
+<!-- Buttons -->
 <div class="text-center mt-3">
-    <button class="btn btn-primary" onclick="clearURLParams()">
-  ✚ New
- </button>
-  <button class="btn btn-success" onclick="saveEstimate()">
-    💾 Save <span class="d-none d-lg-inline">Estimate</span>
+  <button class="btn btn-primary" onclick="clearURLParams()">
+    ✚ New
   </button>
-  <button class="btn btn-success" onclick="generatePDF()">
-    📄 <span class="d-none d-lg-inline">Generate </span>PDF
+
+  <button class="btn btn-success" id="saveEstimateBtn" onclick="saveEstimate()">
+    <span class="spinner-border spinner-border-sm d-none" id="saveSpinner" role="status" aria-hidden="true"></span>
+    <span id="saveText">💾 Save <span class="d-none d-lg-inline">Estimate</span></span>
+  </button>
+
+  <button class="btn btn-success" id="generatePDFBtn" onclick="generatePDF()">
+    <span class="spinner-border spinner-border-sm d-none" id="pdfSpinner" role="status" aria-hidden="true"></span>
+    <span id="pdfText">📄 <span class="d-none d-lg-inline">Generate </span>PDF</span>
   </button>
 </div>
+
 </div>
 </div>
 
@@ -178,6 +193,8 @@ let estimateData = [];
 let grandTotal = 0;
 let currentUser = null;
 let servicesByType = {};
+let isSaving = false;
+let isGeneratingPDF = false;
 
 // ================= AUTH CHECK =================
 firebase.auth().onAuthStateChanged(function(user){
@@ -259,6 +276,13 @@ function loadPackagePreset(packageId) {
     
     console.log("Loading package:", packageId);
     
+    // Ensure estimateRef exists
+    if (!estimateRef) {
+        estimateRef = database
+            .ref("estimate/" + currentUser.uid)
+            .push();
+    }
+    
     const packageRef = database.ref("packages/" + currentUser.uid + "/" + packageId);
     
     packageRef.once("value", function(snapshot) {
@@ -286,25 +310,39 @@ function loadPackagePreset(packageId) {
         // Add services from package
         if (pkg.services && pkg.services.length > 0) {
             pkg.services.forEach(service => {
-                const table = document.getElementById("estimateTable");
-                const row = table.insertRow();
-                
-                // Format the row based on package mode
-                row.innerHTML = `
-                    <td>${service.service || ''}</td>
-                    <td>${service.quantity || 1}</td>
-                    <td>${service.remarks || ''}</td>
-                    <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">Delete</button></td>`;
-                
-                // Add to estimateData array
-                estimateData.push({
-                    service: service.service || '',
-                    qty: service.quantity || 1,
-                    remarks: service.remarks || '',
-                    serviceType: service.serviceType || ''
-                });
-            });
-        }
+                const container = document.getElementById("estimateTable");
+container.innerHTML = "";
+
+if (pkg.services && pkg.services.length > 0) {
+  pkg.services.forEach(service => {
+
+    const card = document.createElement("div");
+    card.className = "card  mb-2";
+
+    card.innerHTML = `
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-1 my-text fw-bold">👨🏻‍💻 ${service.service} Qty: ${service.quantity || 1}</h6>
+          <small class="my-text2 fw-bold">${service.remarks || ""}</small>
+        </div>
+        <button class="btn btn-danger btn-sm"
+          onclick="deleteCard(this)">
+          🗑️<span class="d-none d-lg-inline">Delete</span>
+        </button>
+      </div>
+    `;
+
+    container.appendChild(card);
+
+    estimateData.push({
+      service: service.service,
+      qty: service.quantity || 1,
+      remarks: service.remarks || "",
+      serviceType: service.serviceType || ""
+    });
+  });
+}
+            })}
         
         // Update grand total
         document.getElementById("grandTotal").innerText = grandTotal;
@@ -353,6 +391,7 @@ function setServiceAmount(){
   const serviceSelect = document.getElementById("service");
   const amountInput = document.getElementById("amount");
   const remarksInput = document.getElementById("remarks");
+  const quantityInput = document.getElementById("quantity");
   const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
   
   if(selectedOption && selectedOption.value){
@@ -361,6 +400,9 @@ function setServiceAmount(){
     
     // Set amount
     amountInput.value = amount || 0;
+    
+    // Set quantity to 1 by default
+    quantityInput.value = 1;
     
     // Find and set remarks from the service data
     const serviceType = document.getElementById("serviceType").value;
@@ -375,6 +417,8 @@ function setServiceAmount(){
   } else {
     amountInput.value = "";
     remarksInput.value = "";
+    // Optionally clear quantity when no service is selected
+    // quantityInput.value = "";
   }
 }
 
@@ -383,37 +427,14 @@ function toggleMode(isLoading = false) {
   const toggle = document.getElementById("packageToggle");
   const packageBox = document.getElementById("packageAmountBox");
   const amountBox = document.getElementById("amountBox");
-  const tableHead = document.getElementById("tableHead");
-  const tableBody = document.getElementById("estimateTable");
 
-  // Show/hide package amount box
-  if (toggle.checked) {
-    packageBox.style.display = "block";
-    amountBox.style.display = "none";
+  packageBox.style.display = toggle.checked ? "block" : "none";
+  amountBox.style.display = toggle.checked ? "none" : "block";
 
-    tableHead.innerHTML = `
-      <th>Service</th>
-      <th>Quantity</th>
-      <th>Remarks</th>
-      <th>Action</th>`;
-  } else {
-    packageBox.style.display = "none";
-    amountBox.style.display = "block";
-
-    tableHead.innerHTML = `
-      <th>Service</th>
-      <th>Quantity</th>
-      <th>Amount</th>
-      <th>Total</th>
-      <th>Remarks</th>
-      <th>Action</th>`;
-  }
-
-  // If not loading, clear data
   if (!isLoading) {
     grandTotal = 0;
     estimateData = [];
-    tableBody.innerHTML = "";
+    document.getElementById("estimateTable").innerHTML = "";
     document.getElementById("grandTotal").innerText = 0;
     document.getElementById("packageAmount").value = "";
   }
@@ -425,6 +446,7 @@ function updatePackageTotal() {
   document.getElementById("grandTotal").innerText = amount ? amount : 0;
 }
 
+// ================= ADD SERVICE =================
 // ================= ADD SERVICE =================
 function addService() {
   const toggle = document.getElementById("packageToggle").checked;
@@ -438,21 +460,29 @@ function addService() {
     return;
   }
 
-  const table = document.getElementById("estimateTable");
-  const row = table.insertRow();
+  const container = document.getElementById("estimateTable");
 
   if (toggle) {
-    row.innerHTML = `
-      <td>${service}</td>
-      <td>${qty}</td>
-      <td>${remarks}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">Delete</button></td>`;
+
+    const card = document.createElement("div");
+    card.className = "card  mb-2";
+    card.innerHTML = `
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-1 my-text fw-bold">👨🏻‍💻 ${service} Qty: ${qty}</h6>
+          <small class="my-text2 fw-bold">${remarks}</small>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteCard(this)"> 🗑️<span class="d-none d-lg-inline">Delete</span></button>
+      </div>
+    `;
+
+    container.appendChild(card);
 
     estimateData.push({ service, qty, remarks, serviceType });
 
   } else {
-    const amount = parseFloat(document.getElementById("amount").value);
 
+    const amount = parseFloat(document.getElementById("amount").value);
     if (!amount) {
       alert("Amount is required!");
       return;
@@ -460,69 +490,87 @@ function addService() {
 
     const total = qty * amount;
     grandTotal += total;
-
-    row.innerHTML = `
-      <td>${service}</td>
-      <td>${qty}</td>
-      <td>${amount}</td>
-      <td>${total}</td>
-      <td>${remarks}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this, ${total})">Delete</button></td>`;
-
     document.getElementById("grandTotal").innerText = grandTotal;
+
+    const card = document.createElement("div");
+    card.className = "card  mb-2";
+    card.innerHTML = `
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-1 my-text fw-bold">👨🏻‍💻 ${service} ₹ ${amount}</h6>
+          <small class="my-text2 fw-bold">Qty: ${qty} | Total: ₹ ${total}</small><br>
+          <small class="my-text2 fw-bold">${remarks}</small>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteCard(this, ${total})">🗑️<span class="d-none d-lg-inline">Delete</span></button>
+      </div>
+    `;
+
+    container.appendChild(card);
 
     estimateData.push({ service, qty, amount, total, remarks, serviceType });
   }
 
-  // Clear fields but keep service type selected
-  document.getElementById("quantity").value = "";
+  // Clear inputs but SET QUANTITY BACK TO 1
+  document.getElementById("quantity").value = "1";  // Changed this line
   document.getElementById("remarks").value = "";
   document.getElementById("service").value = "";
   document.getElementById("amount").value = "";
 }
 
 // ================= DELETE ROW =================
-function deleteRow(btn, total = 0) {
-  const row = btn.parentElement.parentElement;
-  row.remove();
+function deleteCard(btn, total = 0) {
+  const card = btn.closest(".card");
+  card.remove();
 
   if (total) {
     grandTotal -= total;
     document.getElementById("grandTotal").innerText = grandTotal;
   }
-  
-  // Update estimateData array by removing the corresponding item
-  // This is a simplified version - you might want to implement a more robust solution
+
+  // Rebuild estimateData from cards
   estimateData = [];
-  const table = document.getElementById("estimateTable");
-  for (let i = 0; i < table.rows.length; i++) {
-    const row = table.rows[i];
-    const cells = row.cells;
+  const cards = document.querySelectorAll("#estimateTable .card");
+
+  cards.forEach(card => {
+    const text = card.innerText;
+
     if (document.getElementById("packageToggle").checked) {
       estimateData.push({
-        service: cells[0].innerText,
-        qty: parseInt(cells[1].innerText),
-        remarks: cells[2].innerText,
-        serviceType: '' // You might want to store this
+        service: text.split("\n")[0],
+        qty: parseInt(text.match(/Qty: (\d+)/)[1]),
+        remarks: ""
       });
     } else {
+      const service = text.split("\n")[0];
+      const qty = parseInt(text.match(/Qty: (\d+)/)[1]);
+      const amount = parseFloat(text.match(/₹ (\d+)/)[1]);
+      const total = parseFloat(text.match(/Total: ₹ (\d+)/)[1]);
+
       estimateData.push({
-        service: cells[0].innerText,
-        qty: parseInt(cells[1].innerText),
-        amount: parseFloat(cells[2].innerText),
-        total: parseFloat(cells[3].innerText),
-        remarks: cells[4].innerText,
-        serviceType: '' // You might want to store this
+        service,
+        qty,
+        amount,
+        total,
+        remarks: ""
       });
     }
-  }
+  });
 }
 
 // ================= SAVE ESTIMATE =================
 function saveEstimate() {
+  // Prevent double submission
+  if (isSaving) return;
+  
+  // Show loader
+  isSaving = true;
+  document.getElementById('saveSpinner').classList.remove('d-none');
+  document.getElementById('saveEstimateBtn').disabled = true;
+  document.getElementById('saveText').innerHTML = 'Saving...';
 
   if (!estimateRef) {
     alert("Estimate not initialized yet!");
+    hideSaveLoader();
     return;
   }
 
@@ -532,9 +580,10 @@ function saveEstimate() {
     return;
   }
 
-  // ❌ Check if at least one service exists
+  // Check if at least one service exists
   if (estimateData.length === 0) {
     alert("Please add at least one service before saving!");
+    hideSaveLoader();
     return;
   }
 
@@ -542,6 +591,7 @@ function saveEstimate() {
 
   if (rawClientName === "") {
     alert("Client name is required!");
+    hideSaveLoader();
     return;
   }
 
@@ -563,12 +613,23 @@ function saveEstimate() {
   estimateRef.set(data)
     .then(() => {
       alert("Estimate saved successfully!");
+      hideSaveLoader();
     })
     .catch(error => {
       alert("Error saving estimate: " + error.message);
+      hideSaveLoader();
     });
 }
 
+// Helper function to hide save loader
+function hideSaveLoader() {
+  isSaving = false;
+  document.getElementById('saveSpinner').classList.add('d-none');
+  document.getElementById('saveEstimateBtn').disabled = false;
+  document.getElementById('saveText').innerHTML = '💾 Save <span class="d-none d-lg-inline">Estimate</span>';
+}
+
+// ================= LOAD EXISTING ESTIMATE =================
 // ================= LOAD EXISTING ESTIMATE =================
 function loadEstimate(){
   if(!estimateRef) return;
@@ -589,75 +650,108 @@ function loadEstimate(){
     estimateData = data.services || [];
     grandTotal = parseFloat(data.grandTotal) || 0;
 
-    const table = document.getElementById("estimateTable");
-    table.innerHTML = "";
+    const container = document.getElementById("estimateTable");
+    container.innerHTML = "";
 
+    // Recreate cards for each service
     estimateData.forEach(service => {
-      const row = table.insertRow();
+      const card = document.createElement("div");
+      card.className = "card mb-2";
 
       if(data.packageMode){
-        row.innerHTML = `
-          <td>${service.service}</td>
-          <td>${service.qty}</td>
-          <td>${service.remarks || ""}</td>
-          <td>
-            <button class="btn btn-danger btn-sm" onclick="deleteRow(this)">
-              Delete
-            </button>
-          </td>`;
+        card.innerHTML = `
+          <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-1 my-text fw-bold">👨🏻‍💻 ${service.service} | Qty: ${service.qty}</h6>
+              <small class="my-text2 fw-bold">${service.remarks || ""}</small>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="deleteCard(this)">🗑️<span class="d-none d-lg-inline">Delete</span></button>
+          </div>
+        `;
       } else {
-        row.innerHTML = `
-          <td>${service.service}</td>
-          <td>${service.qty}</td>
-          <td>${service.amount}</td>
-          <td>${service.total}</td>
-          <td>${service.remarks || ""}</td>
-          <td>
-            <button class="btn btn-danger btn-sm" onclick="deleteRow(this, ${service.total})">
-              Delete
-            </button>
-          </td>`;
+        const total = service.total || (service.qty * service.amount);
+        card.innerHTML = `
+          <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-1 my-text">👨🏻‍💻 ${service.service}  ₹ ${service.amount}</h6>
+              <small class="my-text2 fw-bold">Qty: ${service.qty} | Total: ₹ ${total}</small> <br>
+              <small class="my-text2 fw-bold">${service.remarks || ""}</small>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="deleteCard(this, ${total})">🗑️<span class="d-none d-lg-inline">Delete</span></button>
+          </div>
+        `;
       }
+
+      container.appendChild(card);
     });
   });
 }
 
 // ================= GENERATE PDF =================
-function generatePDF(){
+function generatePDF() {
+  // Prevent double submission
+  if (isGeneratingPDF) return;
+  
+  // Show loader
+  isGeneratingPDF = true;
+  document.getElementById('pdfSpinner').classList.remove('d-none');
+  document.getElementById('generatePDFBtn').disabled = true;
+  document.getElementById('pdfText').innerHTML = 'Generating...';
 
-  if(!estimateRef){
+  if (!estimateRef) {
     alert("Estimate not ready yet!");
+    hidePDFLoader();
     return;
   }
 
-  // ❌ Check if at least one service added
+  // Check if estimate is saved
+  if (!estimateRef.key) {
+    alert("Please save the estimate first before generating PDF!");
+    hidePDFLoader();
+    return;
+  }
+
+  // Check if at least one service added
   if (estimateData.length === 0) {
     alert("Please add at least one service before generating PDF!");
-    return;
-  }
-
-  // ❌ Optional: Check client name
-  const clientName = document.getElementById("clientName").value.trim();
-  if (clientName === "") {
-    alert("Client name is required before generating PDF!");
+    hidePDFLoader();
     return;
   }
 
   const estimateId = estimateRef.key;
-  window.location.href = "estimate-pdf.html?id=" + estimateId;
+  
+  // Small delay to show loader
+  setTimeout(() => {
+    window.location.href = "estimate-pdf.html?id=" + estimateId;
+  }, 500);
+}
+
+// Helper function to hide PDF loader
+function hidePDFLoader() {
+  isGeneratingPDF = false;
+  document.getElementById('pdfSpinner').classList.add('d-none');
+  document.getElementById('generatePDFBtn').disabled = false;
+  document.getElementById('pdfText').innerHTML = '📄 <span class="d-none d-lg-inline">Generate </span>PDF';
 }
 
 function clearURLParams() {
-
   // Remove everything after ?
   const cleanURL = window.location.origin + window.location.pathname;
-
   // Replace URL without reloading first
   window.history.replaceState({}, document.title, cleanURL);
-
   // Now reload the page
   window.location.reload();
+}
 
+// Logout function
+function logout() {
+  firebase.auth().signOut()
+    .then(() => {
+      window.location.href = "login.html";
+    })
+    .catch((error) => {
+      alert("Logout failed: " + error.message);
+    });
 }
 
 // Logout function
