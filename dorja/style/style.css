@@ -1,19 +1,19 @@
-   body{
-        margin: 0;
-        height: 100vh;
-        background-color: #d1d1d1; /* Dark Blue */
-        display: flex;
-    }
+body{
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    background: linear-gradient(to right, #3fffbf77, #ff63c360);
+}
 
 
     /* Glass Card */
 .card{
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(15px);
+    backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),inset 0 4px 20px 10px rgba(0, 0, 0, 0.178);
     animation: fadeIn 1s ease forwards;
 }
 
@@ -54,7 +54,14 @@
   color: transparent;
  
 }
-
+ .my-text2 {
+  background: linear-gradient(245deg, #1300c0, #00b8be, #c702f8);
+  background-size: 50% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+ 
+}
 
 /* 📱 Mobile Screen */
 @media screen and (max-width: 767px) {
