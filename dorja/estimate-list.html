@@ -133,24 +133,9 @@
                 <!-- top row with avatar and client name -->
                 <div class="d-flex align-items-center mb-1">
                   <div class="flex-grow-1">
-                    <h5 class="card-title mb-0 my-text">${escapeHtml(clientName)}</h5>
-                    <small class="text-muted">ID: ${id.substring(0,6)}…</small>
-                  </div>
-                </div>
-
-                <!-- details grid (2 columns) -->
-                <div class="row g-1 mb-1">
-                  <div class="col-6">
-                    <div class="bg-light p-2 rounded text-center">
-                      <small class="text-secondary d-block">⏱️ Duration</small>
-                      <span class="fw-semibold">${escapeHtml(duration)}</span>
-                    </div>
-                  </div>
-                  <div class="col-6">
-                    <div class="bg-light p-2 rounded text-center">
-                      <small class="text-secondary d-block">💰 Total</small>
-                      <span class="fw-semibold">₹ ${escapeHtml(grandTotal)}</span>
-                    </div>
+                    <h6 class="card-title mb-0 my-text">${escapeHtml(clientName)} ₹ ${escapeHtml(grandTotal)}</h6>
+                    <small class="text-muted">ID: ${id.substring(0,6)}…</small><br>
+                    <small class="text-muted">${escapeHtml(duration)}</small>
                   </div>
                 </div>
 

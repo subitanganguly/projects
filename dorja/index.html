@@ -74,8 +74,8 @@
 
   <!-- Package Amount -->
   <div class="col-12 col-md-3 mt-2 mt-md-0" id="packageAmountBox" style="display: none;">
-    <label class="form-label">Package Amount (₹)</label>
-    <input type="number" id="packageAmount" class="form-control" oninput="updatePackageTotal()">
+    <label class="form-label d-none d-md-inline">Package Amount (₹)</label>
+    <input type="number" id="packageAmount" class="form-control" placeholder="Package Amount" oninput="updatePackageTotal()">
   </div>
 
 </div>
@@ -462,25 +462,45 @@ function addService() {
 
   const container = document.getElementById("estimateTable");
 
+  // 🔎 Check if service already exists
+  const existingIndex = estimateData.findIndex(item => item.service === service);
+
+  // ================= PACKAGE MODE =================
   if (toggle) {
 
+    if (existingIndex !== -1) {
+      // ✅ Update quantity
+      estimateData[existingIndex].qty += qty;
+
+      // Update UI
+      const cards = container.querySelectorAll(".card");
+      cards[existingIndex].querySelector("h6").innerHTML =
+        `👨🏻‍💻 ${service} Qty: ${estimateData[existingIndex].qty}`;
+
+      return;
+    }
+
+    // ➕ Create New Card
     const card = document.createElement("div");
-    card.className = "card  mb-2";
+    card.className = "card mb-2";
     card.innerHTML = `
       <div class="card-body d-flex justify-content-between align-items-center">
         <div>
-          <h6 class="mb-1 my-text fw-bold">👨🏻‍💻 ${service} Qty: ${qty}</h6>
-          <small class="my-text2 fw-bold">${remarks}</small>
+          <h6 class="mb-1 fw-bold">👨🏻‍💻 ${service} Qty: ${qty}</h6>
+          <small class="fw-bold">${remarks}</small>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="deleteCard(this)"> 🗑️<span class="d-none d-lg-inline">Delete</span></button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCard(this)"> 
+          🗑️ <span class="d-none d-lg-inline">Delete</span>
+        </button>
       </div>
     `;
 
     container.appendChild(card);
-
     estimateData.push({ service, qty, remarks, serviceType });
 
-  } else {
+  } 
+  // ================= NORMAL MODE =================
+  else {
 
     const amount = parseFloat(document.getElementById("amount").value);
     if (!amount) {
@@ -488,30 +508,54 @@ function addService() {
       return;
     }
 
+    if (existingIndex !== -1) {
+      // ✅ Update quantity & total
+      estimateData[existingIndex].qty += qty;
+      estimateData[existingIndex].total =
+        estimateData[existingIndex].qty * estimateData[existingIndex].amount;
+
+      // 🔄 Recalculate Grand Total
+      grandTotal = 0;
+      estimateData.forEach(item => {
+        if (item.total) grandTotal += item.total;
+      });
+
+      document.getElementById("grandTotal").innerText = grandTotal;
+
+      // Update UI
+      const cards = container.querySelectorAll(".card");
+      cards[existingIndex].querySelector("small").innerHTML =
+        `Qty: ${estimateData[existingIndex].qty} | Total: ₹ ${estimateData[existingIndex].total}`;
+
+      return;
+    }
+
+    // ➕ New Service
     const total = qty * amount;
     grandTotal += total;
     document.getElementById("grandTotal").innerText = grandTotal;
 
     const card = document.createElement("div");
-    card.className = "card  mb-2";
+    card.className = "card mb-2";
     card.innerHTML = `
       <div class="card-body d-flex justify-content-between align-items-center">
         <div>
-          <h6 class="mb-1 my-text fw-bold">👨🏻‍💻 ${service} ₹ ${amount}</h6>
-          <small class="my-text2 fw-bold">Qty: ${qty} | Total: ₹ ${total}</small><br>
-          <small class="my-text2 fw-bold">${remarks}</small>
+          <h6 class="mb-1 fw-bold">👨🏻‍💻 ${service} ₹ ${amount}</h6>
+          <small class="fw-bold">Qty: ${qty} | Total: ₹ ${total}</small><br>
+          <small class="fw-bold">${remarks}</small>
         </div>
-        <button class="btn btn-danger btn-sm" onclick="deleteCard(this, ${total})">🗑️<span class="d-none d-lg-inline">Delete</span></button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCard(this, ${total})">
+          🗑️ <span class="d-none d-lg-inline">Delete</span>
+        </button>
       </div>
     `;
 
     container.appendChild(card);
-
     estimateData.push({ service, qty, amount, total, remarks, serviceType });
   }
 
-  // Clear inputs but SET QUANTITY BACK TO 1
-  document.getElementById("quantity").value = "1";  // Changed this line
+  // 🔄 Reset fields
+  document.getElementById("quantity").value = "1";
   document.getElementById("remarks").value = "";
   document.getElementById("service").value = "";
   document.getElementById("amount").value = "";
@@ -700,6 +744,14 @@ function generatePDF() {
 
   if (!estimateRef) {
     alert("Estimate not ready yet!");
+    hidePDFLoader();
+    return;
+  }
+
+     const rawClientName = document.getElementById("clientName").value.trim();
+
+  if (rawClientName === "") {
+    alert("Client name is required!");
     hidePDFLoader();
     return;
   }

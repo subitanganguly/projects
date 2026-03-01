@@ -8,175 +8,7 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="style/style.css" rel="stylesheet">
 <style>
-.package-card {
-    transition: transform 0.2s, box-shadow 0.2s;
-    height: 100%;
-    border: 1px solid #dee2e6;
-    border-radius: 10px;
-    overflow: hidden;
-}
 
-.package-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-}
-
-.package-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 15px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-.package-title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.package-price {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-top: 5px;
-}
-
-.package-body {
-    padding: 15px;
-    background: white;
-}
-
-.package-description {
-    color: #6c757d;
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-    min-height: 40px;
-}
-
-.package-services-list {
-    max-height: 150px;
-    overflow-y: auto;
-    margin-bottom: 15px;
-    padding: 10px;
-    background: #f8f9fa;
-    border-radius: 5px;
-    font-size: 0.9rem;
-}
-
-.service-item {
-    padding: 3px 0;
-    border-bottom: 1px dashed #dee2e6;
-}
-
-.service-item:last-child {
-    border-bottom: none;
-}
-
-.service-badge {
-    background: #e9ecef;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    margin-left: 5px;
-}
-
-.package-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    font-size: 0.9rem;
-    color: #6c757d;
-}
-
-.package-duration {
-    background: #e9ecef;
-    padding: 4px 10px;
-    border-radius: 15px;
-}
-
-.package-actions {
-    display: flex;
-    gap: 5px;
-    justify-content: flex-end;
-    border-top: 1px solid #dee2e6;
-    padding-top: 15px;
-    margin-top: 5px;
-}
-
-.package-actions .btn {
-    flex: 1;
-    padding: 5px;
-    font-size: 0.85rem;
-}
-
-.preview-modal .modal-body {
-    max-height: 70vh;
-    overflow-y: auto;
-}
-
-.preview-section {
-    margin-bottom: 20px;
-}
-
-.preview-section h6 {
-    color: #495057;
-    font-weight: 600;
-    margin-bottom: 10px;
-    padding-bottom: 5px;
-    border-bottom: 2px solid #e9ecef;
-}
-
-.preview-service-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 10px;
-    background: #f8f9fa;
-    border-radius: 5px;
-    margin-bottom: 5px;
-}
-
-.preview-service-name {
-    font-weight: 500;
-}
-
-.preview-service-qty {
-    background: #6c757d;
-    color: white;
-    padding: 2px 10px;
-    border-radius: 15px;
-    font-size: 0.8rem;
-}
-
-.preview-service-remarks {
-    color: #6c757d;
-    font-size: 0.85rem;
-    font-style: italic;
-    margin-left: 10px;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 50px;
-    color: #6c757d;
-}
-
-.empty-state i {
-    font-size: 3rem;
-    margin-bottom: 15px;
-    align-items: center;
-    justify-content: center;
-}
-
-.packages-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
 </style>
 </head>
 <body>
@@ -211,102 +43,12 @@
 </div>
 
 <div class="card-body">
-
-<!-- Package Form -->
-<div class="row g-3 mb-4">
-<div class="col-md-4">
-<label class="form-label">Package Name</label>
-<input type="text" id="packageName" class="form-control" placeholder="e.g., Basic Website Package">
-</div>
-
-<div class="col-md-4">
-<label class="form-label">Package Amount (₹)</label>
-<input type="number" id="packageAmount" class="form-control" placeholder="Total package price">
-</div>
-
-<div class="col-md-4">
-<label class="form-label">Duration</label>
-<select id="packageDuration" class="form-select">
-<option value="">Select Duration</option>
-<option value="⏳ Duration: One Week">One Week</option>
-<option value="⏳ Duration: One Month">One Month</option>
-<option value="⏳ Duration: One Year">One Year</option>
-<option value="⏳ Duration: Not Needed">Not Needed</option>
-</select>
-</div>
-
-<div class="col-12">
-<label class="form-label">Description</label>
-<textarea id="packageDescription" class="form-control" rows="2" placeholder="Package description..."></textarea>
-</div>
-</div>
-
-<hr>
-
-<!-- Add Services to Package -->
-<h5 class="mb-3">Add Services to Package</h5>
-
-<div class="row g-2 mb-3">
-<div class="col-md-4">
-<label class="form-label">Service Type</label>
-<select id="serviceType" class="form-select" onchange="loadServicesByType()">
-<option value="">Select Service Type</option>
-<option value="Web Services">Web Services</option>
-<option value="Media Services">Media Services</option>
-<option value="Social Media Services">Social Media Services</option>
-<option value="Printing">Printing</option>
-</select>
-</div>
-
-<div class="col-md-4">
-<label class="form-label">Service</label>
-<select id="service" class="form-select" disabled onchange="setServiceDetails()">
-<option value="">Select Service Type First</option>
-</select>
-</div>
-
-<div class="col-md-2">
-<label class="form-label">Quantity</label>
-<input type="number" id="quantity" class="form-control" value="1" min="1">
-</div>
-
-<div class="col-md-2 d-flex align-items-end">
-<button class="btn btn-success w-100" onclick="addServiceToPackage()">Add to Package</button>
-</div>
-</div>
-
-<!-- Package Services Table (without amount columns) -->
-<div class="table-responsive">
-<table class="table table-bordered">
-<thead class="table-dark">
-<tr>
-<th>Service</th>
-<th>Quantity</th>
-<th>Remarks</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody id="packageServicesTable"></tbody>
-</table>
-</div>
-
-<!-- Package Amount Display -->
-<div class="text-end mb-3">
-<h5>Package Amount: ₹ <span id="packageAmountDisplay">0</span></h5>
-<small class="text-muted">(Enter total package amount in the form above)</small>
-</div>
-
-<!-- Save/Cancel Buttons -->
-<div class="text-center mt-4">
-<button class="btn btn-success me-2" onclick="savePackagePreset()">
-💾 Save Package
-</button>
-<button class="btn btn-secondary" onclick="clearForm()">
-🔄 Clear
+<!-- Add Package Button -->
+<div class="text-end mb-1">
+<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#packageModal">
+✚ New Package
 </button>
 </div>
-
-<hr>
 
 <!-- Saved Packages Grid -->
 <h5 class="mb-3">Saved Packages</h5>
@@ -318,6 +60,98 @@
 <!-- Packages will be loaded here -->
 </div>
 
+</div>
+</div>
+</div>
+
+<!-- Package Modal -->
+<div class="modal fade" id="packageModal" tabindex="-1" aria-labelledby="packageModalLabel" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal-dialog modal-lg modal-dialog-scrollable">
+<div class="modal-content">
+<div class="modal-header bg-primary text-white">
+<h5 class="modal-title" id="packageModalLabel">Create New Package</h5>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="clearForm()"></button>
+</div>
+<div class="modal-body">
+
+<!-- Package Form -->
+<div class="row g-3 mb-4">
+<div class="col-md-4">
+<label class="form-label d-none d-md-inline">Package Name</label>
+<input type="text" id="packageName" class="form-control" placeholder="e.g., Basic Website Package">
+</div>
+
+<div class="col-6 col-md-4">
+  <label class="form-label d-none d-md-inline">Package Amount (₹)</label>
+  <input type="number" id="packageAmount" class="form-control" placeholder="Package Price">
+</div>
+
+<div class="col-6 col-md-4">
+  <label class="form-label d-none d-md-inline">Duration</label>
+  <select id="packageDuration" class="form-select">
+    <option value="">Select Duration</option>
+    <option value="⏳ Duration: One Week">One Week</option>
+    <option value="⏳ Duration: One Month">One Month</option>
+    <option value="⏳ Duration: One Year">One Year</option>
+    <option value="⏳ Duration: Not Needed">Not Needed</option>
+  </select>
+</div>
+
+<div class="col-12 d-none">
+<label class="form-label">Description</label>
+<textarea id="packageDescription" class="form-control" rows="2" placeholder="Package description..."></textarea>
+</div>
+</div>
+
+<hr>
+
+<!-- Add Services to Package -->
+<p class="mb-3 my-text fw-bold">Add Services to Package</h5>
+
+<div class="row g-2 mb-3">
+<div class="col-md-4">
+<label class="form-label d-none d-md-inline">Service Type</label>
+<select id="serviceType" class="form-select" onchange="loadServicesByType()">
+<option value="">Select Service Type</option>
+<option value="Web Services">Web Services</option>
+<option value="Media Services">Media Services</option>
+<option value="Social Media Services">Social Media Services</option>
+<option value="Printing">Printing</option>
+</select>
+</div>
+
+<div class="col-md-4">
+<label class="form-label d-none d-md-inline">Service</label>
+<select id="service" class="form-select" disabled onchange="setServiceDetails()">
+<option value="">Select Service Type First</option>
+</select>
+</div>
+
+<div class="col-md-2">
+<label class="form-label d-none d-md-inline">Quantity</label>
+<input type="number" id="quantity" class="form-control" value="1" min="1">
+</div>
+
+<div class="col-md-2 d-flex align-items-end">
+<button class="btn btn-success w-100" onclick="addServiceToPackage()">✚</button>
+</div>
+</div>
+
+<div id="packageServicesTable" class="mt-3"></div>
+
+<!-- Package Amount Display -->
+<div class="text-end mb-3">
+<h5>Package Amount: ₹ <span id="packageAmountDisplay">0</span></h5>
+<small class="text-muted">(Enter total package amount in the form above)</small>
+</div>
+
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" data-bs-dismiss="modal" onclick="clearForm()">Cancel</button>
+<button class="btn btn-success" onclick="savePackagePreset()">
+💾 Save Package
+</button>
+</div>
 </div>
 </div>
 </div>
@@ -425,50 +259,85 @@ function setServiceDetails(){
 }
 
 // ================= ADD SERVICE TO PACKAGE =================
-function addServiceToPackage(){
-const serviceType = document.getElementById("serviceType").value;
-const serviceSelect = document.getElementById("service");
-const service = serviceSelect.value;
-const quantity = parseInt(document.getElementById("quantity").value);
-const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+function addServiceToPackage() {
+  const serviceType = document.getElementById("serviceType").value;
+  const serviceSelect = document.getElementById("service");
+  const service = serviceSelect.value;
+  const quantity = parseInt(document.getElementById("quantity").value);
+  const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
 
-if(!serviceType || !service || !quantity){
-alert("Please select service type, service and enter quantity!");
-return;
-}
+  if (!serviceType || !service || !quantity) {
+    alert("Please select service type, service and enter quantity!");
+    return;
+  }
 
-const remarks = selectedOption.getAttribute("data-remarks") || "";
+  const remarks = selectedOption.getAttribute("data-remarks") || "";
 
-packageServices.push({
-serviceType: serviceType,
-service: service,
-quantity: quantity,
-remarks: remarks
-});
+  // 🔎 Check if same service already exists
+  const existingIndex = packageServices.findIndex(item =>
+    item.service === service &&
+    item.serviceType === serviceType
+  );
 
-updatePackageTable();
+  if (existingIndex !== -1) {
+    // ✅ Update quantity
+    packageServices[existingIndex].quantity += quantity;
+  } else {
+    // ➕ Add new service
+    packageServices.push({
+      serviceType: serviceType,
+      service: service,
+      quantity: quantity,
+      remarks: remarks
+    });
+  }
 
-// Clear service selection but keep type
-document.getElementById("service").value = "";
-document.getElementById("quantity").value = "1";
+  updatePackageTable();
+
+  // Reset inputs
+  document.getElementById("service").value = "";
+  document.getElementById("quantity").value = "1";
 }
 
 // ================= UPDATE PACKAGE TABLE =================
-function updatePackageTable(){
-const table = document.getElementById("packageServicesTable");
-table.innerHTML = "";
+function updatePackageTable() {
+  const container = document.getElementById("packageServicesTable");
+  container.innerHTML = "";
 
-packageServices.forEach((item, index) => {
-const row = table.insertRow();
-row.innerHTML = `
-<td>${item.service}</td>
-<td>${item.quantity}</td>
-<td>${item.remarks || ''}</td>
-<td>
-<button class="btn btn-danger btn-sm" onclick="removePackageService(${index})">Delete</button>
-</td>
-`;
-});
+  if (packageServices.length === 0) {
+    container.innerHTML = `
+      <div class="text-muted text-center py-3">
+        No services added yet
+      </div>
+    `;
+    return;
+  }
+
+  packageServices.forEach((service, index) => {
+
+    const card = document.createElement("div");
+    card.className = "card shadow-sm mb-2";
+
+    card.innerHTML = `
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-1 fw-bold my-text">
+            👨🏻‍💻 ${service.service} | Qty: ${service.quantity || 1}
+          </h6>
+          <small class="text-muted fw-bold my-text2">
+            ${service.remarks || ""}
+          </small>
+        </div>
+
+        <button class="btn btn-danger btn-sm"
+          onclick="removePackageService(${index})">
+          🗑️ <span class="d-none d-lg-inline">Delete</span>
+        </button>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
 }
 
 // ================= REMOVE SERVICE FROM PACKAGE =================
@@ -525,6 +394,9 @@ packagesRef.child(editingPackageId).update(packageData)
 alert("Package updated successfully!");
 clearForm();
 loadSavedPackages();
+// Close modal
+const modal = bootstrap.Modal.getInstance(document.getElementById('packageModal'));
+if(modal) modal.hide();
 })
 .catch(error => {
 console.error("Error updating package:", error);
@@ -537,6 +409,9 @@ packagesRef.push(packageData)
 alert("Package saved successfully!");
 clearForm();
 loadSavedPackages();
+// Close modal
+const modal = bootstrap.Modal.getInstance(document.getElementById('packageModal'));
+if(modal) modal.hide();
 })
 .catch(error => {
 console.error("Error saving package:", error);
@@ -566,7 +441,7 @@ function loadSavedPackages(){
                 <div class="empty-state">
                     <i>📦</i><br>
                     No packages saved yet<br>
-                    <small>Create your first package above</small>
+                    <small>Click "Create New Package" to get started</small>
                 </div>`;
             return;
         }
@@ -606,23 +481,58 @@ servicesHtml = '<div class="service-item text-muted">No services added</div>';
 }
 
 col.innerHTML = `
-<div class="package-header">
-<div class="package-title" title="${pkg.name}">${pkg.name} ₹${pkg.amount}</div>
-</div>
-<div class="package-body">
-<div class="package-services-list">
-${servicesHtml}
-</div>
-<div class="package-meta">
-<span>📊 ${pkg.totalServices || pkg.services.length} services</span>
-<span class="package-duration">${pkg.duration}</span>
-</div>
-<div class="package-actions">
-<button class="btn btn-sm btn-outline-primary" onclick="editPackage('${packageId}')" title="Edit">✏️</button>
-<button class="btn btn-sm btn-outline-danger" onclick="deletePackage('${packageId}')" title="Delete">🗑️</button>
-<button class="btn btn-sm btn-outline-success" onclick="usePackage('${packageId}')" title="Use">🚀</button>
-<button class="btn btn-sm btn-outline-info" onclick="previewPackage('${packageId}')" title="Preview">👁️</button>
-</div>
+<div class="card shadow-sm mb-3">
+  
+  <!-- Header -->
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h6 class="mb-0 text-truncate" title="${pkg.name}">
+      ${pkg.name}
+    </h6>
+    <span class="fw-bold text-primary">₹${pkg.amount}</span>
+  </div>
+
+  <!-- Body -->
+  <div class="card-body">
+
+    <!-- Services List -->
+    <div class="mb-3">
+      ${servicesHtml}
+    </div>
+
+    <!-- Meta Info -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <span class="text-muted small">
+        📊 ${pkg.totalServices || pkg.services.length} services
+      </span>
+      <span class="badge bg-secondary">
+        ${pkg.duration}
+      </span>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-sm btn-outline-primary" 
+        onclick="editPackage('${packageId}')" title="Edit">
+        ✏️
+      </button>
+
+      <button class="btn btn-sm btn-outline-danger" 
+        onclick="deletePackage('${packageId}')" title="Delete">
+        🗑️
+      </button>
+
+      <button class="btn btn-sm btn-outline-success" 
+        onclick="usePackage('${packageId}')" title="Use">
+        🚀 Use
+      </button>
+
+      <button class="btn btn-sm btn-outline-info" 
+        onclick="previewPackage('${packageId}')" title="Preview">
+        👁️
+      </button>
+    </div>
+
+  </div>
 </div>
 `;
 
@@ -712,6 +622,10 @@ updatePackageTable();
 
 // Set editing mode
 editingPackageId = packageId;
+
+// Open modal
+const modal = new bootstrap.Modal(document.getElementById('packageModal'));
+modal.show();
 
 // Scroll to top
 window.scrollTo({ top: 0, behavior: 'smooth' });
