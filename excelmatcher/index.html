@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Excel Linker Pro - Common Row Matcher</title>
+    <!-- Bootstrap 5 + Icons + Styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 (free icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- SheetJS (XLSX) core library -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', Roboto, system-ui;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            color: white;
+            font-weight: 600;
+        }
+        .card {
+            border: none;
+            border-radius: 24px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 24px;
+            transition: all 0.2s;
+        }
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 20px;
+            background: #ffffff;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            background: #eef2ff;
+            border-color: #0d6efd;
+        }
+        .preview-table {
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow: auto;
+            background: #fff;
+            border-radius: 16px;
+        }
+        .preview-table table {
+            width: 100%;
+            background: white;
+        }
+        .preview-table th {
+            background: #e9ecef;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .mapping-icon {
+            font-size: 2rem;
+            color: #0d6efd;
+        }
+        .btn-download {
+            background: linear-gradient(100deg, #198754, #146c43);
+            border: none;
+            font-weight: 600;
+            padding: 12px 28px;
+            border-radius: 40px;
+            transition: all 0.2s;
+        }
+        .btn-download:active {
+            transform: scale(0.97);
+        }
+        .stat-badge {
+            background: #e9ecef;
+            border-radius: 40px;
+            padding: 8px 18px;
+            font-weight: 500;
+        }
+        .common-count-card {
+            background: #e7f1ff;
+            border-left: 5px solid #0d6efd;
+            border-radius: 20px;
+        }
+        .spinner-border-sm-custom {
+            width: 1.2rem;
+            height: 1.2rem;
+            margin-right: 8px;
+        }
+        footer {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 30px;
+        }
+        .field-select {
+            background-color: #f8fafc;
+        }
+        hr {
+            opacity: 0.4;
+        }
+        .checklist-scroll {
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-4 py-md-5">
+    <!-- Header -->
+    <div class="text-center mb-4">
+        <h1 class="display-6 fw-bold"><i class="fas fa-code-branch me-2"></i>Excel Common Matcher</h1>
+        <p class="lead text-muted">Upload two Excel files → define matching keys → download ONLY rows with common values</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- LEFT CARD: File A -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fas fa-file-excel me-2"></i> File A (Base File)
+                </div>
+                <div class="card-body">
+                    <div class="upload-area p-4 text-center" id="dropZoneA">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-2"></i>
+                        <p class="mb-1">Click or drag <strong>Excel file (.xlsx, .xls)</strong></p>
+                        <input type="file" id="fileAInput" accept=".xlsx, .xls, .csv" class="d-none" />
+                        <button class="btn btn-outline-primary btn-sm mt-2" id="btnFileA"><i class="fas fa-folder-open"></i> Browse</button>
+                    </div>
+                    <div id="fileAStatus" class="mt-2 small fw-semibold text-secondary"></div>
+                    <div id="fileAPreview" class="mt-3 preview-table" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT CARD: File B -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="fas fa-file-excel me-2"></i> File B (Lookup File)
+                </div>
+                <div class="card-body">
+                    <div class="upload-area p-4 text-center" id="dropZoneB">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
+                        <p class="mb-1">Click or drag second Excel file</p>
+                        <input type="file" id="fileBInput" accept=".xlsx, .xls, .csv" class="d-none" />
+                        <button class="btn btn-outline-success btn-sm mt-2" id="btnFileB"><i class="fas fa-folder-open"></i> Browse</button>
+                    </div>
+                    <div id="fileBStatus" class="mt-2 small fw-semibold text-secondary"></div>
+                    <div id="fileBPreview" class="mt-3 preview-table" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LINKING CONFIGURATION CARD -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <i class="fas fa-link me-2"></i> Step 2: Define Matching Fields & Common Row Filter
+        </div>
+        <div class="card-body">
+            <div class="row align-items-end g-3">
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold"><i class="fas fa-tag"></i> Common Unique Field (from File A)</label>
+                    <select id="leftKeyField" class="form-select field-select" disabled>
+                        <option value="">— Upload File A first —</option>
+                    </select>
+                    <div class="form-text">Identifier column in File A</div>
+                </div>
+                <div class="col-md-2 text-center d-none d-md-block">
+                    <i class="fas fa-exchange-alt fa-2x mapping-icon"></i>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold"><i class="fas fa-tag"></i> Matching Field (from File B)</label>
+                    <select id="rightKeyField" class="form-select field-select" disabled>
+                        <option value="">— Upload File B first —</option>
+                    </select>
+                    <div class="form-text">Identifier column in File B (same type)</div>
+                </div>
+            </div>
+
+            <!-- COMMON VALUE COUNT DISPLAY (LIVE) -->
+            <div id="commonStatsArea" class="mt-3" style="display: none;">
+                <div class="common-count-card p-3 d-flex justify-content-between align-items-center flex-wrap">
+                    <div><i class="fas fa-chart-simple me-2 fa-fw text-primary"></i> <strong>Matching keys analysis</strong></div>
+                    <div class="mt-2 mt-sm-0">
+                        <span class="badge bg-primary rounded-pill px-3 py-2" id="commonCountDisplay">— common values</span>
+                        <span class="badge bg-secondary rounded-pill px-3 py-2 ms-2" id="uniqueLeftCount">— unique in A</span>
+                        <span class="badge bg-secondary rounded-pill px-3 py-2 ms-2" id="uniqueRightCount">— unique in B</span>
+                    </div>
+                </div>
+                <div class="small text-muted mt-2"><i class="fas fa-info-circle"></i> Only rows where the key exists in BOTH files will be included in the final merged Excel.</div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold"><i class="fas fa-columns"></i> Select columns to include in final merged Excel</label>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light border-0 p-2 h-100">
+                            <h6 class="mb-2"><i class="fas fa-database text-primary"></i> Columns from File A</h6>
+                            <div id="leftColumnsChecklist" class="checklist-scroll">
+                                <span class="text-muted">No file loaded</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light border-0 p-2 h-100">
+                            <h6 class="mb-2"><i class="fas fa-database text-success"></i> Columns from File B</h6>
+                            <div id="rightColumnsChecklist" class="checklist-scroll">
+                                <span class="text-muted">No file loaded</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-text mt-2"><i class="fas fa-check-circle"></i> Check only the fields you need. At least one column from each side is recommended.</div>
+            </div>
+
+            <div class="d-flex justify-content-center mt-4">
+                <button id="mergeAndDownloadBtn" class="btn btn-download btn-lg text-white shadow" disabled>
+                    <i class="fas fa-file-export me-2"></i> Download Merged Excel (Common Rows Only)
+                </button>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <i class="fas fa-filter"></i> Only rows with matching key values in both files are exported. Perfect for intersection-based merging.
+    </footer>
+</div>
+
+<script>
+    // ---------- Global State ----------
+    let fileAData = null;       // { headers, rows: [{col:val}] }
+    let fileBData = null;
+    let fileAName = "";
+    let fileBName = "";
+
+    // DOM elements
+    const fileAInput = document.getElementById('fileAInput');
+    const fileBInput = document.getElementById('fileBInput');
+    const btnFileA = document.getElementById('btnFileA');
+    const btnFileB = document.getElementById('btnFileB');
+    const dropZoneA = document.getElementById('dropZoneA');
+    const dropZoneB = document.getElementById('dropZoneB');
+    const fileAStatus = document.getElementById('fileAStatus');
+    const fileBStatus = document.getElementById('fileBStatus');
+    const fileAPreviewDiv = document.getElementById('fileAPreview');
+    const fileBPreviewDiv = document.getElementById('fileBPreview');
+    const leftKeySelect = document.getElementById('leftKeyField');
+    const rightKeySelect = document.getElementById('rightKeyField');
+    const leftColumnsContainer = document.getElementById('leftColumnsChecklist');
+    const rightColumnsContainer = document.getElementById('rightColumnsChecklist');
+    const mergeBtn = document.getElementById('mergeAndDownloadBtn');
+    const commonStatsArea = document.getElementById('commonStatsArea');
+    const commonCountDisplay = document.getElementById('commonCountDisplay');
+    const uniqueLeftCount = document.getElementById('uniqueLeftCount');
+    const uniqueRightCount = document.getElementById('uniqueRightCount');
+
+    // Helper: read excel using SheetJS
+    function readExcelFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array', defval: "" });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+                if (!jsonRows || jsonRows.length < 2) reject(new Error("File must contain at least header row + data"));
+                const headers = jsonRows[0].map(cell => (cell === undefined || cell === null) ? `Col_${Math.random()}` : String(cell).trim()).filter(h => h !== "");
+                const dataRows = jsonRows.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== null && cell !== ""));
+                const formattedRows = dataRows.map(row => {
+                    const obj = {};
+                    headers.forEach((h, idx) => {
+                        let val = (row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : "";
+                        obj[h] = val;
+                    });
+                    return obj;
+                });
+                resolve({ headers, rows: formattedRows, sheetName: workbook.SheetNames[0] });
+            };
+            reader.onerror = (err) => reject(err);
+            reader.readAsArrayBuffer(file);
+        });
+    }
+
+    function renderPreview(containerDiv, dataObj, fileName) {
+        if (!dataObj || !dataObj.rows.length) {
+            containerDiv.style.display = 'none';
+            return;
+        }
+        containerDiv.style.display = 'block';
+        const headers = dataObj.headers;
+        const rows = dataObj.rows.slice(0, 5);
+        let html = `<div class="fw-bold small mb-1">📄 Preview (${fileName}) — ${dataObj.rows.length} rows total</div><div class="table-responsive"><table class="table table-sm table-bordered table-hover"><thead><tr>`;
+        headers.forEach(h => { html += `<th class="text-nowrap">${escapeHtml(h)}</th>`; });
+        html += `</tr></thead><tbody>`;
+        rows.forEach(row => {
+            html += `<tr>`;
+            headers.forEach(h => {
+                let val = row[h] !== undefined ? row[h] : "";
+                if (val.length > 30) val = val.substring(0,27)+"...";
+                html += `<td class="text-nowrap">${escapeHtml(String(val))}</td>`;
+            });
+            html += `</tr>`;
+        });
+        html += `</tbody></table></div>`;
+        containerDiv.innerHTML = html;
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+    function updateColumnChecklist(container, headers, side) {
+        if (!headers || headers.length === 0) {
+            container.innerHTML = '<span class="text-muted">No columns available</span>';
+            return;
+        }
+        let html = '';
+        headers.forEach(header => {
+            html += `<div class="form-check mb-1">
+                        <input class="form-check-input column-check" type="checkbox" value="${escapeHtml(header)}" data-side="${side}" id="chk_${side}_${header.replace(/\s/g, '_')}" checked>
+                        <label class="form-check-label small" for="chk_${side}_${header.replace(/\s/g, '_')}">${escapeHtml(header)}</label>
+                    </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function getSelectedColumns(side) {
+        const checkboxes = document.querySelectorAll(`.column-check[data-side="${side}"]:checked`);
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    // Compute and display common key stats based on selected key fields
+    function updateCommonStats() {
+        if (!fileAData || !fileBData || !leftKeySelect.value || !rightKeySelect.value) {
+            commonStatsArea.style.display = 'none';
+            return;
+        }
+        const leftKey = leftKeySelect.value;
+        const rightKey = rightKeySelect.value;
+        const leftRows = fileAData.rows;
+        const rightRows = fileBData.rows;
+        
+        const leftSet = new Set();
+        leftRows.forEach(row => {
+            let val = row[leftKey] !== undefined ? String(row[leftKey]).trim() : "";
+            if (val !== "") leftSet.add(val);
+        });
+        const rightSet = new Set();
+        rightRows.forEach(row => {
+            let val = row[rightKey] !== undefined ? String(row[rightKey]).trim() : "";
+            if (val !== "") rightSet.add(val);
+        });
+        // common values
+        const commonValues = [...leftSet].filter(v => rightSet.has(v));
+        const commonCount = commonValues.length;
+        const uniqueLeftOnly = leftSet.size - commonCount;
+        const uniqueRightOnly = rightSet.size - commonCount;
+        
+        commonCountDisplay.innerText = `${commonCount} common key values`;
+        uniqueLeftCount.innerText = `${uniqueLeftOnly} only in A`;
+        uniqueRightCount.innerText = `${uniqueRightOnly} only in B`;
+        commonStatsArea.style.display = 'block';
+    }
+
+    // Populate key dropdowns and refresh stats on change
+    function populateKeySelects() {
+        if (fileAData && fileAData.headers.length) {
+            leftKeySelect.disabled = false;
+            leftKeySelect.innerHTML = '<option value="">-- Select unique field from File A --</option>' + 
+                fileAData.headers.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+            if (fileAData.headers.includes("ID")) leftKeySelect.value = "ID";
+            else if (fileAData.headers[0]) leftKeySelect.value = fileAData.headers[0];
+        } else {
+            leftKeySelect.disabled = true;
+            leftKeySelect.innerHTML = '<option value="">— Upload File A first —</option>';
+        }
+
+        if (fileBData && fileBData.headers.length) {
+            rightKeySelect.disabled = false;
+            rightKeySelect.innerHTML = '<option value="">-- Select matching field from File B --</option>' + 
+                fileBData.headers.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+            if (fileBData.headers.includes("ID")) rightKeySelect.value = "ID";
+            else if (fileBData.headers[0]) rightKeySelect.value = fileBData.headers[0];
+        } else {
+            rightKeySelect.disabled = true;
+            rightKeySelect.innerHTML = '<option value="">— Upload File B first —</option>';
+        }
+        // after populating, compute stats if both keys are selected
+        if (leftKeySelect.value && rightKeySelect.value && fileAData && fileBData) {
+            updateCommonStats();
+        } else {
+            commonStatsArea.style.display = 'none';
+        }
+        toggleMergeButton();
+    }
+
+    function toggleMergeButton() {
+        const leftOk = fileAData && fileAData.rows.length > 0 && leftKeySelect.value && leftKeySelect.value !== "";
+        const rightOk = fileBData && fileBData.rows.length > 0 && rightKeySelect.value && rightKeySelect.value !== "";
+        mergeBtn.disabled = !(leftOk && rightOk);
+    }
+
+    // Process file upload
+    async function handleFileUpload(file, side) {
+        if (!file) return;
+        const statusDiv = side === 'A' ? fileAStatus : fileBStatus;
+        const previewDiv = side === 'A' ? fileAPreviewDiv : fileBPreviewDiv;
+        const setData = (data) => { if (side === 'A') { fileAData = data; fileAName = file.name; } else { fileBData = data; fileBName = file.name; } };
+        try {
+            statusDiv.innerHTML = `<i class="fas fa-spinner fa-pulse"></i> Loading ${file.name} ...`;
+            const excelData = await readExcelFile(file);
+            setData(excelData);
+            statusDiv.innerHTML = `<i class="fas fa-check-circle text-success"></i> Loaded: ${file.name} (${excelData.rows.length} rows, ${excelData.headers.length} cols)`;
+            renderPreview(previewDiv, excelData, file.name);
+            if (side === 'A') {
+                updateColumnChecklist(leftColumnsContainer, excelData.headers, 'left');
+            } else {
+                updateColumnChecklist(rightColumnsContainer, excelData.headers, 'right');
+            }
+            populateKeySelects();
+        } catch (err) {
+            console.error(err);
+            statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle text-danger"></i> Error: ${err.message}`;
+            if (side === 'A') { fileAData = null; fileAPreviewDiv.style.display = 'none'; leftColumnsContainer.innerHTML = '<span class="text-muted">No file loaded</span>'; }
+            else { fileBData = null; fileBPreviewDiv.style.display = 'none'; rightColumnsContainer.innerHTML = '<span class="text-muted">No file loaded</span>'; }
+            populateKeySelects();
+        }
+    }
+
+    // Event listeners for file upload
+    btnFileA.addEventListener('click', () => fileAInput.click());
+    btnFileB.addEventListener('click', () => fileBInput.click());
+    fileAInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFileUpload(e.target.files[0], 'A'); });
+    fileBInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFileUpload(e.target.files[0], 'B'); });
+
+    // Drag & drop
+    [dropZoneA, dropZoneB].forEach((zone, idx) => {
+        const side = idx === 0 ? 'A' : 'B';
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('border-primary'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('border-primary'));
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('border-primary');
+            const file = e.dataTransfer.files[0];
+            if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv'))) {
+                handleFileUpload(file, side);
+            } else {
+                (side === 'A' ? fileAStatus : fileBStatus).innerHTML = '<i class="fas fa-times text-danger"></i> Please upload Excel file';
+            }
+        });
+    });
+
+    // Recompute stats when key selections change
+    leftKeySelect.addEventListener('change', () => {
+        if (leftKeySelect.value && rightKeySelect.value && fileAData && fileBData) updateCommonStats();
+        else commonStatsArea.style.display = 'none';
+        toggleMergeButton();
+    });
+    rightKeySelect.addEventListener('change', () => {
+        if (leftKeySelect.value && rightKeySelect.value && fileAData && fileBData) updateCommonStats();
+        else commonStatsArea.style.display = 'none';
+        toggleMergeButton();
+    });
+
+    // ---- MERGE FUNCTION: ONLY COMMON ROWS (INNER JOIN) ----
+    function mergeOnlyCommonRows() {
+        if (!fileAData || !fileBData) throw new Error("Missing file data");
+        const leftKeyCol = leftKeySelect.value;
+        const rightKeyCol = rightKeySelect.value;
+        if (!leftKeyCol || !rightKeyCol) throw new Error("Select both key columns");
+        
+        const selectedLeftCols = getSelectedColumns('left');
+        const selectedRightCols = getSelectedColumns('right');
+        if (selectedLeftCols.length === 0 && selectedRightCols.length === 0) {
+            throw new Error("Please select at least one column from either file.");
+        }
+        
+        const leftRows = fileAData.rows;
+        const rightRows = fileBData.rows;
+        
+        // Build map from File B: key -> array of row objects (only selected columns)
+        const rightMap = new Map(); // key -> array of objects (each contains selected right cols)
+        for (const row of rightRows) {
+            let keyVal = row[rightKeyCol] !== undefined ? String(row[rightKeyCol]).trim() : "";
+            if (keyVal === "") continue;
+            const entry = {};
+            for (const col of selectedRightCols) {
+                entry[col] = (row[col] !== undefined && row[col] !== null) ? String(row[col]) : "";
+            }
+            if (!rightMap.has(keyVal)) rightMap.set(keyVal, []);
+            rightMap.get(keyVal).push(entry);
+        }
+        
+        // Create result rows: only left rows where key exists in rightMap (common)
+        const mergedRows = [];
+        for (const leftRow of leftRows) {
+            let leftKeyVal = leftRow[leftKeyCol] !== undefined ? String(leftRow[leftKeyCol]).trim() : "";
+            if (leftKeyVal === "") continue;
+            const matchedRightEntries = rightMap.get(leftKeyVal);
+            if (!matchedRightEntries || matchedRightEntries.length === 0) continue; // SKIP if not common -> only common rows
+            
+            for (const rightEntry of matchedRightEntries) {
+                const combined = {};
+                for (const col of selectedLeftCols) {
+                    combined[col] = (leftRow[col] !== undefined && leftRow[col] !== null) ? String(leftRow[col]) : "";
+                }
+                for (const col of selectedRightCols) {
+                    combined[col] = rightEntry[col] !== undefined ? rightEntry[col] : "";
+                }
+                mergedRows.push(combined);
+            }
+        }
+        
+        if (mergedRows.length === 0) {
+            throw new Error("No common rows found based on selected key fields. Try different columns or check data.");
+        }
+        
+        const finalHeaders = [...selectedLeftCols, ...selectedRightCols];
+        const sheetData = [finalHeaders];
+        for (const row of mergedRows) {
+            const rowArr = finalHeaders.map(h => row[h] !== undefined ? row[h] : "");
+            sheetData.push(rowArr);
+        }
+        return sheetData;
+    }
+    
+    // Download with spinner
+    async function handleMergeAndDownload() {
+        if (!fileAData || !fileBData) {
+            alert("Please upload both files.");
+            return;
+        }
+        if (!leftKeySelect.value || !rightKeySelect.value) {
+            alert("Please select linking fields from both files.");
+            return;
+        }
+        // Spinner logic on button
+        const originalContent = mergeBtn.innerHTML;
+        mergeBtn.disabled = true;
+        mergeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Processing merge...';
+        try {
+            // simulate small delay for UI feedback
+            const mergedSheet = await new Promise((resolve) => {
+                setTimeout(() => {
+                    const result = mergeOnlyCommonRows();
+                    resolve(result);
+                }, 100);
+            });
+            const leftShort = fileAName.replace(/\.(xlsx|xls|csv)$/i, '');
+            const rightShort = fileBName.replace(/\.(xlsx|xls|csv)$/i, '');
+            const downloadName = `common_rows_${leftShort}_vs_${rightShort}.xlsx`;
+            const ws = XLSX.utils.aoa_to_sheet(mergedSheet);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "CommonRows");
+            XLSX.writeFile(wb, downloadName);
+            alert(`✅ Success! Exported ${mergedSheet.length-1} common rows (inner join).`);
+        } catch (err) {
+            console.error(err);
+            alert("Merge error: " + err.message);
+        } finally {
+            mergeBtn.innerHTML = originalContent;
+            // Re-evaluate enable state
+            toggleMergeButton();
+        }
+    }
+    
+    mergeBtn.addEventListener('click', handleMergeAndDownload);
+    
+    // Also listen for checkbox changes to re-enable button but no merge recompute needed before download
+    document.addEventListener('change', function(e) {
+        if (e.target.classList && e.target.classList.contains('column-check')) {
+            toggleMergeButton();
+        }
+    });
+</script>
+</body>
+</html>
