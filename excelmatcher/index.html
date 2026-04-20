@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Excel Matcher: Common & Unmatched Rows (Now with .txt support)</title>
+    <title>Excel Matcher: Multi-Key Matching & Unmatched Rows</title>
     <!-- Bootstrap 5 + Icons + Styling -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome 6 -->
@@ -76,12 +76,6 @@
             font-weight: 500;
             padding: 8px 20px;
         }
-        .stat-badge {
-            background: #e9ecef;
-            border-radius: 40px;
-            padding: 6px 16px;
-            font-weight: 500;
-        }
         .common-count-card {
             background: #e7f1ff;
             border-left: 5px solid #0d6efd;
@@ -92,11 +86,18 @@
             overflow-y: auto;
             padding-right: 8px;
         }
-        .action-group {
-            background: #ffffffdd;
-            backdrop-filter: blur(2px);
-            border-radius: 48px;
-            padding: 6px;
+        .key-group {
+            background: #f8f9fc;
+            border-radius: 20px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .remove-key-btn {
+            margin-top: 28px;
+        }
+        .badge-txt {
+            background-color: #6f42c1;
         }
         footer {
             font-size: 0.8rem;
@@ -104,17 +105,14 @@
             text-align: center;
             margin-top: 20px;
         }
-        .badge-unmatched {
-            background-color: #fd7e14;
+        .key-pair-badge {
+            background: #e9ecef;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
         }
         hr {
             opacity: 0.4;
-        }
-        .btn-sm-icon {
-            font-size: 0.85rem;
-        }
-        .badge-txt {
-            background-color: #6f42c1;
         }
     </style>
 </head>
@@ -122,8 +120,8 @@
 
 <div class="container py-2 py-md-3">
     <div class="text-center mb-3">
-        <h5 class="fw-bold"><i class="fas fa-code-branch me-2"></i>Excel Smart Matcher <span class="badge bg-secondary badge-txt ms-2"><i class="fas fa-file-alt"></i> .TXT supported</span></h5>
-        <small class="text-muted">Common rows (inner join) OR unmatched rows (A-only / B-only) based on selected key. Now works with Excel, CSV, and delimited .txt files (tab, comma, semicolon, pipe).</small>
+        <h5 class="fw-bold"><i class="fas fa-code-branch me-2"></i>Excel Smart Matcher <span class="badge bg-secondary badge-txt ms-2"><i class="fas fa-layer-group"></i> Multi-Key Matching</span></h5>
+        <small class="text-muted">Match rows using one or multiple key columns (composite key). Supports Excel, CSV, and .txt files.</small>
     </div>
 
     <div class="row g-4">
@@ -166,43 +164,39 @@
         </div>
     </div>
 
-    <!-- LINKING CONFIGURATION CARD -->
+    <!-- MULTI-KEY CONFIGURATION CARD -->
     <div class="card mt-4">
         <div class="card-header">
-            <i class="fas fa-link me-2"></i> Step 2: Define Matching Key & Export Options
+            <i class="fas fa-link me-2"></i> Step 2: Define Matching Keys (Composite Key Support)
         </div>
         <div class="card-body">
-            <div class="row align-items-end g-3">
-                <div class="col-md-5">
-                    <label class="form-label fw-semibold"><i class="fas fa-tag"></i> Key column (File A)</label>
-                    <select id="leftKeyField" class="form-select field-select" disabled>
-                        <option value="">— Upload File A —</option>
-                    </select>
-                    <div class="form-text">Identifier in File A</div>
-                </div>
-                <div class="col-md-2 text-center d-none d-md-block">
-                    <i class="fas fa-arrows-alt-h fa-2x mapping-icon"></i>
-                </div>
-                <div class="col-md-5">
-                    <label class="form-label fw-semibold"><i class="fas fa-tag"></i> Key column (File B)</label>
-                    <select id="rightKeyField" class="form-select field-select" disabled>
-                        <option value="">— Upload File B —</option>
-                    </select>
-                    <div class="form-text">Matching identifier in File B</div>
-                </div>
+            <div class="alert alert-info alert-sm py-2">
+                <i class="fas fa-info-circle"></i> <strong>Multi-key matching:</strong> Add multiple key pairs to match rows where ALL selected columns match between files (AND logic).
+            </div>
+            
+            <!-- Dynamic Key Pairs Container -->
+            <div id="keyPairsContainer">
+                <!-- Default key pair will be added dynamically -->
+            </div>
+            
+            <div class="mt-2 mb-3">
+                <button id="addKeyPairBtn" class="btn btn-outline-primary btn-sm" disabled>
+                    <i class="fas fa-plus-circle"></i> Add Key Pair
+                </button>
+                <span class="small text-muted ms-2">Add more columns to create composite key matching</span>
             </div>
 
             <!-- STATS CARD: COMMON + UNIQUE -->
             <div id="commonStatsArea" class="mt-3" style="display: none;">
                 <div class="common-count-card p-3 d-flex flex-wrap justify-content-between align-items-center">
-                    <div><i class="fas fa-chart-line me-2 text-primary"></i> <strong>Key intersection analysis</strong></div>
+                    <div><i class="fas fa-chart-line me-2 text-primary"></i> <strong>Composite Key Analysis</strong></div>
                     <div class="mt-2 mt-sm-0">
                         <span class="badge bg-primary rounded-pill px-3 py-2" id="commonCountDisplay">— common</span>
                         <span class="badge bg-secondary rounded-pill px-3 py-2 ms-2" id="uniqueLeftCount">— only in A</span>
                         <span class="badge bg-secondary rounded-pill px-3 py-2 ms-2" id="uniqueRightCount">— only in B</span>
                     </div>
                 </div>
-                <div class="small text-muted mt-2 ps-2"><i class="fas fa-info-circle"></i> Use buttons below to export matched (common) OR unmatched rows from selected file.</div>
+                <div class="small text-muted mt-2 ps-2"><i class="fas fa-info-circle"></i> Matching uses ALL selected key pairs (composite key). Rows match only when all key column values match.</div>
             </div>
 
             <hr class="my-4">
@@ -227,10 +221,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-text mt-2"><i class="fas fa-check-circle"></i> For unmatched exports, only columns from the chosen file are used.</div>
             </div>
 
-            <!-- THREE ACTION BUTTONS: COMMON + UNMATCHED A + UNMATCHED B -->
+            <!-- THREE ACTION BUTTONS -->
             <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
                 <button id="mergeAndDownloadBtn" class="btn btn-download btn-lg text-white shadow" disabled>
                     <i class="fas fa-handshake me-2"></i> Download COMMON rows
@@ -243,22 +236,25 @@
                 </button>
             </div>
             <div class="text-center mt-2 small text-secondary">
-                <i class="fas fa-lightbulb"></i> "Unmatched" = rows where key value does NOT exist in the other file.
+                <i class="fas fa-lightbulb"></i> "Unmatched" uses the same composite key definition to determine exclusivity.
             </div>
         </div>
     </div>
     <footer>
-        <i class="fas fa-filter"></i> Common = inner join. Unmatched = exclusive rows from selected file based on chosen key. <strong>.txt files</strong> (tab, comma, semicolon, pipe) auto-detected.
+        <i class="fas fa-filter"></i> Composite key = multiple column pairs. All selected pairs must match for a row to be considered common.
     </footer>
 </div>
 
 <script>
     // ---------- Global State ----------
-    let fileAData = null;       // { headers, rows: [{col:val}] }
+    let fileAData = null;
     let fileBData = null;
     let fileAName = "";
     let fileBName = "";
-
+    
+    // Key pairs: array of { leftCol, rightCol }
+    let keyPairs = [];
+    
     // DOM elements
     const fileAInput = document.getElementById('fileAInput');
     const fileBInput = document.getElementById('fileBInput');
@@ -270,8 +266,6 @@
     const fileBStatus = document.getElementById('fileBStatus');
     const fileAPreviewDiv = document.getElementById('fileAPreview');
     const fileBPreviewDiv = document.getElementById('fileBPreview');
-    const leftKeySelect = document.getElementById('leftKeyField');
-    const rightKeySelect = document.getElementById('rightKeyField');
     const leftColumnsContainer = document.getElementById('leftColumnsChecklist');
     const rightColumnsContainer = document.getElementById('rightColumnsChecklist');
     const mergeBtn = document.getElementById('mergeAndDownloadBtn');
@@ -281,14 +275,14 @@
     const commonCountDisplay = document.getElementById('commonCountDisplay');
     const uniqueLeftCount = document.getElementById('uniqueLeftCount');
     const uniqueRightCount = document.getElementById('uniqueRightCount');
-
-    // ----- NEW: Parse text file (CSV, TSV, or any delimiter) with auto detection -----
+    const keyPairsContainer = document.getElementById('keyPairsContainer');
+    const addKeyPairBtn = document.getElementById('addKeyPairBtn');
+    
+    // ----- Helper: Parse text file (CSV, TSV, delimited) -----
     function parseTextFile(content, fileName) {
-        // Detect delimiter: try comma, tab, semicolon, pipe
         const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
         if (lines.length === 0) throw new Error("File is empty");
         
-        // Helper to count delimiter occurrences in first 3 lines (excluding header guess)
         function countDelimiter(delim) {
             let total = 0;
             for (let i = 0; i < Math.min(lines.length, 5); i++) {
@@ -307,35 +301,25 @@
         if (semicolonCount > delimCount) { delimiter = ';'; delimCount = semicolonCount; }
         if (pipeCount > delimCount) { delimiter = '|'; delimCount = pipeCount; }
         
-        // Parse using Papa Parse style but manual robust approach to preserve empty values
         const rows = [];
         for (let line of lines) {
             if (line.trim() === "") continue;
             const values = [];
             let inQuotes = false;
             let current = '';
-            let i = 0;
-            // Handle quoted fields if delimiter is comma or semicolon
             if (delimiter === ',' || delimiter === ';') {
-                while (i < line.length) {
+                for (let i = 0; i < line.length; i++) {
                     const ch = line[i];
-                    if (ch === '"') {
-                        inQuotes = !inQuotes;
-                        i++;
-                        continue;
-                    }
+                    if (ch === '"') { inQuotes = !inQuotes; continue; }
                     if (ch === delimiter && !inQuotes) {
                         values.push(current.trim());
                         current = '';
-                        i++;
                         continue;
                     }
                     current += ch;
-                    i++;
                 }
                 values.push(current.trim());
             } else {
-                // Simple split for tab/pipe, but clean quotes if any
                 const parts = line.split(delimiter);
                 for (let p of parts) {
                     let clean = p.trim();
@@ -346,10 +330,8 @@
             rows.push(values);
         }
         
-        if (rows.length === 0) throw new Error("No data rows after parsing");
-        // Determine headers: first non-empty row
-        let headers = rows[0].map(cell => (cell === undefined || cell === null || cell === "") ? `Column_${Math.random().toString(36).substr(2,5)}` : String(cell).trim());
-        // Ensure unique headers
+        if (rows.length === 0) throw new Error("No data rows");
+        let headers = rows[0].map(cell => (cell === undefined || cell === null) ? `Col_${Math.random().toString(36).substr(2,5)}` : String(cell).trim());
         const headerSet = new Set();
         headers = headers.map(h => {
             let unique = h;
@@ -368,17 +350,14 @@
             });
             return obj;
         });
-        
-        return { headers, rows: formattedRows, type: 'txt' };
+        return { headers, rows: formattedRows };
     }
     
-    // Universal reader: detect Excel vs text
+    // Universal reader
     async function readAnyFile(file) {
         const fileName = file.name.toLowerCase();
         const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
-        
         if (isExcel) {
-            // Use SheetJS for excel
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -387,7 +366,7 @@
                         const workbook = XLSX.read(data, { type: 'array', defval: "" });
                         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                         const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
-                        if (!jsonRows || jsonRows.length < 2) reject(new Error("Need at least header + data row"));
+                        if (!jsonRows || jsonRows.length < 2) reject(new Error("Need header + data"));
                         let headers = jsonRows[0].map(cell => (cell === undefined || cell === null) ? `Col_${Math.random()}` : String(cell).trim()).filter(h => h !== "");
                         if (headers.length === 0) headers = ["Column1"];
                         const dataRows = jsonRows.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== null && cell !== ""));
@@ -399,35 +378,31 @@
                             });
                             return obj;
                         });
-                        resolve({ headers, rows: formattedRows, sheetName: workbook.SheetNames[0] });
+                        resolve({ headers, rows: formattedRows });
                     } catch(err) { reject(err); }
                 };
-                reader.onerror = (err) => reject(err);
+                reader.onerror = reject;
                 reader.readAsArrayBuffer(file);
             });
         } else {
-            // treat as CSV or TXT (any delimited text)
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     try {
-                        const content = e.target.result;
-                        const parsed = parseTextFile(content, file.name);
+                        const parsed = parseTextFile(e.target.result, file.name);
                         resolve(parsed);
                     } catch(err) { reject(err); }
                 };
-                reader.onerror = (err) => reject(err);
+                reader.onerror = reject;
                 reader.readAsText(file, "UTF-8");
             });
         }
     }
     
-    // Helper: render preview (unchanged but robust)
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+    
     function renderPreview(containerDiv, dataObj, fileName) {
-        if (!dataObj || !dataObj.rows.length) {
-            containerDiv.style.display = 'none';
-            return;
-        }
+        if (!dataObj || !dataObj.rows.length) { containerDiv.style.display = 'none'; return; }
         containerDiv.style.display = 'block';
         const headers = dataObj.headers;
         const rows = dataObj.rows.slice(0, 5);
@@ -443,17 +418,12 @@
             });
             html += `</tr>`;
         });
-        html += `</tbody></table></div>`;
+        html += `</tbody>}</div>`;
         containerDiv.innerHTML = html;
     }
     
-    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-    
     function updateColumnChecklist(container, headers, side) {
-        if (!headers || headers.length === 0) {
-            container.innerHTML = '<span class="text-muted">No columns</span>';
-            return;
-        }
+        if (!headers || !headers.length) { container.innerHTML = '<span class="text-muted">No columns</span>'; return; }
         let html = '';
         headers.forEach(header => {
             html += `<div class="form-check mb-1">
@@ -469,171 +439,211 @@
         return Array.from(checkboxes).map(cb => cb.value);
     }
     
-    function getKeySets() {
-        if (!fileAData || !fileBData || !leftKeySelect.value || !rightKeySelect.value) return null;
-        const leftKey = leftKeySelect.value;
-        const rightKey = rightKeySelect.value;
+    // Build composite key string for a row based on current keyPairs
+    function getCompositeKey(row, side) {
+        if (keyPairs.length === 0) return null;
+        const parts = [];
+        for (const pair of keyPairs) {
+            const col = side === 'left' ? pair.leftCol : pair.rightCol;
+            const val = row[col] !== undefined && row[col] !== null ? String(row[col]).trim() : "";
+            parts.push(val);
+        }
+        return parts.join('|||'); // unique separator
+    }
+    
+    // Get sets for composite keys
+    function getCompositeKeySets() {
+        if (!fileAData || !fileBData || keyPairs.length === 0) return null;
         const leftSet = new Set();
-        fileAData.rows.forEach(row => {
-            let val = row[leftKey] !== undefined ? String(row[leftKey]).trim() : "";
-            if (val !== "") leftSet.add(val);
-        });
+        for (const row of fileAData.rows) {
+            const key = getCompositeKey(row, 'left');
+            if (key && key.split('|||').some(p => p !== "")) leftSet.add(key);
+        }
         const rightSet = new Set();
-        fileBData.rows.forEach(row => {
-            let val = row[rightKey] !== undefined ? String(row[rightKey]).trim() : "";
-            if (val !== "") rightSet.add(val);
-        });
-        return { leftSet, rightSet, leftKey, rightKey };
+        for (const row of fileBData.rows) {
+            const key = getCompositeKey(row, 'right');
+            if (key && key.split('|||').some(p => p !== "")) rightSet.add(key);
+        }
+        return { leftSet, rightSet };
     }
     
     function updateCommonStats() {
-        const sets = getKeySets();
-        if (!sets) {
+        if (!fileAData || !fileBData || keyPairs.length === 0) {
             commonStatsArea.style.display = 'none';
             return;
         }
-        const { leftSet, rightSet } = sets;
+        const { leftSet, rightSet } = getCompositeKeySets();
+        if (!leftSet || !rightSet) { commonStatsArea.style.display = 'none'; return; }
         const common = [...leftSet].filter(v => rightSet.has(v));
         const commonCount = common.length;
         const uniqueLeft = leftSet.size - commonCount;
         const uniqueRight = rightSet.size - commonCount;
-        commonCountDisplay.innerText = `${commonCount} common values`;
+        commonCountDisplay.innerText = `${commonCount} common composite keys`;
         uniqueLeftCount.innerText = `${uniqueLeft} only in A`;
         uniqueRightCount.innerText = `${uniqueRight} only in B`;
         commonStatsArea.style.display = 'block';
     }
     
-    function populateKeySelects() {
-        if (fileAData && fileAData.headers.length) {
-            leftKeySelect.disabled = false;
-            leftKeySelect.innerHTML = '<option value="">-- Select key from A --</option>' + 
-                fileAData.headers.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
-            if (fileAData.headers.includes("ID")) leftKeySelect.value = "ID";
-            else if (fileAData.headers[0]) leftKeySelect.value = fileAData.headers[0];
-        } else {
-            leftKeySelect.disabled = true;
-            leftKeySelect.innerHTML = '<option value="">— Upload File A —</option>';
+    // Render key pair UI
+    function renderKeyPairs() {
+        if (!fileAData || !fileBData) {
+            keyPairsContainer.innerHTML = `<div class="alert alert-warning py-2">Upload both files to configure key pairs.</div>`;
+            addKeyPairBtn.disabled = true;
+            return;
+        }
+        addKeyPairBtn.disabled = false;
+        if (keyPairs.length === 0) {
+            // Add default first pair
+            keyPairs.push({ leftCol: fileAData.headers[0] || "", rightCol: fileBData.headers[0] || "" });
         }
         
-        if (fileBData && fileBData.headers.length) {
-            rightKeySelect.disabled = false;
-            rightKeySelect.innerHTML = '<option value="">-- Select key from B --</option>' + 
-                fileBData.headers.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
-            if (fileBData.headers.includes("ID")) rightKeySelect.value = "ID";
-            else if (fileBData.headers[0]) rightKeySelect.value = fileBData.headers[0];
-        } else {
-            rightKeySelect.disabled = true;
-            rightKeySelect.innerHTML = '<option value="">— Upload File B —</option>';
+        let html = '';
+        keyPairs.forEach((pair, idx) => {
+            html += `<div class="key-group" data-pair-index="${idx}">
+                        <div class="row align-items-end g-2">
+                            <div class="col-md-5">
+                                <label class="form-label small fw-semibold">File A column</label>
+                                <select class="form-select form-select-sm left-key-select" data-idx="${idx}">
+                                    ${fileAData.headers.map(h => `<option value="${escapeHtml(h)}" ${pair.leftCol === h ? 'selected' : ''}>${escapeHtml(h)}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <i class="fas fa-equals text-muted"></i>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">File B column</label>
+                                <select class="form-select form-select-sm right-key-select" data-idx="${idx}">
+                                    ${fileBData.headers.map(h => `<option value="${escapeHtml(h)}" ${pair.rightCol === h ? 'selected' : ''}>${escapeHtml(h)}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                ${keyPairs.length > 1 ? `<button class="btn btn-outline-danger btn-sm remove-key-btn" data-idx="${idx}"><i class="fas fa-trash"></i></button>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+        });
+        keyPairsContainer.innerHTML = html;
+        
+        // Attach event listeners to dynamic selects and remove buttons
+        document.querySelectorAll('.left-key-select').forEach(select => {
+            select.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                if (!isNaN(idx) && keyPairs[idx]) keyPairs[idx].leftCol = e.target.value;
+                updateCommonStats();
+                toggleAllButtons();
+            });
+        });
+        document.querySelectorAll('.right-key-select').forEach(select => {
+            select.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                if (!isNaN(idx) && keyPairs[idx]) keyPairs[idx].rightCol = e.target.value;
+                updateCommonStats();
+                toggleAllButtons();
+            });
+        });
+        document.querySelectorAll('.remove-key-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.dataset.idx);
+                if (!isNaN(idx) && keyPairs.length > 1) {
+                    keyPairs.splice(idx, 1);
+                    renderKeyPairs();
+                    updateCommonStats();
+                    toggleAllButtons();
+                }
+            });
+        });
+        updateCommonStats();
+    }
+    
+    // Get composite key for unmatched checking
+    function getCompositeKeyFromRow(row, side) {
+        if (keyPairs.length === 0) return null;
+        const parts = [];
+        for (const pair of keyPairs) {
+            const col = side === 'left' ? pair.leftCol : pair.rightCol;
+            const val = row[col] !== undefined && row[col] !== null ? String(row[col]).trim() : "";
+            parts.push(val);
         }
-        if (leftKeySelect.value && rightKeySelect.value && fileAData && fileBData) updateCommonStats();
-        else commonStatsArea.style.display = 'none';
-        toggleAllButtons();
+        return parts.join('|||');
     }
     
-    function toggleAllButtons() {
-        const filesReady = fileAData && fileBData && leftKeySelect.value && rightKeySelect.value;
-        mergeBtn.disabled = !filesReady;
-        unmatchedABtn.disabled = !(fileAData && leftKeySelect.value);
-        unmatchedBBtn.disabled = !(fileBData && rightKeySelect.value);
-    }
-    
-    // 1. COMMON rows (inner join)
+    // COMMON rows using composite key
     function getCommonRows() {
-        if (!fileAData || !fileBData) throw new Error("Missing files");
-        const leftKey = leftKeySelect.value;
-        const rightKey = rightKeySelect.value;
+        if (!fileAData || !fileBData || keyPairs.length === 0) throw new Error("Need both files and at least one key pair");
         const selectedLeft = getSelectedColumns('left');
         const selectedRight = getSelectedColumns('right');
-        if (selectedLeft.length === 0 && selectedRight.length === 0) throw new Error("Select at least one column from any file");
+        if (selectedLeft.length === 0 && selectedRight.length === 0) throw new Error("Select columns to export");
         
         const rightMap = new Map();
         for (const row of fileBData.rows) {
-            let keyVal = row[rightKey] !== undefined ? String(row[rightKey]).trim() : "";
-            if (keyVal === "") continue;
+            const key = getCompositeKeyFromRow(row, 'right');
+            if (!key) continue;
             const entry = {};
-            for (const col of selectedRight) {
-                entry[col] = (row[col] !== undefined && row[col] !== null) ? String(row[col]) : "";
-            }
-            if (!rightMap.has(keyVal)) rightMap.set(keyVal, []);
-            rightMap.get(keyVal).push(entry);
+            for (const col of selectedRight) entry[col] = (row[col] !== undefined && row[col] !== null) ? String(row[col]) : "";
+            if (!rightMap.has(key)) rightMap.set(key, []);
+            rightMap.get(key).push(entry);
         }
         
         const merged = [];
         for (const leftRow of fileAData.rows) {
-            let leftKeyVal = leftRow[leftKey] !== undefined ? String(leftRow[leftKey]).trim() : "";
-            if (leftKeyVal === "") continue;
-            const matches = rightMap.get(leftKeyVal);
-            if (!matches || matches.length === 0) continue;
+            const key = getCompositeKeyFromRow(leftRow, 'left');
+            if (!key) continue;
+            const matches = rightMap.get(key);
+            if (!matches) continue;
             for (const matchEntry of matches) {
                 const combined = {};
-                for (const col of selectedLeft) {
-                    combined[col] = (leftRow[col] !== undefined && leftRow[col] !== null) ? String(leftRow[col]) : "";
-                }
-                for (const col of selectedRight) {
-                    combined[col] = matchEntry[col] !== undefined ? matchEntry[col] : "";
-                }
+                for (const col of selectedLeft) combined[col] = (leftRow[col] !== undefined && leftRow[col] !== null) ? String(leftRow[col]) : "";
+                for (const col of selectedRight) combined[col] = matchEntry[col] !== undefined ? matchEntry[col] : "";
                 merged.push(combined);
             }
         }
-        if (merged.length === 0) throw new Error("No common rows found based on keys");
+        if (merged.length === 0) throw new Error("No common rows found");
         const finalHeaders = [...selectedLeft, ...selectedRight];
         const sheetData = [finalHeaders];
-        for (const row of merged) {
-            sheetData.push(finalHeaders.map(h => row[h] !== undefined ? row[h] : ""));
-        }
+        for (const row of merged) sheetData.push(finalHeaders.map(h => row[h] !== undefined ? row[h] : ""));
         return sheetData;
     }
     
-    // 2. UNMATCHED rows from specific file
     function getUnmatchedRowsFromFile(side) {
-        const sets = getKeySets();
-        if (!sets) throw new Error("Key sets missing or files not ready");
-        const { leftSet, rightSet, leftKey, rightKey } = sets;
+        if (keyPairs.length === 0) throw new Error("Define at least one key pair");
+        const { leftSet, rightSet } = getCompositeKeySets();
+        if (!leftSet || !rightSet) throw new Error("Key sets missing");
+        
         if (side === 'A') {
             if (!fileAData) throw new Error("File A missing");
             const selectedCols = getSelectedColumns('left');
-            if (selectedCols.length === 0) throw new Error("Select at least one column from File A");
-            const unmatchedRows = [];
+            if (selectedCols.length === 0) throw new Error("Select columns from File A");
+            const unmatched = [];
             for (const row of fileAData.rows) {
-                let keyVal = row[leftKey] !== undefined ? String(row[leftKey]).trim() : "";
-                if (keyVal === "") continue;
-                if (!rightSet.has(keyVal)) {
+                const key = getCompositeKeyFromRow(row, 'left');
+                if (key && !rightSet.has(key)) {
                     const obj = {};
-                    for (const col of selectedCols) {
-                        obj[col] = (row[col] !== undefined && row[col] !== null) ? String(row[col]) : "";
-                    }
-                    unmatchedRows.push(obj);
+                    for (const col of selectedCols) obj[col] = (row[col] !== undefined && row[col] !== null) ? String(row[col]) : "";
+                    unmatched.push(obj);
                 }
             }
-            if (unmatchedRows.length === 0) throw new Error("No unmatched rows in File A (all keys exist in B)");
+            if (unmatched.length === 0) throw new Error("No unmatched rows in A");
             const headers = selectedCols;
             const sheetData = [headers];
-            for (const row of unmatchedRows) {
-                sheetData.push(headers.map(h => row[h] !== undefined ? row[h] : ""));
-            }
+            for (const row of unmatched) sheetData.push(headers.map(h => row[h] !== undefined ? row[h] : ""));
             return sheetData;
         } else {
             if (!fileBData) throw new Error("File B missing");
             const selectedCols = getSelectedColumns('right');
-            if (selectedCols.length === 0) throw new Error("Select at least one column from File B");
-            const unmatchedRows = [];
+            if (selectedCols.length === 0) throw new Error("Select columns from File B");
+            const unmatched = [];
             for (const row of fileBData.rows) {
-                let keyVal = row[rightKey] !== undefined ? String(row[rightKey]).trim() : "";
-                if (keyVal === "") continue;
-                if (!leftSet.has(keyVal)) {
+                const key = getCompositeKeyFromRow(row, 'right');
+                if (key && !leftSet.has(key)) {
                     const obj = {};
-                    for (const col of selectedCols) {
-                        obj[col] = (row[col] !== undefined && row[col] !== null) ? String(row[col]) : "";
-                    }
-                    unmatchedRows.push(obj);
+                    for (const col of selectedCols) obj[col] = (row[col] !== undefined && row[col] !== null) ? String(row[col]) : "";
+                    unmatched.push(obj);
                 }
             }
-            if (unmatchedRows.length === 0) throw new Error("No unmatched rows in File B (all keys exist in A)");
+            if (unmatched.length === 0) throw new Error("No unmatched rows in B");
             const headers = selectedCols;
             const sheetData = [headers];
-            for (const row of unmatchedRows) {
-                sheetData.push(headers.map(h => row[h] !== undefined ? row[h] : ""));
-            }
+            for (const row of unmatched) sheetData.push(headers.map(h => row[h] !== undefined ? row[h] : ""));
             return sheetData;
         }
     }
@@ -646,63 +656,74 @@
     }
     
     async function handleFileUpload(file, side) {
-        if (!file) return;
         const statusDiv = side === 'A' ? fileAStatus : fileBStatus;
         const previewDiv = side === 'A' ? fileAPreviewDiv : fileBPreviewDiv;
         const setData = (data) => { if (side === 'A') { fileAData = data; fileAName = file.name; } else { fileBData = data; fileBName = file.name; } };
         try {
-            statusDiv.innerHTML = `<i class="fas fa-spinner fa-pulse"></i> Loading ${file.name} ...`;
-            const excelData = await readAnyFile(file);
-            setData(excelData);
-            statusDiv.innerHTML = `<i class="fas fa-check-circle text-success"></i> ${file.name} (${excelData.rows.length} rows, ${excelData.headers.length} cols)`;
-            renderPreview(previewDiv, excelData, file.name);
-            if (side === 'A') {
-                updateColumnChecklist(leftColumnsContainer, excelData.headers, 'left');
+            statusDiv.innerHTML = `<i class="fas fa-spinner fa-pulse"></i> Loading...`;
+            const data = await readAnyFile(file);
+            setData(data);
+            statusDiv.innerHTML = `<i class="fas fa-check-circle text-success"></i> ${file.name} (${data.rows.length} rows, ${data.headers.length} cols)`;
+            renderPreview(previewDiv, data, file.name);
+            if (side === 'A') updateColumnChecklist(leftColumnsContainer, data.headers, 'left');
+            else updateColumnChecklist(rightColumnsContainer, data.headers, 'right');
+            
+            if (fileAData && fileBData) {
+                if (keyPairs.length === 0) keyPairs = [{ leftCol: fileAData.headers[0], rightCol: fileBData.headers[0] }];
+                renderKeyPairs();
             } else {
-                updateColumnChecklist(rightColumnsContainer, excelData.headers, 'right');
+                renderKeyPairs();
             }
-            populateKeySelects();
+            toggleAllButtons();
         } catch (err) {
             statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle text-danger"></i> Error: ${err.message}`;
             if (side === 'A') { fileAData = null; fileAPreviewDiv.style.display = 'none'; leftColumnsContainer.innerHTML = '<span class="text-muted">No file</span>'; }
             else { fileBData = null; fileBPreviewDiv.style.display = 'none'; rightColumnsContainer.innerHTML = '<span class="text-muted">No file</span>'; }
-            populateKeySelects();
+            renderKeyPairs();
+            toggleAllButtons();
         }
     }
     
-    // Event bindings
-    btnFileA.addEventListener('click', () => fileAInput.click());
-    btnFileB.addEventListener('click', () => fileBInput.click());
-    fileAInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFileUpload(e.target.files[0], 'A'); });
-    fileBInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFileUpload(e.target.files[0], 'B'); });
+    function toggleAllButtons() {
+        const ready = fileAData && fileBData && keyPairs.length > 0 && keyPairs.every(p => p.leftCol && p.rightCol);
+        mergeBtn.disabled = !ready;
+        unmatchedABtn.disabled = !(fileAData && keyPairs.length > 0);
+        unmatchedBBtn.disabled = !(fileBData && keyPairs.length > 0);
+    }
+    
+    // Event handlers
+    btnFileA.onclick = () => fileAInput.click();
+    btnFileB.onclick = () => fileBInput.click();
+    fileAInput.onchange = (e) => e.target.files[0] && handleFileUpload(e.target.files[0], 'A');
+    fileBInput.onchange = (e) => e.target.files[0] && handleFileUpload(e.target.files[0], 'B');
     
     [dropZoneA, dropZoneB].forEach((zone, idx) => {
         const side = idx === 0 ? 'A' : 'B';
-        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('border-primary'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('border-primary'));
-        zone.addEventListener('drop', (e) => {
+        zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('border-primary'); };
+        zone.ondragleave = () => zone.classList.remove('border-primary');
+        zone.ondrop = (e) => {
             e.preventDefault();
             zone.classList.remove('border-primary');
             const file = e.dataTransfer.files[0];
-            if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv') || file.name.endsWith('.txt'))) 
+            if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv') || file.name.endsWith('.txt')))
                 handleFileUpload(file, side);
-            else (side === 'A' ? fileAStatus : fileBStatus).innerHTML = '<i class="fas fa-times text-danger"></i> Invalid file (use .xlsx, .csv, .txt)';
-        });
+            else (side === 'A' ? fileAStatus : fileBStatus).innerHTML = '<i class="fas fa-times text-danger"></i> Invalid file';
+        };
     });
     
-    leftKeySelect.addEventListener('change', () => { updateCommonStats(); toggleAllButtons(); });
-    rightKeySelect.addEventListener('change', () => { updateCommonStats(); toggleAllButtons(); });
+    addKeyPairBtn.onclick = () => {
+        if (fileAData && fileBData) {
+            keyPairs.push({ leftCol: fileAData.headers[0], rightCol: fileBData.headers[0] });
+            renderKeyPairs();
+            toggleAllButtons();
+        }
+    };
+    
     document.addEventListener('change', (e) => { if (e.target.classList && e.target.classList.contains('column-check')) toggleAllButtons(); });
     
-    mergeBtn.addEventListener('click', async () => { setButtonsLoading(true); try { await handleCommon(); } finally { setButtonsLoading(false); } });
-    unmatchedABtn.addEventListener('click', async () => { setButtonsLoading(true); try { await handleUnmatchedA(); } finally { setButtonsLoading(false); } });
-    unmatchedBBtn.addEventListener('click', async () => { setButtonsLoading(true); try { await handleUnmatchedB(); } finally { setButtonsLoading(false); } });
-    
-    async function handleCommon() { if (!fileAData || !fileBData) { alert("Upload both files."); return; } const sheet = getCommonRows(); const name = `common_${fileAName.replace(/\.[^/.]+$/, "")}_vs_${fileBName.replace(/\.[^/.]+$/, "")}.xlsx`; await downloadExcel(sheet, name); alert(`✅ Common: ${sheet.length-1} rows.`); }
-    async function handleUnmatchedA() { if (!fileAData || !leftKeySelect.value) { alert("File A & key required"); return; } const sheet = getUnmatchedRowsFromFile('A'); const name = `unmatched_A_only_${fileAName.replace(/\.[^/.]+$/, "")}.xlsx`; await downloadExcel(sheet, name); alert(`✅ A only: ${sheet.length-1} rows.`); }
-    async function handleUnmatchedB() { if (!fileBData || !rightKeySelect.value) { alert("File B & key required"); return; } const sheet = getUnmatchedRowsFromFile('B'); const name = `unmatched_B_only_${fileBName.replace(/\.[^/.]+$/, "")}.xlsx`; await downloadExcel(sheet, name); alert(`✅ B only: ${sheet.length-1} rows.`); }
-    
-    function setButtonsLoading(loading) { const btns = [mergeBtn, unmatchedABtn, unmatchedBBtn]; btns.forEach(btn => { if (loading) { btn.disabled = true; btn.setAttribute('data-original-text', btn.innerHTML); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ...'; } else { if (btn.getAttribute('data-original-text')) btn.innerHTML = btn.getAttribute('data-original-text'); toggleAllButtons(); } }); }
+    mergeBtn.onclick = async () => { try { const sheet = getCommonRows(); await downloadExcel(sheet, `common_${fileAName.replace(/\.[^/.]+$/, "")}_vs_${fileBName.replace(/\.[^/.]+$/, "")}.xlsx`); alert(`✅ ${sheet.length-1} common rows`); } catch(err) { alert(err.message); } };
+    unmatchedABtn.onclick = async () => { try { const sheet = getUnmatchedRowsFromFile('A'); await downloadExcel(sheet, `unmatched_A_only_${fileAName.replace(/\.[^/.]+$/, "")}.xlsx`); alert(`✅ ${sheet.length-1} rows only in A`); } catch(err) { alert(err.message); } };
+    unmatchedBBtn.onclick = async () => { try { const sheet = getUnmatchedRowsFromFile('B'); await downloadExcel(sheet, `unmatched_B_only_${fileBName.replace(/\.[^/.]+$/, "")}.xlsx`); alert(`✅ ${sheet.length-1} rows only in B`); } catch(err) { alert(err.message); } };
 </script>
 </body>
 </html>
