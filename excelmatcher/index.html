@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Excel Matcher: Common & Unmatched Rows</title>
+    <title>Excel Matcher: Common & Unmatched Rows (Now with .txt support)</title>
     <!-- Bootstrap 5 + Icons + Styling -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome 6 -->
@@ -113,14 +113,17 @@
         .btn-sm-icon {
             font-size: 0.85rem;
         }
+        .badge-txt {
+            background-color: #6f42c1;
+        }
     </style>
 </head>
 <body>
 
 <div class="container py-2 py-md-3">
     <div class="text-center mb-3">
-        <h5 class="fw-bold"><i class="fas fa-code-branch me-2"></i>Excel Smart Matcher</h5>
-        <small class="text-muted">Common rows (inner join) OR unmatched rows (A-only / B-only) based on selected key</small>
+        <h5 class="fw-bold"><i class="fas fa-code-branch me-2"></i>Excel Smart Matcher <span class="badge bg-secondary badge-txt ms-2"><i class="fas fa-file-alt"></i> .TXT supported</span></h5>
+        <small class="text-muted">Common rows (inner join) OR unmatched rows (A-only / B-only) based on selected key. Now works with Excel, CSV, and delimited .txt files (tab, comma, semicolon, pipe).</small>
     </div>
 
     <div class="row g-4">
@@ -133,8 +136,8 @@
                 <div class="card-body">
                     <div class="upload-area p-4 text-center" id="dropZoneA">
                         <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-2"></i>
-                        <p class="mb-1">Click or drag Excel / CSV</p>
-                        <input type="file" id="fileAInput" accept=".xlsx, .xls, .csv" class="d-none" />
+                        <p class="mb-1">Click or drag Excel / CSV / .txt</p>
+                        <input type="file" id="fileAInput" accept=".xlsx, .xls, .csv, .txt" class="d-none" />
                         <button class="btn btn-outline-primary btn-sm mt-2" id="btnFileA"><i class="fas fa-folder-open"></i> Browse</button>
                     </div>
                     <div id="fileAStatus" class="mt-2 small fw-semibold"></div>
@@ -152,8 +155,8 @@
                 <div class="card-body">
                     <div class="upload-area p-4 text-center" id="dropZoneB">
                         <i class="fas fa-cloud-upload-alt fa-3x text-success mb-2"></i>
-                        <p class="mb-1">Drag second Excel file</p>
-                        <input type="file" id="fileBInput" accept=".xlsx, .xls, .csv" class="d-none" />
+                        <p class="mb-1">Drag second Excel / CSV / .txt</p>
+                        <input type="file" id="fileBInput" accept=".xlsx, .xls, .csv, .txt" class="d-none" />
                         <button class="btn btn-outline-success btn-sm mt-2" id="btnFileB"><i class="fas fa-folder-open"></i> Browse</button>
                     </div>
                     <div id="fileBStatus" class="mt-2 small fw-semibold"></div>
@@ -245,7 +248,7 @@
         </div>
     </div>
     <footer>
-        <i class="fas fa-filter"></i> Common = inner join. Unmatched = exclusive rows from selected file based on chosen key.
+        <i class="fas fa-filter"></i> Common = inner join. Unmatched = exclusive rows from selected file based on chosen key. <strong>.txt files</strong> (tab, comma, semicolon, pipe) auto-detected.
     </footer>
 </div>
 
@@ -279,34 +282,147 @@
     const uniqueLeftCount = document.getElementById('uniqueLeftCount');
     const uniqueRightCount = document.getElementById('uniqueRightCount');
 
-    // Helper: read excel
-    function readExcelFile(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array', defval: "" });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
-                if (!jsonRows || jsonRows.length < 2) reject(new Error("Need at least header + data row"));
-                let headers = jsonRows[0].map(cell => (cell === undefined || cell === null) ? `Col_${Math.random()}` : String(cell).trim()).filter(h => h !== "");
-                if (headers.length === 0) headers = ["Column1"];
-                const dataRows = jsonRows.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== null && cell !== ""));
-                const formattedRows = dataRows.map(row => {
-                    const obj = {};
-                    headers.forEach((h, idx) => {
-                        let val = (row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : "";
-                        obj[h] = val;
-                    });
-                    return obj;
-                });
-                resolve({ headers, rows: formattedRows, sheetName: workbook.SheetNames[0] });
-            };
-            reader.onerror = (err) => reject(err);
-            reader.readAsArrayBuffer(file);
+    // ----- NEW: Parse text file (CSV, TSV, or any delimiter) with auto detection -----
+    function parseTextFile(content, fileName) {
+        // Detect delimiter: try comma, tab, semicolon, pipe
+        const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+        if (lines.length === 0) throw new Error("File is empty");
+        
+        // Helper to count delimiter occurrences in first 3 lines (excluding header guess)
+        function countDelimiter(delim) {
+            let total = 0;
+            for (let i = 0; i < Math.min(lines.length, 5); i++) {
+                total += (lines[i].split(delim).length - 1);
+            }
+            return total;
+        }
+        
+        let delimiter = ',';
+        let delimCount = countDelimiter(',');
+        const tabCount = countDelimiter('\t');
+        const semicolonCount = countDelimiter(';');
+        const pipeCount = countDelimiter('|');
+        
+        if (tabCount > delimCount) { delimiter = '\t'; delimCount = tabCount; }
+        if (semicolonCount > delimCount) { delimiter = ';'; delimCount = semicolonCount; }
+        if (pipeCount > delimCount) { delimiter = '|'; delimCount = pipeCount; }
+        
+        // Parse using Papa Parse style but manual robust approach to preserve empty values
+        const rows = [];
+        for (let line of lines) {
+            if (line.trim() === "") continue;
+            const values = [];
+            let inQuotes = false;
+            let current = '';
+            let i = 0;
+            // Handle quoted fields if delimiter is comma or semicolon
+            if (delimiter === ',' || delimiter === ';') {
+                while (i < line.length) {
+                    const ch = line[i];
+                    if (ch === '"') {
+                        inQuotes = !inQuotes;
+                        i++;
+                        continue;
+                    }
+                    if (ch === delimiter && !inQuotes) {
+                        values.push(current.trim());
+                        current = '';
+                        i++;
+                        continue;
+                    }
+                    current += ch;
+                    i++;
+                }
+                values.push(current.trim());
+            } else {
+                // Simple split for tab/pipe, but clean quotes if any
+                const parts = line.split(delimiter);
+                for (let p of parts) {
+                    let clean = p.trim();
+                    if (clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1, -1);
+                    values.push(clean);
+                }
+            }
+            rows.push(values);
+        }
+        
+        if (rows.length === 0) throw new Error("No data rows after parsing");
+        // Determine headers: first non-empty row
+        let headers = rows[0].map(cell => (cell === undefined || cell === null || cell === "") ? `Column_${Math.random().toString(36).substr(2,5)}` : String(cell).trim());
+        // Ensure unique headers
+        const headerSet = new Set();
+        headers = headers.map(h => {
+            let unique = h;
+            let counter = 1;
+            while (headerSet.has(unique)) { unique = `${h}_${counter++}`; }
+            headerSet.add(unique);
+            return unique;
         });
+        
+        const dataRows = rows.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== null && cell !== ""));
+        const formattedRows = dataRows.map(row => {
+            const obj = {};
+            headers.forEach((h, idx) => {
+                let val = (row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : "";
+                obj[h] = val;
+            });
+            return obj;
+        });
+        
+        return { headers, rows: formattedRows, type: 'txt' };
     }
-
+    
+    // Universal reader: detect Excel vs text
+    async function readAnyFile(file) {
+        const fileName = file.name.toLowerCase();
+        const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+        
+        if (isExcel) {
+            // Use SheetJS for excel
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array', defval: "" });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+                        if (!jsonRows || jsonRows.length < 2) reject(new Error("Need at least header + data row"));
+                        let headers = jsonRows[0].map(cell => (cell === undefined || cell === null) ? `Col_${Math.random()}` : String(cell).trim()).filter(h => h !== "");
+                        if (headers.length === 0) headers = ["Column1"];
+                        const dataRows = jsonRows.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== null && cell !== ""));
+                        const formattedRows = dataRows.map(row => {
+                            const obj = {};
+                            headers.forEach((h, idx) => {
+                                let val = (row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : "";
+                                obj[h] = val;
+                            });
+                            return obj;
+                        });
+                        resolve({ headers, rows: formattedRows, sheetName: workbook.SheetNames[0] });
+                    } catch(err) { reject(err); }
+                };
+                reader.onerror = (err) => reject(err);
+                reader.readAsArrayBuffer(file);
+            });
+        } else {
+            // treat as CSV or TXT (any delimited text)
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const content = e.target.result;
+                        const parsed = parseTextFile(content, file.name);
+                        resolve(parsed);
+                    } catch(err) { reject(err); }
+                };
+                reader.onerror = (err) => reject(err);
+                reader.readAsText(file, "UTF-8");
+            });
+        }
+    }
+    
+    // Helper: render preview (unchanged but robust)
     function renderPreview(containerDiv, dataObj, fileName) {
         if (!dataObj || !dataObj.rows.length) {
             containerDiv.style.display = 'none';
@@ -317,7 +433,7 @@
         const rows = dataObj.rows.slice(0, 5);
         let html = `<div class="fw-bold small mb-1">📄 Preview (${fileName}) — ${dataObj.rows.length} rows</div><div class="table-responsive"><table class="table table-sm table-bordered table-hover"><thead><tr>`;
         headers.forEach(h => { html += `<th class="text-nowrap">${escapeHtml(h)}</th>`; });
-        html += `</tr></thead><tbody>`;
+        html += `</thead><tbody>`;
         rows.forEach(row => {
             html += `<tr>`;
             headers.forEach(h => {
@@ -327,12 +443,12 @@
             });
             html += `</tr>`;
         });
-        html += `</tbody>}</div>`;
+        html += `</tbody></table></div>`;
         containerDiv.innerHTML = html;
     }
-
+    
     function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-
+    
     function updateColumnChecklist(container, headers, side) {
         if (!headers || headers.length === 0) {
             container.innerHTML = '<span class="text-muted">No columns</span>';
@@ -347,13 +463,12 @@
         });
         container.innerHTML = html;
     }
-
+    
     function getSelectedColumns(side) {
         const checkboxes = document.querySelectorAll(`.column-check[data-side="${side}"]:checked`);
         return Array.from(checkboxes).map(cb => cb.value);
     }
-
-    // compute sets and stats
+    
     function getKeySets() {
         if (!fileAData || !fileBData || !leftKeySelect.value || !rightKeySelect.value) return null;
         const leftKey = leftKeySelect.value;
@@ -370,7 +485,7 @@
         });
         return { leftSet, rightSet, leftKey, rightKey };
     }
-
+    
     function updateCommonStats() {
         const sets = getKeySets();
         if (!sets) {
@@ -387,7 +502,7 @@
         uniqueRightCount.innerText = `${uniqueRight} only in B`;
         commonStatsArea.style.display = 'block';
     }
-
+    
     function populateKeySelects() {
         if (fileAData && fileAData.headers.length) {
             leftKeySelect.disabled = false;
@@ -399,7 +514,7 @@
             leftKeySelect.disabled = true;
             leftKeySelect.innerHTML = '<option value="">— Upload File A —</option>';
         }
-
+        
         if (fileBData && fileBData.headers.length) {
             rightKeySelect.disabled = false;
             rightKeySelect.innerHTML = '<option value="">-- Select key from B --</option>' + 
@@ -414,15 +529,15 @@
         else commonStatsArea.style.display = 'none';
         toggleAllButtons();
     }
-
+    
     function toggleAllButtons() {
         const filesReady = fileAData && fileBData && leftKeySelect.value && rightKeySelect.value;
         mergeBtn.disabled = !filesReady;
         unmatchedABtn.disabled = !(fileAData && leftKeySelect.value);
         unmatchedBBtn.disabled = !(fileBData && rightKeySelect.value);
     }
-
-    // 1. COMMON rows (inner join) using selected columns from both files
+    
+    // 1. COMMON rows (inner join)
     function getCommonRows() {
         if (!fileAData || !fileBData) throw new Error("Missing files");
         const leftKey = leftKeySelect.value;
@@ -431,7 +546,7 @@
         const selectedRight = getSelectedColumns('right');
         if (selectedLeft.length === 0 && selectedRight.length === 0) throw new Error("Select at least one column from any file");
         
-        const rightMap = new Map(); // key -> array of row subsets (selected cols)
+        const rightMap = new Map();
         for (const row of fileBData.rows) {
             let keyVal = row[rightKey] !== undefined ? String(row[rightKey]).trim() : "";
             if (keyVal === "") continue;
@@ -448,7 +563,7 @@
             let leftKeyVal = leftRow[leftKey] !== undefined ? String(leftRow[leftKey]).trim() : "";
             if (leftKeyVal === "") continue;
             const matches = rightMap.get(leftKeyVal);
-            if (!matches || matches.length === 0) continue; // only common
+            if (!matches || matches.length === 0) continue;
             for (const matchEntry of matches) {
                 const combined = {};
                 for (const col of selectedLeft) {
@@ -468,18 +583,16 @@
         }
         return sheetData;
     }
-
-    // 2. UNMATCHED rows from a specific file (A-only or B-only) – uses only columns from that file
+    
+    // 2. UNMATCHED rows from specific file
     function getUnmatchedRowsFromFile(side) {
-        // side: 'A' or 'B'
         const sets = getKeySets();
         if (!sets) throw new Error("Key sets missing or files not ready");
         const { leftSet, rightSet, leftKey, rightKey } = sets;
         if (side === 'A') {
             if (!fileAData) throw new Error("File A missing");
             const selectedCols = getSelectedColumns('left');
-            if (selectedCols.length === 0) throw new Error("Select at least one column from File A to export");
-            // rows where leftKey value NOT in rightSet
+            if (selectedCols.length === 0) throw new Error("Select at least one column from File A");
             const unmatchedRows = [];
             for (const row of fileAData.rows) {
                 let keyVal = row[leftKey] !== undefined ? String(row[leftKey]).trim() : "";
@@ -499,11 +612,10 @@
                 sheetData.push(headers.map(h => row[h] !== undefined ? row[h] : ""));
             }
             return sheetData;
-        } 
-        else { // side B
+        } else {
             if (!fileBData) throw new Error("File B missing");
             const selectedCols = getSelectedColumns('right');
-            if (selectedCols.length === 0) throw new Error("Select at least one column from File B to export");
+            if (selectedCols.length === 0) throw new Error("Select at least one column from File B");
             const unmatchedRows = [];
             for (const row of fileBData.rows) {
                 let keyVal = row[rightKey] !== undefined ? String(row[rightKey]).trim() : "";
@@ -525,78 +637,14 @@
             return sheetData;
         }
     }
-
-    // Download wrapper
+    
     async function downloadExcel(sheetData, fileNameHint) {
         const ws = XLSX.utils.aoa_to_sheet(sheetData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
         XLSX.writeFile(wb, fileNameHint);
     }
-
-    // Handlers with loading feedback
-    async function handleCommon() {
-        if (!fileAData || !fileBData) { alert("Upload both files and select keys."); return; }
-        setButtonsLoading(true);
-        try {
-            const sheet = getCommonRows();
-            const name = `common_rows_${fileAName.replace(/\.[^/.]+$/, "")}_vs_${fileBName.replace(/\.[^/.]+$/, "")}.xlsx`;
-            await downloadExcel(sheet, name);
-            alert(`✅ Common export: ${sheet.length-1} rows.`);
-        } catch (err) {
-            alert("Common export error: " + err.message);
-        } finally {
-            setButtonsLoading(false);
-        }
-    }
-
-    async function handleUnmatchedA() {
-        if (!fileAData) { alert("File A not loaded or key missing."); return; }
-        if (!leftKeySelect.value) { alert("Please select key column for File A."); return; }
-        setButtonsLoading(true);
-        try {
-            const sheet = getUnmatchedRowsFromFile('A');
-            const name = `unmatched_A_only_${fileAName.replace(/\.[^/.]+$/, "")}.xlsx`;
-            await downloadExcel(sheet, name);
-            alert(`✅ Unmatched rows from A: ${sheet.length-1} rows.`);
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            setButtonsLoading(false);
-        }
-    }
-
-    async function handleUnmatchedB() {
-        if (!fileBData) { alert("File B not loaded or key missing."); return; }
-        if (!rightKeySelect.value) { alert("Please select key column for File B."); return; }
-        setButtonsLoading(true);
-        try {
-            const sheet = getUnmatchedRowsFromFile('B');
-            const name = `unmatched_B_only_${fileBName.replace(/\.[^/.]+$/, "")}.xlsx`;
-            await downloadExcel(sheet, name);
-            alert(`✅ Unmatched rows from B: ${sheet.length-1} rows.`);
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            setButtonsLoading(false);
-        }
-    }
-
-    function setButtonsLoading(loading) {
-        const btns = [mergeBtn, unmatchedABtn, unmatchedBBtn];
-        btns.forEach(btn => {
-            if (loading) {
-                btn.disabled = true;
-                btn.setAttribute('data-original-text', btn.innerHTML);
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ...';
-            } else {
-                if (btn.getAttribute('data-original-text')) btn.innerHTML = btn.getAttribute('data-original-text');
-                toggleAllButtons();
-            }
-        });
-    }
-
-    // File upload handler
+    
     async function handleFileUpload(file, side) {
         if (!file) return;
         const statusDiv = side === 'A' ? fileAStatus : fileBStatus;
@@ -604,7 +652,7 @@
         const setData = (data) => { if (side === 'A') { fileAData = data; fileAName = file.name; } else { fileBData = data; fileBName = file.name; } };
         try {
             statusDiv.innerHTML = `<i class="fas fa-spinner fa-pulse"></i> Loading ${file.name} ...`;
-            const excelData = await readExcelFile(file);
+            const excelData = await readAnyFile(file);
             setData(excelData);
             statusDiv.innerHTML = `<i class="fas fa-check-circle text-success"></i> ${file.name} (${excelData.rows.length} rows, ${excelData.headers.length} cols)`;
             renderPreview(previewDiv, excelData, file.name);
@@ -621,7 +669,7 @@
             populateKeySelects();
         }
     }
-
+    
     // Event bindings
     btnFileA.addEventListener('click', () => fileAInput.click());
     btnFileB.addEventListener('click', () => fileBInput.click());
@@ -636,18 +684,25 @@
             e.preventDefault();
             zone.classList.remove('border-primary');
             const file = e.dataTransfer.files[0];
-            if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv'))) handleFileUpload(file, side);
-            else (side === 'A' ? fileAStatus : fileBStatus).innerHTML = '<i class="fas fa-times text-danger"></i> Invalid file';
+            if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv') || file.name.endsWith('.txt'))) 
+                handleFileUpload(file, side);
+            else (side === 'A' ? fileAStatus : fileBStatus).innerHTML = '<i class="fas fa-times text-danger"></i> Invalid file (use .xlsx, .csv, .txt)';
         });
     });
-
+    
     leftKeySelect.addEventListener('change', () => { updateCommonStats(); toggleAllButtons(); });
     rightKeySelect.addEventListener('change', () => { updateCommonStats(); toggleAllButtons(); });
     document.addEventListener('change', (e) => { if (e.target.classList && e.target.classList.contains('column-check')) toggleAllButtons(); });
     
-    mergeBtn.addEventListener('click', handleCommon);
-    unmatchedABtn.addEventListener('click', handleUnmatchedA);
-    unmatchedBBtn.addEventListener('click', handleUnmatchedB);
+    mergeBtn.addEventListener('click', async () => { setButtonsLoading(true); try { await handleCommon(); } finally { setButtonsLoading(false); } });
+    unmatchedABtn.addEventListener('click', async () => { setButtonsLoading(true); try { await handleUnmatchedA(); } finally { setButtonsLoading(false); } });
+    unmatchedBBtn.addEventListener('click', async () => { setButtonsLoading(true); try { await handleUnmatchedB(); } finally { setButtonsLoading(false); } });
+    
+    async function handleCommon() { if (!fileAData || !fileBData) { alert("Upload both files."); return; } const sheet = getCommonRows(); const name = `common_${fileAName.replace(/\.[^/.]+$/, "")}_vs_${fileBName.replace(/\.[^/.]+$/, "")}.xlsx`; await downloadExcel(sheet, name); alert(`✅ Common: ${sheet.length-1} rows.`); }
+    async function handleUnmatchedA() { if (!fileAData || !leftKeySelect.value) { alert("File A & key required"); return; } const sheet = getUnmatchedRowsFromFile('A'); const name = `unmatched_A_only_${fileAName.replace(/\.[^/.]+$/, "")}.xlsx`; await downloadExcel(sheet, name); alert(`✅ A only: ${sheet.length-1} rows.`); }
+    async function handleUnmatchedB() { if (!fileBData || !rightKeySelect.value) { alert("File B & key required"); return; } const sheet = getUnmatchedRowsFromFile('B'); const name = `unmatched_B_only_${fileBName.replace(/\.[^/.]+$/, "")}.xlsx`; await downloadExcel(sheet, name); alert(`✅ B only: ${sheet.length-1} rows.`); }
+    
+    function setButtonsLoading(loading) { const btns = [mergeBtn, unmatchedABtn, unmatchedBBtn]; btns.forEach(btn => { if (loading) { btn.disabled = true; btn.setAttribute('data-original-text', btn.innerHTML); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ...'; } else { if (btn.getAttribute('data-original-text')) btn.innerHTML = btn.getAttribute('data-original-text'); toggleAllButtons(); } }); }
 </script>
 </body>
 </html>
