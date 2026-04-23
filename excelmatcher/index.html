@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Excel Matcher: Multi-Key Matching & Unmatched Rows</title>
+    <title>Excel Matcher Pro</title>
+    <link rel="icon" type="image/png" href="../sumadhu.png">
+    <link href="style.css" rel="stylesheet">
     <!-- Bootstrap 5 + Icons + Styling -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- SheetJS (XLSX) core library -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script type="module" src="sg-plugin.js"></script>
     <style>
         body {
             background: #eef2f5;
@@ -22,17 +25,18 @@
             border-bottom: none;
         }
         .card {
+            background: linear-gradient(245deg, #00c0c011, #ff00c81a, #007bff13);
             border: none;
             border-radius: 28px;
-            box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.08),inset 0 5px 50px rgba(41, 41, 41, 0.281);
             overflow: hidden;
             margin-bottom: 24px;
             transition: 0.2s;
         }
         .upload-area {
-            border: 2px dashed #bac8d9;
+            border: 2px dashed #001e42;
             border-radius: 24px;
-            background: #f8fafc;
+            background: #f8fafc6e;
             transition: all 0.2s;
             cursor: pointer;
         }
@@ -58,10 +62,6 @@
             top: 0;
             z-index: 10;
         }
-        .mapping-icon {
-            font-size: 2rem;
-            color: #0d6efd;
-        }
         .btn-download {
             background: linear-gradient(100deg, #198754, #0f5c3a);
             border: none;
@@ -70,11 +70,6 @@
             border-radius: 40px;
             transition: all 0.2s;
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-        .btn-outline-unmatched {
-            border-radius: 40px;
-            font-weight: 500;
-            padding: 8px 20px;
         }
         .common-count-card {
             background: #e7f1ff;
@@ -96,33 +91,49 @@
         .remove-key-btn {
             margin-top: 28px;
         }
-        .badge-txt {
-            background-color: #6f42c1;
-        }
         footer {
             font-size: 0.8rem;
             color: #4a627a;
             text-align: center;
             margin-top: 20px;
         }
-        .key-pair-badge {
-            background: #e9ecef;
-            border-radius: 20px;
-            padding: 4px 12px;
-            font-size: 0.75rem;
-        }
         hr {
             opacity: 0.4;
+        }
+        .btn-select-group {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .btn-select-group .btn-sm {
+            font-size: 0.7rem;
+            padding: 3px 10px;
         }
     </style>
 </head>
 <body>
-
+<div class="particles" id="particles"></div>
 <div class="container py-2 py-md-3">
-    <div class="text-center mb-3">
-        <h5 class="fw-bold"><i class="fas fa-code-branch me-2"></i>Excel Smart Matcher <span class="badge bg-secondary badge-txt ms-2"><i class="fas fa-layer-group"></i> Multi-Key Matching</span></h5>
-        <small class="text-muted">Match rows using one or multiple key columns (composite key). Supports Excel, CSV, and .txt files.</small>
-    </div>
+    <!-- <div class="text-center mb-3">
+        <h5 class="fw-bold sg-text"><i class="fas fa-code-branch me-2"></i>Excel Smart Matcher Pro <span class="text-light ms-2"><i class="fas fa-layer-group"></i> Multi-Key Matching</span></h5>
+        <small class="text-muted ">Match rows using composite keys. Download matched/unmatched rows + Advanced Analysis</small>
+    </div> -->
+
+        <div id="welcome-message" class="text-center mb-3" >
+
+        <div id="phrases" style="display:none;">
+            <span>Excel Smart Matcher Pro</span>
+            <span>Advanced Multi-Key & Multi-Column Matching</span>
+            <span>Smart Data Analysis</span>
+            <span>Developed by Subitan Ganguly</span>
+
+        </div>
+            <span id="typed-text" class="sg-text fw-bold" style="font-size: 25px;"></span>
+        <span class="typed-cursor" style="color: rgb(175, 0, 131); font-size: 25px;">|</span>
+
+        </div> 
 
     <div class="row g-4">
         <!-- LEFT CARD: File A -->
@@ -202,19 +213,27 @@
             <hr class="my-4">
 
             <div class="mb-3">
-                <label class="form-label fw-semibold"><i class="fas fa-columns"></i> Select columns to include in export</label>
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+                    <label class="form-label fw-semibold mb-0"><i class="fas fa-columns"></i> Select columns to include in export</label>
+                    <div class="btn-select-group">
+                        <button id="selectAllLeftBtn" class="btn btn-outline-primary btn-sm" disabled><i class="fas fa-check-square"></i> Select All A</button>
+                        <button id="deselectAllLeftBtn" class="btn btn-outline-secondary btn-sm" disabled><i class="fas fa-square"></i> Deselect All A</button>
+                        <button id="selectAllRightBtn" class="btn btn-outline-success btn-sm" disabled><i class="fas fa-check-square"></i> Select All B</button>
+                        <button id="deselectAllRightBtn" class="btn btn-outline-secondary btn-sm" disabled><i class="fas fa-square"></i> Deselect All B</button>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="card bg-light border-0 p-2 h-100">
-                            <h6 class="mb-2"><i class="fas fa-database text-primary"></i> Columns from File A</h6>
+                        <div class="glass-card shine p-2 h-100">
+                            <h6 class="mb-2 text-center sg-text"><i class="fas fa-database text-primary"></i> Columns from File A</h6>
                             <div id="leftColumnsChecklist" class="checklist-scroll">
                                 <span class="text-muted">No file</span>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card bg-light border-0 p-2 h-100">
-                            <h6 class="mb-2"><i class="fas fa-database text-success"></i> Columns from File B</h6>
+                        <div class="glass-card shine p-2 h-100">
+                            <h6 class="mb-2  text-center sg-text2"><i class="fas fa-database text-success"></i> Columns from File B</h6>
                             <div id="rightColumnsChecklist" class="checklist-scroll">
                                 <span class="text-muted">No file</span>
                             </div>
@@ -223,20 +242,30 @@
                 </div>
             </div>
 
-            <!-- THREE ACTION BUTTONS -->
+            <!-- ACTION BUTTONS GROUP -->
             <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
-                <button id="mergeAndDownloadBtn" class="btn btn-download btn-lg text-white shadow" disabled>
-                    <i class="fas fa-handshake me-2"></i> Download COMMON rows
+                <button id="mergeAndDownloadBtn" class="btn button12 text-light fw-bold" disabled>
+                    <i class="fas fa-handshake me-2"></i> Download Common
                 </button>
-                <button id="unmatchedADownloadBtn" class="btn btn-outline-danger btn-lg btn-outline-unmatched" disabled>
-                    <i class="fas fa-file-excel me-1"></i> Unmatched rows (A only)
+                <button id="unmatchedADownloadBtn" class="btn button10 text-light fw-bold" disabled>
+                    <i class="fas fa-file-excel me-1"></i> Unmatched (A only)
                 </button>
-                <button id="unmatchedBDownloadBtn" class="btn btn-outline-warning btn-lg btn-outline-unmatched" disabled>
-                    <i class="fas fa-file-excel me-1"></i> Unmatched rows (B only)
+                <button id="unmatchedBDownloadBtn" class="btn button14 text-light fw-bold" disabled>
+                    <i class="fas fa-file-excel me-1"></i> Unmatched (B only)
+                </button>
+                <button id="allRowsBtn" class="btn button13 text-light fw-bold" disabled>
+                    <i class="fas fa-table me-2"></i> 📋 Download ALL
+                </button>
+            </div>
+
+            <!-- ANALYZE BUTTON -->
+            <div class="text-center mt-3">
+                <button id="analyzeBtn" class="btn button11 text-light fw-bold btn-lg px-5">
+                    <i class="fas fa-chart-pie me-2"></i> 🔍 Analyze 
                 </button>
             </div>
             <div class="text-center mt-2 small text-secondary">
-                <i class="fas fa-lightbulb"></i> "Unmatched" uses the same composite key definition to determine exclusivity.
+                <i class="fas fa-lightbulb"></i> "ALL rows" exports File A and File B data in ONE sheet. "Analyze" saves data and opens analyze.html
             </div>
         </div>
     </div>
@@ -245,485 +274,355 @@
     </footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ---------- Global State ----------
-    let fileAData = null;
-    let fileBData = null;
-    let fileAName = "";
-    let fileBName = "";
-    
-    // Key pairs: array of { leftCol, rightCol }
-    let keyPairs = [];
-    
-    // DOM elements
-    const fileAInput = document.getElementById('fileAInput');
-    const fileBInput = document.getElementById('fileBInput');
-    const btnFileA = document.getElementById('btnFileA');
-    const btnFileB = document.getElementById('btnFileB');
-    const dropZoneA = document.getElementById('dropZoneA');
-    const dropZoneB = document.getElementById('dropZoneB');
-    const fileAStatus = document.getElementById('fileAStatus');
-    const fileBStatus = document.getElementById('fileBStatus');
-    const fileAPreviewDiv = document.getElementById('fileAPreview');
-    const fileBPreviewDiv = document.getElementById('fileBPreview');
-    const leftColumnsContainer = document.getElementById('leftColumnsChecklist');
-    const rightColumnsContainer = document.getElementById('rightColumnsChecklist');
-    const mergeBtn = document.getElementById('mergeAndDownloadBtn');
-    const unmatchedABtn = document.getElementById('unmatchedADownloadBtn');
-    const unmatchedBBtn = document.getElementById('unmatchedBDownloadBtn');
-    const commonStatsArea = document.getElementById('commonStatsArea');
-    const commonCountDisplay = document.getElementById('commonCountDisplay');
-    const uniqueLeftCount = document.getElementById('uniqueLeftCount');
-    const uniqueRightCount = document.getElementById('uniqueRightCount');
-    const keyPairsContainer = document.getElementById('keyPairsContainer');
-    const addKeyPairBtn = document.getElementById('addKeyPairBtn');
-    
-    // ----- Helper: Parse text file (CSV, TSV, delimited) -----
-    function parseTextFile(content, fileName) {
-        const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
-        if (lines.length === 0) throw new Error("File is empty");
+    (function() {
+        // ---------- Global State ----------
+        let fileAData = null;
+        let fileBData = null;
+        let fileAName = "";
+        let fileBName = "";
+        let keyPairs = [];
         
-        function countDelimiter(delim) {
-            let total = 0;
-            for (let i = 0; i < Math.min(lines.length, 5); i++) {
-                total += (lines[i].split(delim).length - 1);
+        // DOM elements
+        const fileAInput = document.getElementById('fileAInput');
+        const fileBInput = document.getElementById('fileBInput');
+        const btnFileA = document.getElementById('btnFileA');
+        const btnFileB = document.getElementById('btnFileB');
+        const dropZoneA = document.getElementById('dropZoneA');
+        const dropZoneB = document.getElementById('dropZoneB');
+        const fileAStatus = document.getElementById('fileAStatus');
+        const fileBStatus = document.getElementById('fileBStatus');
+        const fileAPreviewDiv = document.getElementById('fileAPreview');
+        const fileBPreviewDiv = document.getElementById('fileBPreview');
+        const leftColumnsContainer = document.getElementById('leftColumnsChecklist');
+        const rightColumnsContainer = document.getElementById('rightColumnsChecklist');
+        const mergeBtn = document.getElementById('mergeAndDownloadBtn');
+        const unmatchedABtn = document.getElementById('unmatchedADownloadBtn');
+        const unmatchedBBtn = document.getElementById('unmatchedBDownloadBtn');
+        const allRowsBtn = document.getElementById('allRowsBtn');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const commonStatsArea = document.getElementById('commonStatsArea');
+        const commonCountDisplay = document.getElementById('commonCountDisplay');
+        const uniqueLeftCount = document.getElementById('uniqueLeftCount');
+        const uniqueRightCount = document.getElementById('uniqueRightCount');
+        const keyPairsContainer = document.getElementById('keyPairsContainer');
+        const addKeyPairBtn = document.getElementById('addKeyPairBtn');
+        
+        // Select/Deselect buttons
+        const selectAllLeftBtn = document.getElementById('selectAllLeftBtn');
+        const deselectAllLeftBtn = document.getElementById('deselectAllLeftBtn');
+        const selectAllRightBtn = document.getElementById('selectAllRightBtn');
+        const deselectAllRightBtn = document.getElementById('deselectAllRightBtn');
+        
+        // Helper functions
+        function parseTextFile(content) {
+            const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+            if (lines.length === 0) throw new Error("File is empty");
+            function countDelimiter(delim) { let total = 0; for (let i = 0; i < Math.min(lines.length, 5); i++) total += (lines[i].split(delim).length - 1); return total; }
+            let delimiter = ','; let delimCount = countDelimiter(',');
+            const tabCount = countDelimiter('\t'); const semicolonCount = countDelimiter(';'); const pipeCount = countDelimiter('|');
+            if (tabCount > delimCount) { delimiter = '\t'; delimCount = tabCount; }
+            if (semicolonCount > delimCount) { delimiter = ';'; delimCount = semicolonCount; }
+            if (pipeCount > delimCount) { delimiter = '|'; }
+            const rows = [];
+            for (let line of lines) {
+                if (line.trim() === "") continue;
+                if (delimiter === ',' || delimiter === ';') {
+                    const values = []; let inQuotes = false; let current = '';
+                    for (let i = 0; i < line.length; i++) { const ch = line[i]; if (ch === '"') { inQuotes = !inQuotes; continue; } if (ch === delimiter && !inQuotes) { values.push(current.trim()); current = ''; continue; } current += ch; }
+                    values.push(current.trim()); rows.push(values);
+                } else { rows.push(line.split(delimiter).map(p => p.trim().replace(/^"|"$/g, ''))); }
             }
-            return total;
+            let headers = rows[0].map(cell => String(cell || `Col_${Math.random()}`).trim());
+            const headerSet = new Set();
+            headers = headers.map(h => { let unique = h; let c=1; while(headerSet.has(unique)) unique=`${h}_${c++}`; headerSet.add(unique); return unique; });
+            const dataRows = rows.slice(1).filter(row => row.some(cell => cell && cell !== ""));
+            const formattedRows = dataRows.map(row => { const obj = {}; headers.forEach((h,idx)=> obj[h] = (row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : ""); return obj; });
+            return { headers, rows: formattedRows };
         }
         
-        let delimiter = ',';
-        let delimCount = countDelimiter(',');
-        const tabCount = countDelimiter('\t');
-        const semicolonCount = countDelimiter(';');
-        const pipeCount = countDelimiter('|');
-        
-        if (tabCount > delimCount) { delimiter = '\t'; delimCount = tabCount; }
-        if (semicolonCount > delimCount) { delimiter = ';'; delimCount = semicolonCount; }
-        if (pipeCount > delimCount) { delimiter = '|'; delimCount = pipeCount; }
-        
-        const rows = [];
-        for (let line of lines) {
-            if (line.trim() === "") continue;
-            const values = [];
-            let inQuotes = false;
-            let current = '';
-            if (delimiter === ',' || delimiter === ';') {
-                for (let i = 0; i < line.length; i++) {
-                    const ch = line[i];
-                    if (ch === '"') { inQuotes = !inQuotes; continue; }
-                    if (ch === delimiter && !inQuotes) {
-                        values.push(current.trim());
-                        current = '';
-                        continue;
-                    }
-                    current += ch;
-                }
-                values.push(current.trim());
-            } else {
-                const parts = line.split(delimiter);
-                for (let p of parts) {
-                    let clean = p.trim();
-                    if (clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1, -1);
-                    values.push(clean);
-                }
-            }
-            rows.push(values);
+        async function readAnyFile(file) {
+            const isExcel = file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls');
+            if (isExcel) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = e => { try { const data = new Uint8Array(e.target.result); const wb = XLSX.read(data, { type: 'array', defval: "" }); const sheet = wb.Sheets[wb.SheetNames[0]]; const jsonRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" }); if (!jsonRows || jsonRows.length < 2) reject("Need header+data"); let headers = jsonRows[0].map(cell => String(cell || "").trim()).filter(h=>h); if(headers.length===0) headers=["Column1"]; const dataRows = jsonRows.slice(1).filter(row=>row.some(c=>c)); const formattedRows = dataRows.map(row=>{ const obj={}; headers.forEach((h,idx)=> obj[h] = (row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : ""); return obj; }); resolve({ headers, rows: formattedRows }); } catch(err){ reject(err); } };
+                    reader.onerror = reject; reader.readAsArrayBuffer(file);
+                });
+            } else { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => { try { resolve(parseTextFile(e.target.result)); } catch(err){ reject(err); } }; reader.onerror = reject; reader.readAsText(file, "UTF-8"); }); }
         }
         
-        if (rows.length === 0) throw new Error("No data rows");
-        let headers = rows[0].map(cell => (cell === undefined || cell === null) ? `Col_${Math.random().toString(36).substr(2,5)}` : String(cell).trim());
-        const headerSet = new Set();
-        headers = headers.map(h => {
-            let unique = h;
-            let counter = 1;
-            while (headerSet.has(unique)) { unique = `${h}_${counter++}`; }
-            headerSet.add(unique);
-            return unique;
-        });
+        function renderPreview(containerDiv, dataObj, fileName) { if (!dataObj?.rows.length) { if(containerDiv) containerDiv.style.display='none'; return; } containerDiv.style.display='block'; const headers=dataObj.headers, rows=dataObj.rows.slice(0,5); let html=`<div class="fw-bold small mb-1">📄 Preview (${fileName}) — ${dataObj.rows.length} rows</div><div class="table-responsive"><table class="table table-sm table-bordered"><thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>`; rows.forEach(row=>{ html+=`<tr>${headers.map(h=>`<td>${escapeHtml(String(row[h]||"").substring(0,35))}</td>`).join('')}</tr>`; }); html+=`</tbody>}</div>`; containerDiv.innerHTML=html; }
+        function escapeHtml(str) { return String(str).replace(/[&<>]/g, m=> m==='&'?'&amp;': m==='<'?'&lt;': '&gt;'); }
         
-        const dataRows = rows.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== null && cell !== ""));
-        const formattedRows = dataRows.map(row => {
-            const obj = {};
-            headers.forEach((h, idx) => {
-                let val = (row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : "";
-                obj[h] = val;
-            });
-            return obj;
-        });
-        return { headers, rows: formattedRows };
-    }
-    
-    // Universal reader
-    async function readAnyFile(file) {
-        const fileName = file.name.toLowerCase();
-        const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
-        if (isExcel) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array', defval: "" });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
-                        if (!jsonRows || jsonRows.length < 2) reject(new Error("Need header + data"));
-                        let headers = jsonRows[0].map(cell => (cell === undefined || cell === null) ? `Col_${Math.random()}` : String(cell).trim()).filter(h => h !== "");
-                        if (headers.length === 0) headers = ["Column1"];
-                        const dataRows = jsonRows.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== null && cell !== ""));
-                        const formattedRows = dataRows.map(row => {
-                            const obj = {};
-                            headers.forEach((h, idx) => {
-                                let val = (row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : "";
-                                obj[h] = val;
-                            });
-                            return obj;
-                        });
-                        resolve({ headers, rows: formattedRows });
-                    } catch(err) { reject(err); }
-                };
-                reader.onerror = reject;
-                reader.readAsArrayBuffer(file);
-            });
-        } else {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const parsed = parseTextFile(e.target.result, file.name);
-                        resolve(parsed);
-                    } catch(err) { reject(err); }
-                };
-                reader.onerror = reject;
-                reader.readAsText(file, "UTF-8");
-            });
-        }
-    }
-    
-    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-    
-    function renderPreview(containerDiv, dataObj, fileName) {
-        if (!dataObj || !dataObj.rows.length) { containerDiv.style.display = 'none'; return; }
-        containerDiv.style.display = 'block';
-        const headers = dataObj.headers;
-        const rows = dataObj.rows.slice(0, 5);
-        let html = `<div class="fw-bold small mb-1">📄 Preview (${fileName}) — ${dataObj.rows.length} rows</div><div class="table-responsive"><table class="table table-sm table-bordered table-hover"><thead><tr>`;
-        headers.forEach(h => { html += `<th class="text-nowrap">${escapeHtml(h)}</th>`; });
-        html += `</thead><tbody>`;
-        rows.forEach(row => {
-            html += `<tr>`;
-            headers.forEach(h => {
-                let val = row[h] !== undefined ? row[h] : "";
-                if (val.length > 35) val = val.substring(0,32)+"...";
-                html += `<td class="text-nowrap">${escapeHtml(String(val))}</td>`;
-            });
-            html += `</tr>`;
-        });
-        html += `</tbody>}</div>`;
-        containerDiv.innerHTML = html;
-    }
-    
-    function updateColumnChecklist(container, headers, side) {
-        if (!headers || !headers.length) { container.innerHTML = '<span class="text-muted">No columns</span>'; return; }
-        let html = '';
-        headers.forEach(header => {
-            html += `<div class="form-check mb-1">
-                        <input class="form-check-input column-check" type="checkbox" value="${escapeHtml(header)}" data-side="${side}" id="chk_${side}_${header.replace(/\s/g, '_')}" checked>
-                        <label class="form-check-label small" for="chk_${side}_${header.replace(/\s/g, '_')}">${escapeHtml(header)}</label>
-                    </div>`;
-        });
-        container.innerHTML = html;
-    }
-    
-    function getSelectedColumns(side) {
-        const checkboxes = document.querySelectorAll(`.column-check[data-side="${side}"]:checked`);
-        return Array.from(checkboxes).map(cb => cb.value);
-    }
-    
-    // Build composite key string for a row based on current keyPairs
-    function getCompositeKey(row, side) {
-        if (keyPairs.length === 0) return null;
-        const parts = [];
-        for (const pair of keyPairs) {
-            const col = side === 'left' ? pair.leftCol : pair.rightCol;
-            const val = row[col] !== undefined && row[col] !== null ? String(row[col]).trim() : "";
-            parts.push(val);
-        }
-        return parts.join('|||'); // unique separator
-    }
-    
-    // Get sets for composite keys
-    function getCompositeKeySets() {
-        if (!fileAData || !fileBData || keyPairs.length === 0) return null;
-        const leftSet = new Set();
-        for (const row of fileAData.rows) {
-            const key = getCompositeKey(row, 'left');
-            if (key && key.split('|||').some(p => p !== "")) leftSet.add(key);
-        }
-        const rightSet = new Set();
-        for (const row of fileBData.rows) {
-            const key = getCompositeKey(row, 'right');
-            if (key && key.split('|||').some(p => p !== "")) rightSet.add(key);
-        }
-        return { leftSet, rightSet };
-    }
-    
-    function updateCommonStats() {
-        if (!fileAData || !fileBData || keyPairs.length === 0) {
-            commonStatsArea.style.display = 'none';
-            return;
-        }
-        const { leftSet, rightSet } = getCompositeKeySets();
-        if (!leftSet || !rightSet) { commonStatsArea.style.display = 'none'; return; }
-        const common = [...leftSet].filter(v => rightSet.has(v));
-        const commonCount = common.length;
-        const uniqueLeft = leftSet.size - commonCount;
-        const uniqueRight = rightSet.size - commonCount;
-        commonCountDisplay.innerText = `${commonCount} common composite keys`;
-        uniqueLeftCount.innerText = `${uniqueLeft} only in A`;
-        uniqueRightCount.innerText = `${uniqueRight} only in B`;
-        commonStatsArea.style.display = 'block';
-    }
-    
-    // Render key pair UI
-    function renderKeyPairs() {
-        if (!fileAData || !fileBData) {
-            keyPairsContainer.innerHTML = `<div class="alert alert-warning py-2">Upload both files to configure key pairs.</div>`;
-            addKeyPairBtn.disabled = true;
-            return;
-        }
-        addKeyPairBtn.disabled = false;
-        if (keyPairs.length === 0) {
-            // Add default first pair
-            keyPairs.push({ leftCol: fileAData.headers[0] || "", rightCol: fileBData.headers[0] || "" });
+        function updateColumnChecklist(container, headers, side) { 
+            if (!headers?.length) { container.innerHTML='<span class="text-muted">No columns</span>'; return; } 
+            let html=''; 
+            headers.forEach((h, idx)=>{ 
+                html+=`<div class="form-check mb-1"><input class="form-check-input column-check" type="checkbox" value="${escapeHtml(h)}" data-side="${side}" id="chk_${side}_${h.replace(/\s/g,'_')}" checked><label class="form-check-label small">${escapeHtml(h)}</label></div>`; 
+            }); 
+            container.innerHTML=html; 
         }
         
-        let html = '';
-        keyPairs.forEach((pair, idx) => {
-            html += `<div class="key-group" data-pair-index="${idx}">
-                        <div class="row align-items-end g-2">
-                            <div class="col-md-5">
-                                <label class="form-label small fw-semibold">File A column</label>
-                                <select class="form-select form-select-sm left-key-select" data-idx="${idx}">
-                                    ${fileAData.headers.map(h => `<option value="${escapeHtml(h)}" ${pair.leftCol === h ? 'selected' : ''}>${escapeHtml(h)}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="col-md-2 text-center">
-                                <i class="fas fa-equals text-muted"></i>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-semibold">File B column</label>
-                                <select class="form-select form-select-sm right-key-select" data-idx="${idx}">
-                                    ${fileBData.headers.map(h => `<option value="${escapeHtml(h)}" ${pair.rightCol === h ? 'selected' : ''}>${escapeHtml(h)}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="col-md-1">
-                                ${keyPairs.length > 1 ? `<button class="btn btn-outline-danger btn-sm remove-key-btn" data-idx="${idx}"><i class="fas fa-trash"></i></button>` : ''}
-                            </div>
-                        </div>
-                    </div>`;
-        });
-        keyPairsContainer.innerHTML = html;
-        
-        // Attach event listeners to dynamic selects and remove buttons
-        document.querySelectorAll('.left-key-select').forEach(select => {
-            select.addEventListener('change', (e) => {
-                const idx = parseInt(e.target.dataset.idx);
-                if (!isNaN(idx) && keyPairs[idx]) keyPairs[idx].leftCol = e.target.value;
-                updateCommonStats();
-                toggleAllButtons();
-            });
-        });
-        document.querySelectorAll('.right-key-select').forEach(select => {
-            select.addEventListener('change', (e) => {
-                const idx = parseInt(e.target.dataset.idx);
-                if (!isNaN(idx) && keyPairs[idx]) keyPairs[idx].rightCol = e.target.value;
-                updateCommonStats();
-                toggleAllButtons();
-            });
-        });
-        document.querySelectorAll('.remove-key-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const idx = parseInt(btn.dataset.idx);
-                if (!isNaN(idx) && keyPairs.length > 1) {
-                    keyPairs.splice(idx, 1);
-                    renderKeyPairs();
-                    updateCommonStats();
-                    toggleAllButtons();
-                }
-            });
-        });
-        updateCommonStats();
-    }
-    
-    // Get composite key for unmatched checking
-    function getCompositeKeyFromRow(row, side) {
-        if (keyPairs.length === 0) return null;
-        const parts = [];
-        for (const pair of keyPairs) {
-            const col = side === 'left' ? pair.leftCol : pair.rightCol;
-            const val = row[col] !== undefined && row[col] !== null ? String(row[col]).trim() : "";
-            parts.push(val);
-        }
-        return parts.join('|||');
-    }
-    
-    // COMMON rows using composite key
-    function getCommonRows() {
-        if (!fileAData || !fileBData || keyPairs.length === 0) throw new Error("Need both files and at least one key pair");
-        const selectedLeft = getSelectedColumns('left');
-        const selectedRight = getSelectedColumns('right');
-        if (selectedLeft.length === 0 && selectedRight.length === 0) throw new Error("Select columns to export");
-        
-        const rightMap = new Map();
-        for (const row of fileBData.rows) {
-            const key = getCompositeKeyFromRow(row, 'right');
-            if (!key) continue;
-            const entry = {};
-            for (const col of selectedRight) entry[col] = (row[col] !== undefined && row[col] !== null) ? String(row[col]) : "";
-            if (!rightMap.has(key)) rightMap.set(key, []);
-            rightMap.get(key).push(entry);
+        function getSelectedColumns(side) { 
+            const checkboxes = document.querySelectorAll(`.column-check[data-side="${side}"]:checked`);
+            return Array.from(checkboxes).map(cb=>cb.value); 
         }
         
-        const merged = [];
-        for (const leftRow of fileAData.rows) {
-            const key = getCompositeKeyFromRow(leftRow, 'left');
-            if (!key) continue;
-            const matches = rightMap.get(key);
-            if (!matches) continue;
-            for (const matchEntry of matches) {
-                const combined = {};
-                for (const col of selectedLeft) combined[col] = (leftRow[col] !== undefined && leftRow[col] !== null) ? String(leftRow[col]) : "";
-                for (const col of selectedRight) combined[col] = matchEntry[col] !== undefined ? matchEntry[col] : "";
-                merged.push(combined);
-            }
-        }
-        if (merged.length === 0) throw new Error("No common rows found");
-        const finalHeaders = [...selectedLeft, ...selectedRight];
-        const sheetData = [finalHeaders];
-        for (const row of merged) sheetData.push(finalHeaders.map(h => row[h] !== undefined ? row[h] : ""));
-        return sheetData;
-    }
-    
-    function getUnmatchedRowsFromFile(side) {
-        if (keyPairs.length === 0) throw new Error("Define at least one key pair");
-        const { leftSet, rightSet } = getCompositeKeySets();
-        if (!leftSet || !rightSet) throw new Error("Key sets missing");
+        function getCompositeKey(row, side) { if(keyPairs.length===0) return null; return keyPairs.map(pair=>String(row[side==='left'?pair.leftCol:pair.rightCol]||"").trim()).join('|||'); }
+        function getCompositeKeySets() { if(!fileAData||!fileBData||keyPairs.length===0) return null; const leftSet=new Set(fileAData.rows.map(r=>getCompositeKey(r,'left')).filter(k=>k && k.split('|||').some(p=>p))); const rightSet=new Set(fileBData.rows.map(r=>getCompositeKey(r,'right')).filter(k=>k && k.split('|||').some(p=>p))); return {leftSet, rightSet}; }
+        function updateCommonStats() { if(!fileAData||!fileBData||keyPairs.length===0) { if(commonStatsArea) commonStatsArea.style.display='none'; return; } const {leftSet,rightSet}=getCompositeKeySets(); if(!leftSet||!rightSet) { if(commonStatsArea) commonStatsArea.style.display='none'; return; } const commonCount = [...leftSet].filter(v=>rightSet.has(v)).length; if(uniqueLeftCount) uniqueLeftCount.innerText = `${leftSet.size-commonCount} only in A`; if(uniqueRightCount) uniqueRightCount.innerText = `${rightSet.size-commonCount} only in B`; if(commonCountDisplay) commonCountDisplay.innerText = `${commonCount} common`; if(commonStatsArea) commonStatsArea.style.display='block'; }
         
-        if (side === 'A') {
-            if (!fileAData) throw new Error("File A missing");
-            const selectedCols = getSelectedColumns('left');
-            if (selectedCols.length === 0) throw new Error("Select columns from File A");
-            const unmatched = [];
-            for (const row of fileAData.rows) {
-                const key = getCompositeKeyFromRow(row, 'left');
-                if (key && !rightSet.has(key)) {
-                    const obj = {};
-                    for (const col of selectedCols) obj[col] = (row[col] !== undefined && row[col] !== null) ? String(row[col]) : "";
-                    unmatched.push(obj);
-                }
-            }
-            if (unmatched.length === 0) throw new Error("No unmatched rows in A");
-            const headers = selectedCols;
-            const sheetData = [headers];
-            for (const row of unmatched) sheetData.push(headers.map(h => row[h] !== undefined ? row[h] : ""));
-            return sheetData;
-        } else {
-            if (!fileBData) throw new Error("File B missing");
-            const selectedCols = getSelectedColumns('right');
-            if (selectedCols.length === 0) throw new Error("Select columns from File B");
-            const unmatched = [];
-            for (const row of fileBData.rows) {
-                const key = getCompositeKeyFromRow(row, 'right');
-                if (key && !leftSet.has(key)) {
-                    const obj = {};
-                    for (const col of selectedCols) obj[col] = (row[col] !== undefined && row[col] !== null) ? String(row[col]) : "";
-                    unmatched.push(obj);
-                }
-            }
-            if (unmatched.length === 0) throw new Error("No unmatched rows in B");
-            const headers = selectedCols;
-            const sheetData = [headers];
-            for (const row of unmatched) sheetData.push(headers.map(h => row[h] !== undefined ? row[h] : ""));
-            return sheetData;
-        }
-    }
-    
-    async function downloadExcel(sheetData, fileNameHint) {
-        const ws = XLSX.utils.aoa_to_sheet(sheetData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-        XLSX.writeFile(wb, fileNameHint);
-    }
-    
-    async function handleFileUpload(file, side) {
-        const statusDiv = side === 'A' ? fileAStatus : fileBStatus;
-        const previewDiv = side === 'A' ? fileAPreviewDiv : fileBPreviewDiv;
-        const setData = (data) => { if (side === 'A') { fileAData = data; fileAName = file.name; } else { fileBData = data; fileBName = file.name; } };
-        try {
-            statusDiv.innerHTML = `<i class="fas fa-spinner fa-pulse"></i> Loading...`;
-            const data = await readAnyFile(file);
-            setData(data);
-            statusDiv.innerHTML = `<i class="fas fa-check-circle text-success"></i> ${file.name} (${data.rows.length} rows, ${data.headers.length} cols)`;
-            renderPreview(previewDiv, data, file.name);
-            if (side === 'A') updateColumnChecklist(leftColumnsContainer, data.headers, 'left');
-            else updateColumnChecklist(rightColumnsContainer, data.headers, 'right');
+        function renderKeyPairs() { if(!fileAData||!fileBData) { if(keyPairsContainer) keyPairsContainer.innerHTML=`<div class="alert alert-warning">Upload both files to enable composite key matching.</div>`; if(addKeyPairBtn) addKeyPairBtn.disabled=true; return; } if(addKeyPairBtn) addKeyPairBtn.disabled=false; if(keyPairs.length===0) keyPairs.push({ leftCol: fileAData.headers[0], rightCol: fileBData.headers[0] }); let html=''; keyPairs.forEach((pair,idx)=>{ html+=`<div class="key-group"><div class="row align-items-end g-2"><div class="col-md-5"><label class="small fw-semibold">File A</label><select class="form-select form-select-sm left-key-select" data-idx="${idx}">${fileAData.headers.map(h=>`<option ${pair.leftCol===h?'selected':''}>${escapeHtml(h)}</option>`).join('')}</select></div><div class="col-md-2 text-center"><i class="fas fa-equals"></i></div><div class="col-md-4"><label class="small fw-semibold">File B</label><select class="form-select form-select-sm right-key-select" data-idx="${idx}">${fileBData.headers.map(h=>`<option ${pair.rightCol===h?'selected':''}>${escapeHtml(h)}</option>`).join('')}</select></div><div class="col-md-1">${keyPairs.length>1?`<button class="btn btn-outline-danger btn-sm remove-key-btn" data-idx="${idx}"><i class="fas fa-trash"></i></button>`:''}</div></div></div>`; }); if(keyPairsContainer) keyPairsContainer.innerHTML=html; attachKeyEvents(); updateCommonStats(); }
+        function attachKeyEvents() { document.querySelectorAll('.left-key-select').forEach(s=>s.addEventListener('change',e=>{const idx=parseInt(e.target.dataset.idx); if(keyPairs[idx]) keyPairs[idx].leftCol=e.target.value; updateCommonStats(); toggleButtons();})); document.querySelectorAll('.right-key-select').forEach(s=>s.addEventListener('change',e=>{const idx=parseInt(e.target.dataset.idx); if(keyPairs[idx]) keyPairs[idx].rightCol=e.target.value; updateCommonStats(); toggleButtons();})); document.querySelectorAll('.remove-key-btn').forEach(b=>b.addEventListener('click',e=>{const idx=parseInt(b.dataset.idx); if(keyPairs.length>1){keyPairs.splice(idx,1); renderKeyPairs(); updateCommonStats(); toggleButtons();}})); }
+        
+        // DOWNLOAD ALL ROWS IN ONE SHEET - WITHOUT filename in headers, just original column names
+        function downloadAllRowsOneSheet() {
+            const selectedLeft = getSelectedColumns('left');
+            const selectedRight = getSelectedColumns('right');
             
-            if (fileAData && fileBData) {
-                if (keyPairs.length === 0) keyPairs = [{ leftCol: fileAData.headers[0], rightCol: fileBData.headers[0] }];
-                renderKeyPairs();
-            } else {
-                renderKeyPairs();
+            if(!selectedLeft.length && !selectedRight.length) {
+                throw new Error("Select at least one column from File A or File B to export");
             }
-            toggleAllButtons();
-        } catch (err) {
-            statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle text-danger"></i> Error: ${err.message}`;
-            if (side === 'A') { fileAData = null; fileAPreviewDiv.style.display = 'none'; leftColumnsContainer.innerHTML = '<span class="text-muted">No file</span>'; }
-            else { fileBData = null; fileBPreviewDiv.style.display = 'none'; rightColumnsContainer.innerHTML = '<span class="text-muted">No file</span>'; }
-            renderKeyPairs();
-            toggleAllButtons();
+            
+            // Build headers - just the original column names (no filename prefix)
+            const headers = [...selectedLeft, ...selectedRight];
+            
+            // Determine max rows
+            const maxRows = Math.max(
+                fileAData ? fileAData.rows.length : 0,
+                fileBData ? fileBData.rows.length : 0
+            );
+            
+            const sheetData = [headers];
+            
+            // Build rows - combine data row by row
+            for(let i = 0; i < maxRows; i++) {
+                const rowData = [];
+                // File A data for this row index
+                if(fileAData && selectedLeft.length > 0 && i < fileAData.rows.length) {
+                    const row = fileAData.rows[i];
+                    for(const col of selectedLeft) {
+                        rowData.push(row[col] !== undefined && row[col] !== null ? String(row[col]) : "");
+                    }
+                } else if(selectedLeft.length > 0) {
+                    // Empty cells if File A has fewer rows
+                    for(let j = 0; j < selectedLeft.length; j++) rowData.push("");
+                }
+                
+                // File B data for this row index
+                if(fileBData && selectedRight.length > 0 && i < fileBData.rows.length) {
+                    const row = fileBData.rows[i];
+                    for(const col of selectedRight) {
+                        rowData.push(row[col] !== undefined && row[col] !== null ? String(row[col]) : "");
+                    }
+                } else if(selectedRight.length > 0) {
+                    // Empty cells if File B has fewer rows
+                    for(let j = 0; j < selectedRight.length; j++) rowData.push("");
+                }
+                
+                sheetData.push(rowData);
+            }
+            
+            const ws = XLSX.utils.aoa_to_sheet(sheetData);
+            // Auto-size columns
+            ws['!cols'] = headers.map(() => ({wch: 18}));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "All Data (A + B)");
+            
+            const leftFileName = fileAName ? fileAName.replace(/\.[^/.]+$/,"") : "fileA";
+            const rightFileName = fileBName ? fileBName.replace(/\.[^/.]+$/,"") : "fileB";
+            const fileName = `all_data_${leftFileName}_and_${rightFileName}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            
+            let msg = `✅ Exported to ONE sheet:\n`;
+            msg += `- File A: ${fileAData ? fileAData.rows.length : 0} rows (${selectedLeft.length} columns)\n`;
+            msg += `- File B: ${fileBData ? fileBData.rows.length : 0} rows (${selectedRight.length} columns)`;
+            alert(msg);
         }
-    }
-    
-    function toggleAllButtons() {
-        const ready = fileAData && fileBData && keyPairs.length > 0 && keyPairs.every(p => p.leftCol && p.rightCol);
-        mergeBtn.disabled = !ready;
-        unmatchedABtn.disabled = !(fileAData && keyPairs.length > 0);
-        unmatchedBBtn.disabled = !(fileBData && keyPairs.length > 0);
-    }
-    
-    // Event handlers
-    btnFileA.onclick = () => fileAInput.click();
-    btnFileB.onclick = () => fileBInput.click();
-    fileAInput.onchange = (e) => e.target.files[0] && handleFileUpload(e.target.files[0], 'A');
-    fileBInput.onchange = (e) => e.target.files[0] && handleFileUpload(e.target.files[0], 'B');
-    
-    [dropZoneA, dropZoneB].forEach((zone, idx) => {
-        const side = idx === 0 ? 'A' : 'B';
-        zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('border-primary'); };
-        zone.ondragleave = () => zone.classList.remove('border-primary');
-        zone.ondrop = (e) => {
-            e.preventDefault();
-            zone.classList.remove('border-primary');
-            const file = e.dataTransfer.files[0];
-            if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv') || file.name.endsWith('.txt')))
-                handleFileUpload(file, side);
-            else (side === 'A' ? fileAStatus : fileBStatus).innerHTML = '<i class="fas fa-times text-danger"></i> Invalid file';
+        
+        // Select/Deselect functions
+        function selectAllColumns(side) {
+            const checkboxes = document.querySelectorAll(`.column-check[data-side="${side}"]`);
+            checkboxes.forEach(cb => cb.checked = true);
+            toggleButtons();
+        }
+        
+        function deselectAllColumns(side) {
+            const checkboxes = document.querySelectorAll(`.column-check[data-side="${side}"]`);
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleButtons();
+        }
+        
+        // ANALYZE FUNCTION - Clears localStorage, saves data, opens analyze.html
+        function analyzeAndSave() {
+            // Clear previous localStorage data
+            localStorage.removeItem('matchAnalysisData');
+            
+            const analysisPayload = {
+                timestamp: new Date().toISOString(),
+                fileAName: fileAData ? fileAName : null,
+                fileBName: fileBData ? fileBName : null,
+                fileAData: fileAData ? {
+                    headers: fileAData.headers,
+                    rows: fileAData.rows,
+                    rowCount: fileAData.rows.length
+                } : null,
+                fileBData: fileBData ? {
+                    headers: fileBData.headers,
+                    rows: fileBData.rows,
+                    rowCount: fileBData.rows.length
+                } : null,
+                keyPairs: keyPairs,
+                selectedLeftCols: getSelectedColumns('left'),
+                selectedRightCols: getSelectedColumns('right')
+            };
+            
+            localStorage.setItem('matchAnalysisData', JSON.stringify(analysisPayload));
+            alert(`✅ Data saved to localStorage!\n${fileAData ? `File A: ${fileAName} (${fileAData.rows.length} rows)\n` : ''}${fileBData ? `File B: ${fileBName} (${fileBData.rows.length} rows)` : 'Only File A loaded'}`);
+            window.open('analyze.html', '_blank');
+        }
+        
+        async function handleFileUpload(file, side) { 
+            const statusDiv = side==='A'?fileAStatus:fileBStatus; 
+            const previewDiv = side==='A'?fileAPreviewDiv:fileBPreviewDiv; 
+            const setData = (d)=> side==='A'? (fileAData=d,fileAName=file.name): (fileBData=d,fileBName=file.name); 
+            try { 
+                if(statusDiv) statusDiv.innerHTML=`<i class="fas fa-spinner fa-pulse"></i> Loading...`; 
+                const data = await readAnyFile(file); 
+                setData(data); 
+                if(statusDiv) statusDiv.innerHTML=`<i class="fas fa-check-circle text-success"></i> ${file.name} (${data.rows.length} rows)`; 
+                if(previewDiv) renderPreview(previewDiv, data, file.name); 
+                if(side==='A' && leftColumnsContainer) updateColumnChecklist(leftColumnsContainer, data.headers, 'left'); 
+                if(side==='B' && rightColumnsContainer) updateColumnChecklist(rightColumnsContainer, data.headers, 'right'); 
+                if(fileAData && fileBData) { 
+                    if(keyPairs.length===0) keyPairs=[{ leftCol:fileAData.headers[0], rightCol:fileBData.headers[0] }]; 
+                    renderKeyPairs(); 
+                } else if(fileAData || fileBData) {
+                    if(keyPairsContainer) keyPairsContainer.innerHTML=`<div class="alert alert-secondary">${fileAData ? '✓ File A loaded. Upload File B to enable matching features.' : '✓ File B loaded. Upload File A to enable matching features.'}</div>`;
+                    if(addKeyPairBtn) addKeyPairBtn.disabled = true;
+                } else {
+                    renderKeyPairs();
+                }
+                
+                if(selectAllLeftBtn) selectAllLeftBtn.disabled = !fileAData;
+                if(deselectAllLeftBtn) deselectAllLeftBtn.disabled = !fileAData;
+                if(selectAllRightBtn) selectAllRightBtn.disabled = !fileBData;
+                if(deselectAllRightBtn) deselectAllRightBtn.disabled = !fileBData;
+                
+                toggleButtons(); 
+            } catch(err) { 
+                if(statusDiv) statusDiv.innerHTML=`<i class="fas fa-exclamation-triangle text-danger"></i> ${err.message}`; 
+                if(side==='A') fileAData=null; 
+                else fileBData=null; 
+                renderKeyPairs(); 
+                toggleButtons(); 
+            } 
+        }
+        
+        function toggleButtons() { 
+            const bothFilesReady = fileAData && fileBData && keyPairs.length>0 && keyPairs.every(p=>p.leftCol&&p.rightCol);
+            const atLeastOneFile = fileAData || fileBData;
+            
+            if(mergeBtn) mergeBtn.disabled = !bothFilesReady; 
+            if(unmatchedABtn) unmatchedABtn.disabled = !(fileAData && keyPairs.length && fileBData); 
+            if(unmatchedBBtn) unmatchedBBtn.disabled = !(fileBData && keyPairs.length && fileAData); 
+            if(allRowsBtn) allRowsBtn.disabled = !(fileAData && fileBData && keyPairs.length); 
+            if(analyzeBtn) analyzeBtn.disabled = !atLeastOneFile; 
+        }
+        
+        function getCommonRowsForMerge() { 
+            const selectedLeft=getSelectedColumns('left'), selectedRight=getSelectedColumns('right'); 
+            if(!selectedLeft.length && !selectedRight.length) throw new Error("Select columns"); 
+            const rightMap=new Map(); 
+            for(const row of fileBData.rows) { 
+                const key=getCompositeKey(row,'right'); 
+                if(key){ 
+                    const obj={}; 
+                    selectedRight.forEach(c=>obj[c]=row[c]||""); 
+                    if(!rightMap.has(key)) rightMap.set(key,[]); 
+                    rightMap.get(key).push(obj); 
+                } 
+            } 
+            const merged=[]; 
+            for(const row of fileAData.rows){ 
+                const key=getCompositeKey(row,'left'); 
+                if(key && rightMap.has(key)) for(const match of rightMap.get(key)){ 
+                    const comb={}; 
+                    selectedLeft.forEach(c=>comb[c]=row[c]||""); 
+                    selectedRight.forEach(c=>comb[c]=match[c]||""); 
+                    merged.push(comb); 
+                } 
+            } 
+            if(!merged.length) throw new Error("No common rows"); 
+            return [ [...selectedLeft, ...selectedRight], ...merged.map(r=>[...selectedLeft,...selectedRight].map(h=>r[h]||"")) ]; 
+        }
+        
+        function getUnmatched(side){ 
+            const selected=side==='A'?getSelectedColumns('left'):getSelectedColumns('right'); 
+            if(!selected.length) throw new Error("Select columns"); 
+            const {leftSet,rightSet}=getCompositeKeySets(); 
+            const dataRows=side==='A'?fileAData.rows:fileBData.rows; 
+            const unmatched=[]; 
+            for(const row of dataRows){ 
+                const key=getCompositeKey(row,side==='A'?'left':'right'); 
+                if(key && (side==='A'?!rightSet.has(key):!leftSet.has(key))){ 
+                    const obj={}; 
+                    selected.forEach(c=>obj[c]=row[c]||""); 
+                    unmatched.push(obj); 
+                } 
+            } 
+            if(!unmatched.length) throw new Error(`No unmatched rows in ${side}`); 
+            return [selected, ...unmatched.map(r=>selected.map(c=>r[c]||""))]; 
+        }
+        
+        async function downloadExcel(sheetData, name) { 
+            const ws = XLSX.utils.aoa_to_sheet(sheetData); 
+            const wb = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1"); 
+            XLSX.writeFile(wb, name); 
+        }
+        
+        // Event bindings
+        if(btnFileA) btnFileA.onclick = () => fileAInput?.click();
+        if(btnFileB) btnFileB.onclick = () => fileBInput?.click();
+        if(fileAInput) fileAInput.onchange = e => e.target.files[0] && handleFileUpload(e.target.files[0], 'A');
+        if(fileBInput) fileBInput.onchange = e => e.target.files[0] && handleFileUpload(e.target.files[0], 'B');
+        
+        if(selectAllLeftBtn) selectAllLeftBtn.onclick = () => selectAllColumns('left');
+        if(deselectAllLeftBtn) deselectAllLeftBtn.onclick = () => deselectAllColumns('left');
+        if(selectAllRightBtn) selectAllRightBtn.onclick = () => selectAllColumns('right');
+        if(deselectAllRightBtn) deselectAllRightBtn.onclick = () => deselectAllColumns('right');
+        
+        [dropZoneA, dropZoneB].forEach((zone, idx) => { 
+            if(!zone) return;
+            const side = idx===0?'A':'B'; 
+            zone.ondragover = e=>{e.preventDefault(); zone.classList.add('border-primary');}; 
+            zone.ondragleave = ()=>zone.classList.remove('border-primary'); 
+            zone.ondrop = e=>{ e.preventDefault(); zone.classList.remove('border-primary'); const file=e.dataTransfer.files[0]; if(file && (file.name.match(/\.(xlsx|xls|csv|txt)$/i))) handleFileUpload(file, side); else if(side==='A' && fileAStatus) fileAStatus.innerHTML='<i class="fas fa-times text-danger"></i> Invalid file'; else if(fileBStatus) fileBStatus.innerHTML='<i class="fas fa-times text-danger"></i> Invalid file'; }; 
+        });
+        
+        if(addKeyPairBtn) {
+            addKeyPairBtn.onclick = () => { if(fileAData&&fileBData){ keyPairs.push({ leftCol:fileAData.headers[0], rightCol:fileBData.headers[0] }); renderKeyPairs(); toggleButtons(); } };
+        }
+        
+        document.addEventListener('change', e=>{ if(e.target.classList?.contains('column-check')) toggleButtons(); });
+        
+        if(mergeBtn) mergeBtn.onclick = async()=>{ try{ const sheet=getCommonRowsForMerge(); await downloadExcel(sheet, `common_${fileAName.replace(/\.[^/.]+$/,"")}_vs_${fileBName.replace(/\.[^/.]+$/,"")}.xlsx`); alert(`✅ ${sheet.length-1} common rows`); }catch(e){ alert(e.message); } };
+        if(unmatchedABtn) unmatchedABtn.onclick = async()=>{ try{ const sheet=getUnmatched('A'); await downloadExcel(sheet, `unmatched_A_only_${fileAName.replace(/\.[^/.]+$/,"")}.xlsx`); alert(`✅ ${sheet.length-1} rows only in A`); }catch(e){ alert(e.message); } };
+        if(unmatchedBBtn) unmatchedBBtn.onclick = async()=>{ try{ const sheet=getUnmatched('B'); await downloadExcel(sheet, `unmatched_B_only_${fileBName.replace(/\.[^/.]+$/,"")}.xlsx`); alert(`✅ ${sheet.length-1} rows only in B`); }catch(e){ alert(e.message); } };
+        if(allRowsBtn) allRowsBtn.onclick = ()=>{ try{ downloadAllRowsOneSheet(); }catch(e){ alert(e.message); } };
+        if(analyzeBtn) analyzeBtn.onclick = () => { 
+            if(!fileAData && !fileBData){ 
+                alert("Please upload at least one file before analyzing."); 
+                return; 
+            } 
+            analyzeAndSave(); 
         };
-    });
-    
-    addKeyPairBtn.onclick = () => {
-        if (fileAData && fileBData) {
-            keyPairs.push({ leftCol: fileAData.headers[0], rightCol: fileBData.headers[0] });
-            renderKeyPairs();
-            toggleAllButtons();
-        }
-    };
-    
-    document.addEventListener('change', (e) => { if (e.target.classList && e.target.classList.contains('column-check')) toggleAllButtons(); });
-    
-    mergeBtn.onclick = async () => { try { const sheet = getCommonRows(); await downloadExcel(sheet, `common_${fileAName.replace(/\.[^/.]+$/, "")}_vs_${fileBName.replace(/\.[^/.]+$/, "")}.xlsx`); alert(`✅ ${sheet.length-1} common rows`); } catch(err) { alert(err.message); } };
-    unmatchedABtn.onclick = async () => { try { const sheet = getUnmatchedRowsFromFile('A'); await downloadExcel(sheet, `unmatched_A_only_${fileAName.replace(/\.[^/.]+$/, "")}.xlsx`); alert(`✅ ${sheet.length-1} rows only in A`); } catch(err) { alert(err.message); } };
-    unmatchedBBtn.onclick = async () => { try { const sheet = getUnmatchedRowsFromFile('B'); await downloadExcel(sheet, `unmatched_B_only_${fileBName.replace(/\.[^/.]+$/, "")}.xlsx`); alert(`✅ ${sheet.length-1} rows only in B`); } catch(err) { alert(err.message); } };
+        
+        toggleButtons();
+    })();
 </script>
 </body>
 </html>
