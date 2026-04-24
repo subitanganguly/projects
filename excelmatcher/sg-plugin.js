@@ -358,15 +358,15 @@ document.head.appendChild(style);
   }
 
   window.alertSuccess = function(msg){
-    createToast(msg,"success",2000);
+    createToast(msg,"success",5000);
   }
 
   window.alertError = function(msg){
-    createToast(msg,"error",2000);
+    createToast(msg,"error",5000);
   }
 
   window.alertInfo = function(msg){
-    createToast(msg,"info",2000);
+    createToast(msg,"info",5000);
   }
 
 })();

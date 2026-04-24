@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Single File Analyzer</title>
+    <link rel="icon" type="image/png" href="../sumadhu.png">
+    <link href="style.css" rel="stylesheet">
+    <!-- Bootstrap 5 + Icons + Styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- SheetJS (XLSX) core library -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script type="module" src="sg-plugin.js"></script>
+    <style>
+        body {
+            background: linear-gradient(245deg, #1300c025, #00b8be42, #c702f842);
+            font-family: 'Segoe UI', Roboto, system-ui;
+        }
+
+
+        .upload-card {
+            background: linear-gradient(245deg, #00c0c011, #ff00c81a, #007bff13);
+            border: none;
+            border-radius: 28px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-card.hidden {
+            display: none;
+        }
+
+        .upload-area {
+            border: 2px dashed #001e42;
+            border-radius: 24px;
+            background: #f8fafc6e;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            background: #eef2ff;
+            border-color: #0d6efd;
+        }
+
+        .column-selector-card {
+            background: linear-gradient(245deg, #00c0c011, #ff00c81a, #007bff13);
+            border: none;
+            border-radius: 28px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .column-selector-header {
+            background: linear-gradient(135deg, #001535, #0d6efd);
+            color: white;
+            padding: 16px 24px;
+            font-weight: 600;
+        }
+
+        .columns-container {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .column-panel {
+            flex: 1;
+            min-width: 280px;
+            background: rgba(83, 83, 83, 0);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .column-panel-header {
+            background: linear-gradient(135deg, #3f3f3f17, #250069);
+            padding: 12px 16px;
+            font-weight: 700;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .column-list {
+            max-height: 350px;
+            overflow-y: auto;
+            padding: 1px 0;
+        }
+
+        .column-check-item {
+            padding: 3px 3px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .column-check-item:hover {
+            background: #f8f9fa4d;
+        }
+
+        .column-check-item input {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .column-check-item label {
+            cursor: pointer;
+            margin: 0;
+            font-size: 0.85rem;
+            flex: 1;
+        }
+
+        .panel-actions {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #bb85ee, #c7ffce);
+            border-top: 1px solid #b9b9b9;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .section-card {
+            background: linear-gradient(245deg, #eeecfd, #e9feff, #fbebff);
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            background: linear-gradient(245deg, #0a0063, #00b8be, #690083);
+            padding: 16px 24px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            padding: 0;
+            max-height: 550px;
+            overflow-y: auto;
+        }
+
+        .table-custom {
+            font-size: 0.8rem;
+            margin-bottom: 0;
+            width: 100%;
+        }
+
+        .table-custom th {
+            background: #f1f5f9;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .cell-match-green {
+            background-color: #d4edda !important;
+        }
+
+        .empty-placeholder {
+            text-align: center;
+            padding: 60px;
+            color: #6c757d;
+            background: #f8f9fa;
+            border-radius: 20px;
+        }
+
+        .match-rule-card {
+            background: #f8f9fc;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            position: relative;
+        }
+
+        .btn-match {
+            background: linear-gradient(135deg, #6f42c1, #0d6efd);
+            border: none;
+            font-weight: 600;
+            border-radius: 40px;
+            padding: 8px 20px;
+            color: white;
+        }
+
+        .rule-stats {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+
+        .rule-stat-item {
+            background: white;
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #0d6efd;
+        }
+
+        .active-rules-bar {
+            background: #e9ecef;
+            border: 2px dashed #8cb0dd;
+            border-radius: 10px;
+            padding: 8px 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .rule-badge {
+            background: #9b005a;
+            color: white;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rule-badge .remove-rule-badge {
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .rule-badge .remove-rule-badge:hover {
+            opacity: 1;
+        }
+
+        .file-info-card {
+            background: linear-gradient(135deg, #230064, #6d0064);
+            border-radius: 20px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid #0dfddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            color: #ffffff;
+        }
+
+        .new-upload-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            border-radius: 40px;
+            padding: 8px 20px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .new-upload-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #20c997, #28a745);
+            color: white;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #6c757d;
+            font-size: 0.75rem;
+            padding-bottom: 20px;
+        }
+
+        .btn-back {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 40px;
+            padding: 8px 20px;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+        
+        .remove-rule-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        
+        .rule-number {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: #0d6efd;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+
+<div class="container-fluid">
+    <!-- File Upload Section -->
+    <div class="upload-card" id="uploadCard">
+        <div class="column-selector-header">
+            <i class="fas fa-upload me-2"></i> Upload Your File
+        </div>
+        <div class="p-4">
+            <div class="upload-area p-5 text-center" id="dropZone">
+                <i class="fas fa-cloud-upload-alt fa-4x text-primary mb-3"></i>
+                <p class="mb-2 fs-5">Click or drag file here</p>
+                <p class="text-muted small">Supports: Excel (.xlsx, .xls), CSV, Text (.txt), XML</p>
+                <input type="file" id="fileInput" accept=".xlsx, .xls, .csv, .txt, .xml" class="d-none" />
+                <button class="btn btn-primary btn-lg mt-3" id="btnBrowse">
+                    <i class="fas fa-folder-open me-2"></i> Browse Files
+                </button>
+            </div>
+            <div id="fileStatus" class="mt-3"></div>
+        </div>
+    </div>
+
+    <!-- File Info Card (shown after upload) -->
+    <div id="fileInfoCard" class="file-info-card mt-2" style="display: none;">
+        <div>
+            <i class="fas fa-file-excel fa-1x text-light me-2"></i>
+            <strong style="font-size: 15px;"> <span id="fileName"></span></strong>
+            <span class="badge bg-primary ms-3" id="rowCount">0 rows</span>
+            <span class="badge bg-secondary ms-2" id="colCount">0 columns</span>
+        </div>
+        <button id="uploadNewFileBtn" class="new-upload-btn">
+            <i class="fas fa-upload me-1"></i> Upload New File
+        </button>
+    </div>
+
+    <!-- Column Selection Section -->
+    <div class="column-selector-card" id="columnSelectorCard" style="display: none;">
+        <div class="column-selector-header">
+            <i class="fas fa-columns me-2"></i> Select Columns to Display
+        </div>
+        <div class="p-4">
+            <div class="columns-container">
+                <div class="column-panel">
+                    <div class="column-panel-header">
+                        <i class="fas fa-database text-primary"></i> Available Columns
+                        <span class="badge bg-primary ms-2" id="columnCount">0 columns</span>
+                    </div>
+                    <div id="columnsList" class="column-list">
+                        <div class="text-muted text-center p-4">No columns available</div>
+                    </div>
+                    <div class="panel-actions">
+                        <button id="selectAllCols" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-check-square"></i> Select All
+                        </button>
+                        <button id="deselectAllCols" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-square"></i> Deselect All
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button id="generateTablesBtn" class="btn button12 btn-lg w-100 text-white">
+                    <i class="fas fa-table me-2"></i> Show Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table Section -->
+    <div class="section-card" id="dataTableSection" style="display: none;">
+        <div class="section-header">
+            <div>
+                <i class="fas fa-table me-2"></i> Data View
+                <span class="badge bg-primary rounded-pill ms-2" id="dataTableCount">0</span>
+                <span id="ruleBadge" class="badge bg-secondary ms-2">No comparison</span>
+            </div>
+            <button id="matchColumnsBtn" class="btn btn-match" disabled>
+                <i class="fas fa-filter me-2"></i> Manage Comparisons
+            </button>
+        </div>
+        
+        <div id="activeRulesSummary" class="px-3 pt-2 pb-1" style="display: none;">
+            <div class="active-rules-bar">
+                <i class="fas fa-chart-simple me-1"></i> <strong>Active Comparisons (<span id="activeRuleCount">0</span>):</strong>
+                <span id="rulesSummaryList"></span>
+            </div>
+        </div>
+        
+        <div class="table-wrapper" id="dataTableWrapper">
+            <div class="empty-placeholder">Select columns and click "Show Data" to view</div>
+        </div>
+    </div>
+
+    <footer>
+        <i class="fas fa-chart-line"></i> Compare any two columns within your file. Matching cells will be highlighted in green.
+    </footer>
+</div>
+
+<!-- MATCH RULES MODAL -->
+<div class="modal fade" id="matchModal" tabindex="-1" aria-labelledby="matchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="matchModalLabel"><i class="fas fa-filter me-2"></i>Manage Column Comparisons</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i> Add multiple rules to compare different column pairs. Cells matching ANY rule will be highlighted in <span class="badge bg-success">GREEN</span>.
+                </p>
+                
+                <div id="matchRulesContainer">
+                    <div class="alert alert-secondary text-center">No comparison rules defined. Click "Add Comparison Rule" to create conditions.</div>
+                </div>
+                
+                <div class="mt-3">
+                    <button id="addMatchRuleBtn" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-plus-circle me-1"></i> Add Comparison Rule
+                    </button>
+                    <button id="clearAllRulesBtn" class="btn btn-outline-danger btn-sm ms-2">
+                        <i class="fas fa-trash me-1"></i> Clear All Rules
+                    </button>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div id="ruleStatsContainer" class="rule-stats" style="display: none;">
+                    <h6 class="mb-2"><i class="fas fa-chart-bar me-2"></i>Comparison Statistics</h6>
+                    <div id="ruleStatsList"></div>
+                </div>
+                
+                <!-- <div class="alert alert-info small">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Match Options:</strong>
+                    <ul class="mb-0 mt-1">
+                        <li><strong>Exact Match</strong> - Values must be identical</li>
+                        <li><strong>Contains</strong> - One value contains the other</li>
+                        <li><strong>Starts With / Ends With</strong> - Pattern matching</li>
+                        <li><strong>Case Sensitive</strong> - Toggle case sensitivity</li>
+                        <li><strong>Ignore Spaces</strong> - Remove spaces before comparing</li>
+                        <li><strong>Ignore Punctuation</strong> - Remove brackets and punctuation</li>
+                    </ul>
+                </div> -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="applyMatchRulesBtn" class="btn btn-primary">Apply All Rules & Highlight</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let fileData = null;
+    let fileHeaders = null;
+    let fileName = "";
+    let selectedColumns = [];
+    let currentHeaders = [];
+    let currentTableData = [];
+    let matchRules = [];
+    let cellMatchMap = new Map();
+
+    // Parse different file types
+    async function readFile(file) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        
+        if (ext === 'xlsx' || ext === 'xls') {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const wb = XLSX.read(data, { type: 'array', defval: "" });
+                        const sheet = wb.Sheets[wb.SheetNames[0]];
+                        const jsonRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+                        if (!jsonRows || jsonRows.length < 2) reject("Need header and data");
+                        let headers = jsonRows[0].map(cell => String(cell || "").trim()).filter(h => h);
+                        if (headers.length === 0) headers = ["Column1"];
+                        const dataRows = jsonRows.slice(1).filter(row => row.some(c => c));
+                        const formattedRows = dataRows.map(row => {
+                            const obj = {};
+                            headers.forEach((h, idx) => obj[h] = (row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : "");
+                            return obj;
+                        });
+                        resolve({ headers, rows: formattedRows });
+                    } catch(err) { reject(err); }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        } else if (ext === 'xml') {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        const text = e.target.result;
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(text, "text/xml");
+                        const elements = xmlDoc.getElementsByTagName("*");
+                        const headers = [];
+                        for (let i = 0; i < elements.length; i++) {
+                            if (elements[i].children.length === 0 && elements[i].textContent.trim()) {
+                                headers.push(elements[i].tagName);
+                            }
+                        }
+                        const uniqueHeaders = [...new Set(headers)];
+                        const dataRows = [];
+                        for (let i = 0; i < elements.length; i++) {
+                            if (elements[i].children.length === 0) {
+                                const row = {};
+                                uniqueHeaders.forEach(h => row[h] = "");
+                                row[elements[i].tagName] = elements[i].textContent;
+                                dataRows.push(row);
+                            }
+                        }
+                        resolve({ headers: uniqueHeaders, rows: dataRows });
+                    } catch(err) { reject(err); }
+                };
+                reader.onerror = reject;
+                reader.readAsText(file, "UTF-8");
+            });
+        } else {
+            // CSV or Text
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        const content = e.target.result;
+                        const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+                        if (lines.length === 0) reject("File is empty");
+                        
+                        let delimiter = ',';
+                        if (lines[0].includes('\t')) delimiter = '\t';
+                        if (lines[0].includes(';')) delimiter = ';';
+                        if (lines[0].includes('|')) delimiter = '|';
+                        
+                        const rows = [];
+                        for (let line of lines) {
+                            if (delimiter === ',' || delimiter === ';') {
+                                const values = [];
+                                let inQuotes = false;
+                                let current = '';
+                                for (let i = 0; i < line.length; i++) {
+                                    const ch = line[i];
+                                    if (ch === '"') { inQuotes = !inQuotes; continue; }
+                                    if (ch === delimiter && !inQuotes) {
+                                        values.push(current.trim());
+                                        current = '';
+                                        continue;
+                                    }
+                                    current += ch;
+                                }
+                                values.push(current.trim());
+                                rows.push(values);
+                            } else {
+                                rows.push(line.split(delimiter).map(p => p.trim().replace(/^"|"$/g, '')));
+                            }
+                        }
+                        
+                        let headers = rows[0].map(cell => String(cell || `Col_${Math.random()}`).trim());
+                        const headerSet = new Set();
+                        headers = headers.map(h => {
+                            let unique = h;
+                            let c = 1;
+                            while (headerSet.has(unique)) unique = `${h}_${c++}`;
+                            headerSet.add(unique);
+                            return unique;
+                        });
+                        const dataRows = rows.slice(1).filter(row => row.some(cell => cell && cell !== ""));
+                        const formattedRows = dataRows.map(row => {
+                            const obj = {};
+                            headers.forEach((h, idx) => obj[h] = (row[idx] !== undefined && row[idx] !== null) ? String(row[idx]) : "");
+                            return obj;
+                        });
+                        resolve({ headers, rows: formattedRows });
+                    } catch(err) { reject(err); }
+                };
+                reader.onerror = reject;
+                reader.readAsText(file, "UTF-8");
+            });
+        }
+    }
+
+    function normalizeText(text, options) {
+        if (text === undefined || text === null) return "";
+        let result = String(text);
+        if (options.ignoreSpaces) {
+            result = result.replace(/\s+/g, ' ').trim();
+            result = result.replace(/\s/g, '');
+        }
+        if (options.ignoreBrackets) {
+            result = result.replace(/[\[{\(\)}\]<>]+/g, '');
+            result = result.replace(/[.,!?;:\-_\/\\|`~@#$%^&*=\+]+/g, '');
+        }
+        if (options.ignoreCase) {
+            result = result.toLowerCase();
+        }
+        return result;
+    }
+
+    function resetUploadArea() {
+        document.getElementById('uploadCard').classList.add('hidden');
+        document.getElementById('fileInfoCard').style.display = 'flex';
+        document.getElementById('columnSelectorCard').style.display = 'block';
+    }
+
+    function showUploadArea() {
+        document.getElementById('uploadCard').classList.remove('hidden');
+        document.getElementById('fileInfoCard').style.display = 'none';
+        document.getElementById('columnSelectorCard').style.display = 'none';
+        document.getElementById('dataTableSection').style.display = 'none';
+        fileData = null;
+        fileHeaders = null;
+        selectedColumns = [];
+        matchRules = [];
+        cellMatchMap.clear();
+    }
+
+    async function handleFileUpload(file) {
+        const statusDiv = document.getElementById('fileStatus');
+        
+        try {
+            statusDiv.innerHTML = `<div class="alert alert-info"><i class="fas fa-spinner fa-pulse"></i> Loading file...</div>`;
+            const data = await readFile(file);
+            fileData = data.rows;
+            fileHeaders = data.headers;
+            fileName = file.name;
+            
+            statusDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check-circle"></i> File loaded successfully!</div>`;
+            
+            document.getElementById('fileName').innerText = file.name;
+            document.getElementById('rowCount').innerHTML = `${data.rows.length} rows`;
+            document.getElementById('colCount').innerHTML = `${data.headers.length} columns`;
+            
+            resetUploadArea();
+            renderColumnList();
+            
+            if (fileHeaders.length >= 2) {
+                selectedColumns = [...fileHeaders];
+                updateSelectedColumns();
+            }
+            
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 2000);
+            
+        } catch(err) {
+            statusDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error: ${err.message || err}</div>`;
+            fileData = null;
+            fileHeaders = null;
+        }
+    }
+
+    function renderColumnList() {
+        const container = document.getElementById('columnsList');
+        if (fileHeaders && fileHeaders.length) {
+            let html = '';
+            fileHeaders.forEach((header, idx) => {
+                html += `<div class="column-check-item">
+                    <input type="checkbox" class="column-checkbox" data-column="${escapeHtml(header)}" id="chk_col_${idx}" checked>
+                    <label for="chk_col_${idx}">${escapeHtml(header)}</label>
+                    <span class="column-type"><i class="fas fa-tag"></i></span>
+                </div>`;
+            });
+            container.innerHTML = html;
+            document.getElementById('columnCount').innerHTML = `${fileHeaders.length} columns`;
+            selectedColumns = [...fileHeaders];
+            attachColumnCheckboxEvents();
+        }
+    }
+
+    function attachColumnCheckboxEvents() {
+        document.querySelectorAll('.column-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateSelectedColumns);
+        });
+    }
+
+    function updateSelectedColumns() {
+        selectedColumns = [];
+        document.querySelectorAll('.column-checkbox:checked').forEach(cb => {
+            selectedColumns.push(cb.dataset.column);
+        });
+        document.getElementById('columnCount').innerHTML = `${selectedColumns.length} / ${fileHeaders.length} selected`;
+        
+        const compareBtn = document.getElementById('matchColumnsBtn');
+        if (compareBtn) {
+            compareBtn.disabled = selectedColumns.length < 2;
+        }
+    }
+
+    function selectAllColumns() {
+        document.querySelectorAll('.column-checkbox').forEach(cb => cb.checked = true);
+        updateSelectedColumns();
+    }
+
+    function deselectAllColumns() {
+        document.querySelectorAll('.column-checkbox').forEach(cb => cb.checked = false);
+        updateSelectedColumns();
+    }
+
+    function generateDataTable() {
+        if (!fileData || !selectedColumns.length) {
+            document.getElementById('dataTableWrapper').innerHTML = '<div class="empty-placeholder">No data or columns selected</div>';
+            return;
+        }
+        
+        currentHeaders = selectedColumns.map(col => ({
+            name: col,
+            originalCol: col,
+            displayName: escapeHtml(col)
+        }));
+        
+        currentTableData = [];
+        for (const row of fileData) {
+            const rowData = [];
+            for (const col of selectedColumns) {
+                rowData.push(row[col] !== undefined && row[col] !== null ? String(row[col]) : "");
+            }
+            currentTableData.push(rowData);
+        }
+        
+        renderTableWithHighlights();
+        document.getElementById('dataTableCount').innerText = `${currentTableData.length} rows`;
+        document.getElementById('dataTableSection').style.display = 'block';
+        
+        const compareBtn = document.getElementById('matchColumnsBtn');
+        if (compareBtn) {
+            compareBtn.disabled = selectedColumns.length < 2;
+        }
+        
+        updateRuleBadgeAndSummary();
+    }
+
+    function evaluateAllRules() {
+        cellMatchMap.clear();
+        if (matchRules.length === 0) return;
+        
+        for (let rowIdx = 0; rowIdx < currentTableData.length; rowIdx++) {
+            for (let ruleIdx = 0; ruleIdx < matchRules.length; ruleIdx++) {
+                const rule = matchRules[ruleIdx];
+                let leftColIdx = -1, rightColIdx = -1;
+                
+                for (let colIdx = 0; colIdx < currentHeaders.length; colIdx++) {
+                    if (currentHeaders[colIdx].originalCol === rule.leftColumn) leftColIdx = colIdx;
+                    if (currentHeaders[colIdx].originalCol === rule.rightColumn) rightColIdx = colIdx;
+                }
+                
+                if (leftColIdx !== -1 && rightColIdx !== -1 && leftColIdx !== rightColIdx) {
+                    let leftRaw = currentTableData[rowIdx][leftColIdx];
+                    let rightRaw = currentTableData[rowIdx][rightColIdx];
+                    let leftValue = normalizeText(leftRaw, rule);
+                    let rightValue = normalizeText(rightRaw, rule);
+                    
+                    if (leftValue === "" && rightValue === "") continue;
+                    
+                    let isMatch = false;
+                    switch (rule.matchType) {
+                        case 'exact': isMatch = leftValue === rightValue; break;
+                        case 'contains': isMatch = leftValue.includes(rightValue) || (rightValue.length > 0 && rightValue.includes(leftValue)); break;
+                        case 'startswith': isMatch = leftValue.startsWith(rightValue) && rightValue !== ""; break;
+                        case 'endswith': isMatch = leftValue.endsWith(rightValue) && rightValue !== ""; break;
+                        case 'regex':
+                            try { const regex = new RegExp(rightValue, 'i'); isMatch = regex.test(leftValue); }
+                            catch(e) { isMatch = false; }
+                            break;
+                    }
+                    
+                    if (isMatch) {
+                        cellMatchMap.set(`${rowIdx}_${leftColIdx}`, true);
+                        cellMatchMap.set(`${rowIdx}_${rightColIdx}`, true);
+                    }
+                }
+            }
+        }
+    }
+
+    function calculateAllRuleStats() {
+        const stats = [];
+        for (let ruleIdx = 0; ruleIdx < matchRules.length; ruleIdx++) {
+            const rule = matchRules[ruleIdx];
+            let matchCount = 0, totalComparisons = 0;
+            let leftColIdx = -1, rightColIdx = -1;
+            
+            for (let colIdx = 0; colIdx < currentHeaders.length; colIdx++) {
+                if (currentHeaders[colIdx].originalCol === rule.leftColumn) leftColIdx = colIdx;
+                if (currentHeaders[colIdx].originalCol === rule.rightColumn) rightColIdx = colIdx;
+            }
+            
+            if (leftColIdx !== -1 && rightColIdx !== -1 && leftColIdx !== rightColIdx) {
+                for (let rowIdx = 0; rowIdx < currentTableData.length; rowIdx++) {
+                    totalComparisons++;
+                    let leftRaw = currentTableData[rowIdx][leftColIdx];
+                    let rightRaw = currentTableData[rowIdx][rightColIdx];
+                    let leftValue = normalizeText(leftRaw, rule);
+                    let rightValue = normalizeText(rightRaw, rule);
+                    
+                    if (leftValue === "" && rightValue === "") continue;
+                    
+                    let isMatch = false;
+                    switch (rule.matchType) {
+                        case 'exact': isMatch = leftValue === rightValue; break;
+                        case 'contains': isMatch = leftValue.includes(rightValue) || (rightValue.length > 0 && rightValue.includes(leftValue)); break;
+                        case 'startswith': isMatch = leftValue.startsWith(rightValue) && rightValue !== ""; break;
+                        case 'endswith': isMatch = leftValue.endsWith(rightValue) && rightValue !== ""; break;
+                        case 'regex':
+                            try { const regex = new RegExp(rightValue, 'i'); isMatch = regex.test(leftValue); }
+                            catch(e) { isMatch = false; }
+                            break;
+                    }
+                    if (isMatch) matchCount++;
+                }
+            }
+            stats.push({ rule, matchCount, totalComparisons });
+        }
+        return stats;
+    }
+
+    function renderTableWithHighlights() {
+        const container = document.getElementById('dataTableWrapper');
+        if (!currentTableData.length) {
+            container.innerHTML = '<div class="empty-placeholder">No data to display</div>';
+            return;
+        }
+        
+        evaluateAllRules();
+        
+        let html = `<table class="table table-custom table-bordered"><thead><tr>`;
+        for (const h of currentHeaders) html += `<th class="text-nowrap">${h.displayName}</th>`;
+        html += `</thead><tbody>`;
+        
+        for (let i = 0; i < Math.min(currentTableData.length, 500); i++) {
+            html += `<tr>`;
+            for (let j = 0; j < currentTableData[i].length; j++) {
+                let val = currentTableData[i][j];
+                if (val.length > 80) val = val.substring(0, 77) + "...";
+                const matchClass = cellMatchMap.has(`${i}_${j}`) ? 'cell-match-green' : '';
+                html += `<td class="text-wrap ${matchClass}">${escapeHtml(val)}</td>`;
+            }
+            html += `</tr>`;
+        }
+        
+        if (currentTableData.length > 500) {
+            html += `<tr><td colspan="${currentHeaders.length}" class="text-center text-muted">... and ${currentTableData.length - 500} more rows</td></tr>`;
+        }
+        
+        html += `</tbody>}</table>`;
+        container.innerHTML = html;
+    }
+
+    function updateRuleBadgeAndSummary() {
+        const badge = document.getElementById('ruleBadge');
+        const summaryDiv = document.getElementById('activeRulesSummary');
+        const summaryList = document.getElementById('rulesSummaryList');
+        const activeCount = document.getElementById('activeRuleCount');
+        
+        if (matchRules.length === 0) {
+            badge.innerText = "No comparison"; 
+            badge.className = "badge bg-secondary ms-2";
+            summaryDiv.style.display = 'none';
+            return;
+        }
+        
+        badge.innerText = `${matchRules.length} Comparison(s) Active`; 
+        badge.className = "badge bg-success ms-2";
+        activeCount.innerText = matchRules.length;
+        
+        const stats = calculateAllRuleStats();
+        let summaryHtml = '';
+        stats.forEach((stat, idx) => {
+            const pct = stat.totalComparisons > 0 ? ((stat.matchCount / stat.totalComparisons) * 100).toFixed(1) : 0;
+            summaryHtml += `<span class="rule-badge me-2 mb-1">
+                <span class="rule-number">${idx+1}</span>
+                ${escapeHtml(stat.rule.leftColumn)} → ${escapeHtml(stat.rule.rightColumn)}: 
+                <strong>${stat.matchCount} matches</strong> (${pct}%)
+            </span>`;
+        });
+        summaryList.innerHTML = summaryHtml;
+        summaryDiv.style.display = 'block';
+    }
+
+    function renderMatchRulesModal() {
+        const container = document.getElementById('matchRulesContainer');
+        const availableColumns = selectedColumns.length ? selectedColumns : fileHeaders;
+        
+        if (matchRules.length === 0) {
+            container.innerHTML = '<div class="alert alert-secondary text-center">No comparison rules defined. Click "Add Comparison Rule" to create conditions.</div>';
+            document.getElementById('ruleStatsContainer').style.display = 'none';
+            return;
+        }
+        
+        let html = '';
+        matchRules.forEach((rule, idx) => {
+            html += `
+<div class="match-rule-card border rounded p-3 mb-3" data-rule-index="${idx}">
+
+    <!-- Row 1: Select Fields -->
+    <div class="row g-3 mb-2">
+        <div class="col-md-4">
+            <label class="small fw-semibold">
+                <i class="fas fa-columns text-primary"></i> First Column
+            </label>
+            <select class="form-select form-select-sm rule-left-col" data-rule-idx="${idx}">
+                ${availableColumns.map(col => `
+                    <option value="${escapeHtml(col)}" ${rule.leftColumn === col ? 'selected' : ''}>
+                        ${escapeHtml(col)}
+                    </option>`).join('')}
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label class="small fw-semibold">
+                <i class="fas fa-columns text-success"></i> Second Column
+            </label>
+            <select class="form-select form-select-sm rule-right-col" data-rule-idx="${idx}">
+                ${availableColumns
+                    .filter(col => col !== rule.leftColumn)
+                    .map(col => `
+                        <option value="${escapeHtml(col)}" ${rule.rightColumn === col ? 'selected' : ''}>
+                            ${escapeHtml(col)}
+                        </option>`).join('')}
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label class="small">Match Type</label>
+            <select class="form-select form-select-sm rule-type" data-rule-idx="${idx}">
+                <option value="exact" ${rule.matchType === 'exact' ? 'selected' : ''}>Exact</option>
+                <option value="contains" ${rule.matchType === 'contains' ? 'selected' : ''}>Contains</option>
+                <option value="startswith" ${rule.matchType === 'startswith' ? 'selected' : ''}>Starts With</option>
+                <option value="endswith" ${rule.matchType === 'endswith' ? 'selected' : ''}>Ends With</option>
+                <option value="regex" ${rule.matchType === 'regex' ? 'selected' : ''}>Regex</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Row 2: Options + Delete -->
+    <div class="row align-items-center">
+        <div class="col-md-10">
+            <label class="small fw-semibold d-block mb-1">Options</label>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input rule-case-sensitive" type="checkbox"
+                    data-rule-idx="${idx}" ${rule.ignoreCase ? '' : 'checked'}>
+                <label class="form-check-label small">Case Sensitive</label>
+            </div>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input rule-ignore-spaces" type="checkbox"
+                    data-rule-idx="${idx}" ${rule.ignoreSpaces ? 'checked' : ''}>
+                <label class="form-check-label small">Ignore Spaces</label>
+            </div>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input rule-ignore-brackets" type="checkbox"
+                    data-rule-idx="${idx}" ${rule.ignoreBrackets ? 'checked' : ''}>
+                <label class="form-check-label small">Ignore Punct</label>
+            </div>
+        </div>
+
+        <!-- Delete Button -->
+        <div class="col-md-2 text-end">
+            <button class="btn btn-outline-danger btn-sm remove-rule-btn"
+                data-rule-idx="${idx}">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+    </div>
+
+</div>
+`;
+        });
+        
+        container.innerHTML = html;
+        
+        // Attach events for all rules
+        for (let i = 0; i < matchRules.length; i++) {
+            attachRuleEvents(i);
+        }
+        
+        // Show stats
+        const stats = calculateAllRuleStats();
+        if (stats.length > 0 && currentTableData.length) {
+            const statsContainer = document.getElementById('ruleStatsContainer');
+            const statsList = document.getElementById('ruleStatsList');
+            let statsHtml = '';
+            stats.forEach((stat, idx) => {
+                const pct = stat.totalComparisons > 0 ? ((stat.matchCount / stat.totalComparisons) * 100).toFixed(1) : 0;
+                statsHtml += `<div class="rule-stat-item">
+                    <strong>Rule ${idx+1}:</strong> ${escapeHtml(stat.rule.leftColumn)} → ${escapeHtml(stat.rule.rightColumn)}<br>
+                    ✅ ${stat.matchCount} matching cells out of ${stat.totalComparisons} (${pct}%)
+                </div>`;
+            });
+            statsList.innerHTML = statsHtml;
+            statsContainer.style.display = 'block';
+        } else {
+            document.getElementById('ruleStatsContainer').style.display = 'none';
+        }
+    }
+
+    function attachRuleEvents(idx) {
+        const leftCol = document.querySelector(`.rule-left-col[data-rule-idx="${idx}"]`);
+        const rightCol = document.querySelector(`.rule-right-col[data-rule-idx="${idx}"]`);
+        const typeSel = document.querySelector(`.rule-type[data-rule-idx="${idx}"]`);
+        const caseChk = document.querySelector(`.rule-case-sensitive[data-rule-idx="${idx}"]`);
+        const spaceChk = document.querySelector(`.rule-ignore-spaces[data-rule-idx="${idx}"]`);
+        const bracketChk = document.querySelector(`.rule-ignore-brackets[data-rule-idx="${idx}"]`);
+        const removeBtn = document.querySelector(`.remove-rule-btn[data-rule-idx="${idx}"]`);
+        
+        const updateRightColOptions = () => {
+            const currentLeft = leftCol.value;
+            const availableColumns = selectedColumns.length ? selectedColumns : fileHeaders;
+            const currentRight = matchRules[idx].rightColumn;
+            const newOptions = availableColumns
+                .filter(col => col !== currentLeft)
+                .map(col => `<option value="${escapeHtml(col)}" ${currentRight === col ? 'selected' : ''}>${escapeHtml(col)}</option>`)
+                .join('');
+            rightCol.innerHTML = newOptions;
+            if (currentRight === currentLeft || !availableColumns.includes(currentRight)) {
+                const newVal = availableColumns.filter(col => col !== currentLeft)[0] || '';
+                rightCol.value = newVal;
+                matchRules[idx].rightColumn = newVal;
+            }
+        };
+        
+        if (leftCol) {
+            leftCol.addEventListener('change', e => {
+                matchRules[idx].leftColumn = e.target.value;
+                updateRightColOptions();
+            });
+        }
+        if (rightCol) rightCol.addEventListener('change', e => matchRules[idx].rightColumn = e.target.value);
+        if (typeSel) typeSel.addEventListener('change', e => matchRules[idx].matchType = e.target.value);
+        if (caseChk) caseChk.addEventListener('change', e => matchRules[idx].ignoreCase = !e.target.checked);
+        if (spaceChk) spaceChk.addEventListener('change', e => matchRules[idx].ignoreSpaces = e.target.checked);
+        if (bracketChk) bracketChk.addEventListener('change', e => matchRules[idx].ignoreBrackets = e.target.checked);
+        if (removeBtn) removeBtn.addEventListener('click', () => {
+            matchRules.splice(idx, 1);
+            renderMatchRulesModal();
+        });
+    }
+
+    function addMatchRule() {
+        const availableColumns = selectedColumns.length >= 2 ? selectedColumns : fileHeaders;
+        if (!availableColumns || availableColumns.length < 2) {
+            alert("Need at least 2 columns to create a comparison rule");
+            return;
+        }
+        
+        matchRules.push({
+            leftColumn: availableColumns[0],
+            rightColumn: availableColumns[1],
+            matchType: 'exact',
+            ignoreCase: true,
+            ignoreSpaces: false,
+            ignoreBrackets: false
+        });
+        renderMatchRulesModal();
+    }
+
+    function clearAllRules() { 
+        matchRules = []; 
+        renderMatchRulesModal();
+        if (currentTableData.length) {
+            renderTableWithHighlights();
+            updateRuleBadgeAndSummary();
+        }
+    }
+
+    function applyMatchRulesAndHighlight() {
+        if (currentTableData.length) {
+            renderTableWithHighlights();
+            updateRuleBadgeAndSummary();
+        }
+        
+        if (matchRules.length && currentTableData.length) {
+            const stats = calculateAllRuleStats();
+            let totalMatches = 0;
+            stats.forEach(s => totalMatches += s.matchCount);
+            alert(`✅ ${matchRules.length} comparison rule(s) applied!\nTotal matching cells: ${totalMatches}`);
+        }
+        
+        const modal = bootstrap.Modal.getInstance(document.getElementById('matchModal'));
+        if (modal) modal.hide();
+    }
+
+    function escapeHtml(str) { 
+        return String(str ?? '').replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); 
+    }
+
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const btnBrowse = document.getElementById('btnBrowse');
+        const uploadNewBtn = document.getElementById('uploadNewFileBtn');
+        
+        btnBrowse.onclick = () => fileInput.click();
+        uploadNewBtn.onclick = () => showUploadArea();
+        fileInput.onchange = e => e.target.files[0] && handleFileUpload(e.target.files[0]);
+        
+        dropZone.ondragover = e => { e.preventDefault(); dropZone.classList.add('border-primary'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('border-primary');
+        dropZone.ondrop = e => {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary');
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.match(/\.(xlsx|xls|csv|txt|xml)$/i)) {
+                handleFileUpload(file);
+            } else {
+                document.getElementById('fileStatus').innerHTML = '<div class="alert alert-danger"><i class="fas fa-times"></i> Invalid file type</div>';
+            }
+        };
+        
+        document.getElementById('selectAllCols').addEventListener('click', selectAllColumns);
+        document.getElementById('deselectAllCols').addEventListener('click', deselectAllColumns);
+        document.getElementById('generateTablesBtn').addEventListener('click', generateDataTable);
+        document.getElementById('matchColumnsBtn').addEventListener('click', () => {
+            if (selectedColumns.length >= 2 || (fileHeaders && fileHeaders.length >= 2)) {
+                renderMatchRulesModal();
+                new bootstrap.Modal(document.getElementById('matchModal')).show();
+            } else {
+                alert("Please select at least 2 columns to compare");
+            }
+        });
+        document.getElementById('addMatchRuleBtn').addEventListener('click', addMatchRule);
+        document.getElementById('clearAllRulesBtn').addEventListener('click', clearAllRules);
+        document.getElementById('applyMatchRulesBtn').addEventListener('click', applyMatchRulesAndHighlight);
+    });
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Analyze | Smart Data Viewer </title>
+    <title>Analyze | Smart Data Viewer</title>
     <link rel="icon" type="image/png" href="../sumadhu.png">
     <link href="style.css" rel="stylesheet">
     <!-- Bootstrap 5 + Icons + Styling -->
@@ -13,7 +13,7 @@
     <script type="module" src="sg-plugin.js"></script>
     <style>
         body {
-            background: #eef2f5;
+            background: linear-gradient(245deg, #1300c025, #00b8be42, #c702f842);
             font-family: 'Segoe UI', Roboto, system-ui;
         }
 
@@ -88,18 +88,74 @@
             padding: 16px 24px;
             font-weight: 600;
         }
+        
+        /* New Column Selection Layout */
+        .columns-container {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .column-panel {
+            flex: 1;
+            min-width: 280px;
+            background: rgba(92, 92, 92, 0.041);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .column-panel-header {
+            background: linear-gradient(135deg, #5858582a, #e9ecef);
+            padding: 12px 16px;
+            font-weight: 700;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .column-panel-header i {
+            margin-right: 8px;
+        }
+        .column-panel-header .badge {
+            font-size: 0.7rem;
+            margin-left: 8px;
+        }
+        .column-list {
+            max-height: 350px;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
         .column-check-item {
-            padding: 8px 12px;
-            border-bottom: 1px solid #e9ecef;
+            padding: 10px 16px;
+            border-bottom: 1px solid #ffffff;
             transition: background 0.2s;
+            display: flex;
+            align-items: center;
         }
         .column-check-item:hover {
-            background: #f8f9fa;
+            background: #f8f9fa21;
         }
         .column-check-item input {
-            margin-right: 10px;
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
-   
+        .column-check-item label {
+            cursor: pointer;
+            margin: 0;
+            font-size: 0.85rem;
+            flex: 1;
+        }
+        .column-check-item .column-type {
+            font-size: 0.7rem;
+            color: #6c757d;
+            margin-left: 8px;
+        }
+        .panel-actions {
+            padding: 12px 16px;
+            background: #63636310;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
         .badge-key {
             background: #e9ecef;
             color: #0a58ca;
@@ -183,21 +239,21 @@
             font-size: 0.7rem;
             font-weight: 500;
         }
-        .normalization-options {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 10px;
-            margin-top: 8px;
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd, #ffe69e);
+            border: none;
+            color: #856404;
         }
+ 
     </style>
 </head>
 <body>
-
+<div class="particles" id="particles"></div>
 <div class="header-gradient">
-    <div class="container">
+    <div class="container d-none">
         <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div class="mt-2 mt-sm-0">
-                <button id="backToMainBtn" class="btn button6 text-light mb-1 mt-1 d-none" >
+                <button id="backToMainBtn" class="btn button6 text-light mb-1 mt-1">
                     <i class="fas fa-arrow-left me-1"></i> Back to Matcher
                 </button>
             </div>
@@ -211,32 +267,51 @@
             <i class="fas fa-columns me-2"></i> Select Columns to Display
         </div>
         <div class="p-4">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6 class="fw-bold mb-3"><i class="fas fa-database text-primary me-2"></i>File A Columns</h6>
-                    <div id="fileAColumnsList" class="border rounded" style="max-height: 280px; overflow-y: auto;">
-                        <div class="p-3 text-muted text-center">No file loaded</div>
+            <div class="columns-container">
+                <!-- File A Panel -->
+                <div class="column-panel">
+                    <div class="column-panel-header">
+                        <i class="fas fa-database text-primary"></i> File A
+                        <span class="badge bg-primary" id="fileACount">0 columns</span>
+                    </div>
+                    <div id="fileAColumnsList" class="column-list">
+                        <div class="text-muted text-center p-4">No file loaded</div>
+                    </div>
+                    <div class="panel-actions">
+                        <button id="selectAllA" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-check-square"></i> Select All
+                        </button>
+                        <button id="deselectAllA" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-square"></i> Deselect All
+                        </button>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <h6 class="fw-bold mb-3"><i class="fas fa-database text-success me-2"></i>File B Columns</h6>
-                    <div id="fileBColumnsList" class="border rounded" style="max-height: 280px; overflow-y: auto;">
-                        <div class="p-3 text-muted text-center">No file loaded</div>
+
+                <!-- File B Panel -->
+                <div class="column-panel">
+                    <div class="column-panel-header">
+                        <i class="fas fa-database text-success"></i> File B
+                        <span class="badge bg-success" id="fileBCount">0 columns</span>
+                    </div>
+                    <div id="fileBColumnsList" class="column-list">
+                        <div class="text-muted text-center p-4">No file loaded</div>
+                    </div>
+                    <div class="panel-actions">
+                        <button id="selectAllB" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-check-square"></i> Select All
+                        </button>
+                        <button id="deselectAllB" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-square"></i> Deselect All
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="text-center mt-2">
-               
-                <button id="selectAllA" class="btn btn-outline-primary btn-sm ms-2">Select All A</button>
-                <button id="deselectAllA" class="btn btn-outline-secondary btn-sm ms-1">Deselect All A</button>
-                <button id="selectAllB" class="btn btn-outline-success btn-sm ms-2">Select All B</button>
-                <button id="deselectAllB" class="btn btn-outline-secondary btn-sm ms-1">Deselect All B</button>
-            </div>
-            <center>
-             <button id="generateTablesBtn" class="btn button12 btn-lg px-5 mt-2 text-light fw-bold">
+            
+            <div class="text-center mt-4">
+                <button id="generateTablesBtn" class="btn button12 btn-lg w-100 text-white fw-bold">
                     <i class="fas fa-table me-2"></i> Show Data
-            </button>
-            </center>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -245,7 +320,12 @@
             <div><i class="fas fa-link me-2 text-primary"></i> <strong>Composite Keys:</strong> <span id="compositeKeyDisplay">—</span></div>
             <div><span class="badge bg-primary" id="matchedRowCount">0 matched rows</span></div>
         </div>
-        <div class="small text-muted mt-1">Only rows with matching composite keys are shown (when both files exist).</div>
+        <div class="small text-muted mt-1">Only rows with matching composite keys are shown.</div>
+    </div>
+
+    <div id="bothFilesRequiredAlert" class="alert alert-warning text-center" style="display: none;">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Both File A and File B are required</strong> - This analysis requires both files to be loaded for composite key matching.
     </div>
 
     <div class="section-card" id="dataTableSection" style="display: none;">
@@ -273,7 +353,7 @@
     </div>
 
     <footer>
-        <i class="fas fa-database"></i> Advanced normalization: Case Insensitive | Ignore Spaces | Remove Brackets/Punctuation ([{ }] etc.)
+        <i class="fas fa-database"></i> Composite key matching: Rows are matched based on defined composite keys. Match rules highlight matching cells between File A and File B.
     </footer>
 </div>
 
@@ -287,7 +367,7 @@
             </div>
             <div class="modal-body">
                 <p class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i> Define rules to highlight matching <strong>individual cells</strong> in <span class="badge bg-success">GREEN</span>.
+                    <i class="fas fa-info-circle me-1"></i> Define rules to highlight matching <strong>individual cells</strong> between File A and File B in <span class="badge bg-success">GREEN</span>.
                 </p>
                 
                 <div id="matchRulesContainer">
@@ -369,41 +449,71 @@
                 loadedFileBName = data.fileBName || "File B";
                 hasFileB = true;
             }
+            
+            if (!hasFileA || !hasFileB) {
+                document.getElementById('bothFilesRequiredAlert').style.display = 'block';
+                document.getElementById('compositeKeyInfo').style.display = 'none';
+                document.getElementById('dataTableSection').style.display = 'none';
+                if (document.getElementById('matchColumnsBtn')) document.getElementById('matchColumnsBtn').disabled = true;
+                return false;
+            }
+            
             if (data.keyPairs && data.keyPairs.length > 0) {
                 compositeKeyPairs = data.keyPairs;
                 const keyHtml = data.keyPairs.map(kp => `<span class="badge-key me-1">${escapeHtml(kp.leftCol)} ⇔ ${escapeHtml(kp.rightCol)}</span>`).join('');
                 document.getElementById('compositeKeyDisplay').innerHTML = keyHtml;
                 document.getElementById('compositeKeyInfo').style.display = 'block';
-            } else if (hasFileA && hasFileB) {
+            } else {
                 document.getElementById('compositeKeyInfo').style.display = 'block';
-                document.getElementById('compositeKeyDisplay').innerHTML = '<span class="text-muted">No composite keys defined - showing all rows</span>';
+                document.getElementById('compositeKeyDisplay').innerHTML = '<span class="text-warning">⚠ No composite keys defined - please define keys in main page</span>';
+                return false;
             }
-            if (!hasFileA && !hasFileB) { showNoDataMessage(); return false; }
+            
             renderColumnLists();
             return true;
         } catch(err) { console.error(err); showNoDataMessage(); return false; }
     }
 
     function renderColumnLists() {
+        // Render File A Columns
         const aContainer = document.getElementById('fileAColumnsList');
         if (hasFileA && loadedFileAHeaders) {
             let html = '';
-            loadedFileAHeaders.forEach(header => {
-                html += `<div class="column-check-item"><input type="checkbox" class="column-checkbox" data-side="A" data-column="${escapeHtml(header)}" checked><label class="small">${escapeHtml(header)}</label></div>`;
+            loadedFileAHeaders.forEach((header, idx) => {
+                html += `<div class="column-check-item">
+                    <input type="checkbox" class="column-checkbox" data-side="A" data-column="${escapeHtml(header)}" id="chk_a_${idx}" checked>
+                    <label for="chk_a_${idx}">${escapeHtml(header)}</label>
+                    <span class="column-type"><i class="fas fa-tag"></i></span>
+                </div>`;
             });
             aContainer.innerHTML = html;
+            document.getElementById('fileACount').innerText = `${loadedFileAHeaders.length} columns`;
             selectedAColumns = [...loadedFileAHeaders];
-        } else { aContainer.innerHTML = '<div class="p-3 text-muted">No file loaded</div>'; selectedAColumns = []; }
+        } else {
+            aContainer.innerHTML = '<div class="text-muted text-center p-4"><i class="fas fa-file-excel"></i> No file loaded</div>';
+            document.getElementById('fileACount').innerText = '0 columns';
+            selectedAColumns = [];
+        }
         
+        // Render File B Columns
         const bContainer = document.getElementById('fileBColumnsList');
         if (hasFileB && loadedFileBHeaders) {
             let html = '';
-            loadedFileBHeaders.forEach(header => {
-                html += `<div class="column-check-item"><input type="checkbox" class="column-checkbox" data-side="B" data-column="${escapeHtml(header)}" checked><label class="small">${escapeHtml(header)}</label></div>`;
+            loadedFileBHeaders.forEach((header, idx) => {
+                html += `<div class="column-check-item">
+                    <input type="checkbox" class="column-checkbox" data-side="B" data-column="${escapeHtml(header)}" id="chk_b_${idx}" checked>
+                    <label for="chk_b_${idx}">${escapeHtml(header)}</label>
+                    <span class="column-type"><i class="fas fa-tag"></i></span>
+                </div>`;
             });
             bContainer.innerHTML = html;
+            document.getElementById('fileBCount').innerText = `${loadedFileBHeaders.length} columns`;
             selectedBColumns = [...loadedFileBHeaders];
-        } else { bContainer.innerHTML = '<div class="p-3 text-muted">No file loaded</div>'; selectedBColumns = []; }
+        } else {
+            bContainer.innerHTML = '<div class="text-muted text-center p-4"><i class="fas fa-file-excel"></i> No file loaded</div>';
+            document.getElementById('fileBCount').innerText = '0 columns';
+            selectedBColumns = [];
+        }
         
         attachColumnListeners();
     }
@@ -416,10 +526,14 @@
     }
 
     function updateSelectedColumns() {
-        selectedAColumns = []; selectedBColumns = [];
+        selectedAColumns = [];
+        selectedBColumns = [];
         document.querySelectorAll('.column-checkbox[data-side="A"]:checked').forEach(cb => selectedAColumns.push(cb.dataset.column));
         document.querySelectorAll('.column-checkbox[data-side="B"]:checked').forEach(cb => selectedBColumns.push(cb.dataset.column));
-        console.log("Updated - A:", selectedAColumns.length, "B:", selectedBColumns.length);
+        
+        // Update count badges
+        document.getElementById('fileACount').innerHTML = `${selectedAColumns.length} / ${loadedFileAHeaders ? loadedFileAHeaders.length : 0} selected`;
+        document.getElementById('fileBCount').innerHTML = `${selectedBColumns.length} / ${loadedFileBHeaders ? loadedFileBHeaders.length : 0} selected`;
     }
 
     function selectAllColumns(side) {
@@ -440,39 +554,44 @@
     }
 
     function getFilteredRows() {
-        if (!hasFileA && hasFileB) return loadedFileBData.map((row, i) => ({ aRow: null, bRow: row, rowIndex: i }));
-        if (hasFileA && !hasFileB) return loadedFileAData.map((row, i) => ({ aRow: row, bRow: null, rowIndex: i }));
-        if (compositeKeyPairs.length) {
-            const rightMap = new Map();
-            loadedFileBData.forEach((row, i) => {
-                const key = getCompositeKeyFromRow(row, 'right');
-                if (key) { if (!rightMap.has(key)) rightMap.set(key, []); rightMap.get(key).push(row); }
-            });
-            const matched = [];
-            loadedFileAData.forEach((row, i) => {
-                const key = getCompositeKeyFromRow(row, 'left');
-                if (key && rightMap.has(key)) rightMap.get(key).forEach(bRow => matched.push({ aRow: row, bRow, rowIndex: i }));
-            });
-            document.getElementById('matchedRowCount').innerText = `${matched.length} matched rows`;
-            return matched;
-        } else {
-            const maxRows = Math.max(loadedFileAData.length, loadedFileBData.length);
-            const rows = [];
-            for (let i = 0; i < maxRows; i++) {
-                rows.push({ aRow: i < loadedFileAData.length ? loadedFileAData[i] : null, bRow: i < loadedFileBData.length ? loadedFileBData[i] : null, rowIndex: i });
+        const rightMap = new Map();
+        loadedFileBData.forEach((row, i) => {
+            const key = getCompositeKeyFromRow(row, 'right');
+            if (key) { 
+                if (!rightMap.has(key)) rightMap.set(key, []); 
+                rightMap.get(key).push(row); 
             }
-            document.getElementById('matchedRowCount').innerText = `All rows (no composite key)`;
-            return rows;
+        });
+        
+        const matched = [];
+        loadedFileAData.forEach((row, i) => {
+            const key = getCompositeKeyFromRow(row, 'left');
+            if (key && rightMap.has(key)) {
+                rightMap.get(key).forEach(bRow => matched.push({ aRow: row, bRow, rowIndex: i }));
+            }
+        });
+        
+        if (matched.length === 0) {
+            document.getElementById('matchedRowCount').innerHTML = '<span class="text-warning">⚠ No matching rows found</span>';
+        } else {
+            document.getElementById('matchedRowCount').innerText = `${matched.length} matched rows`;
         }
+        return matched;
     }
 
     function generateDataTable() {
+        if (!hasFileA || !hasFileB) {
+            document.getElementById('bothFilesRequiredAlert').style.display = 'block';
+            document.getElementById('dataTableSection').style.display = 'none';
+            return;
+        }
+        
         updateSelectedColumns();
         const showA = hasFileA && selectedAColumns.length > 0;
         const showB = hasFileB && selectedBColumns.length > 0;
         if (!showA && !showB) {
             document.getElementById('dataTableSection').style.display = 'block';
-            document.getElementById('dataTableWrapper').innerHTML = '<div class="empty-placeholder">Select at least one column</div>';
+            document.getElementById('dataTableWrapper').innerHTML = '<div class="empty-placeholder">Select at least one column from File A or File B</div>';
             return;
         }
         
@@ -504,32 +623,36 @@
         if (matchRules.length === 0) return;
         
         for (let rowIdx = 0; rowIdx < currentTableData.length; rowIdx++) {
-            const rawRow = currentRawRows[rowIdx];
             for (let ruleIdx = 0; ruleIdx < matchRules.length; ruleIdx++) {
                 const rule = matchRules[ruleIdx];
                 let leftColIdx = -1, rightColIdx = -1;
+                
                 for (let colIdx = 0; colIdx < currentHeaders.length; colIdx++) {
                     const header = currentHeaders[colIdx];
                     if (header.source === rule.leftSource && header.originalCol === rule.leftColumn) leftColIdx = colIdx;
                     if (header.source === rule.rightSource && header.originalCol === rule.rightColumn) rightColIdx = colIdx;
                 }
-                if (leftColIdx !== -1 && rightColIdx !== -1) {
+                
+                if (leftColIdx !== -1 && rightColIdx !== -1 && leftColIdx !== rightColIdx) {
                     let leftRaw = currentTableData[rowIdx][leftColIdx];
                     let rightRaw = currentTableData[rowIdx][rightColIdx];
                     let leftValue = normalizeText(leftRaw, rule);
                     let rightValue = normalizeText(rightRaw, rule);
                     
+                    if (leftValue === "" && rightValue === "") continue;
+                    
                     let isMatch = false;
                     switch (rule.matchType) {
                         case 'exact': isMatch = leftValue === rightValue; break;
                         case 'contains': isMatch = leftValue.includes(rightValue) || (rightValue.length > 0 && rightValue.includes(leftValue)); break;
-                        case 'startswith': isMatch = leftValue.startsWith(rightValue); break;
-                        case 'endswith': isMatch = leftValue.endsWith(rightValue); break;
+                        case 'startswith': isMatch = leftValue.startsWith(rightValue) && rightValue !== ""; break;
+                        case 'endswith': isMatch = leftValue.endsWith(rightValue) && rightValue !== ""; break;
                         case 'regex':
-                            try { const regex = new RegExp(rightValue, ''); isMatch = regex.test(leftValue); }
+                            try { const regex = new RegExp(rightValue, 'i'); isMatch = regex.test(leftValue); }
                             catch(e) { isMatch = false; }
                             break;
                     }
+                    
                     if (isMatch) {
                         cellMatchMap.set(`${rowIdx}_${leftColIdx}`, true);
                         cellMatchMap.set(`${rowIdx}_${rightColIdx}`, true);
@@ -545,40 +668,45 @@
             const rule = matchRules[ruleIdx];
             let matchCount = 0, totalComparisons = 0;
             let leftColIdx = -1, rightColIdx = -1;
+            
             for (let colIdx = 0; colIdx < currentHeaders.length; colIdx++) {
                 const header = currentHeaders[colIdx];
                 if (header.source === rule.leftSource && header.originalCol === rule.leftColumn) leftColIdx = colIdx;
                 if (header.source === rule.rightSource && header.originalCol === rule.rightColumn) rightColIdx = colIdx;
             }
-            if (leftColIdx !== -1 && rightColIdx !== -1) {
+            
+            if (leftColIdx !== -1 && rightColIdx !== -1 && leftColIdx !== rightColIdx) {
                 for (let rowIdx = 0; rowIdx < currentTableData.length; rowIdx++) {
                     totalComparisons++;
                     let leftRaw = currentTableData[rowIdx][leftColIdx];
                     let rightRaw = currentTableData[rowIdx][rightColIdx];
                     let leftValue = normalizeText(leftRaw, rule);
                     let rightValue = normalizeText(rightRaw, rule);
+                    
+                    if (leftValue === "" && rightValue === "") continue;
+                    
                     let isMatch = false;
                     switch (rule.matchType) {
                         case 'exact': isMatch = leftValue === rightValue; break;
                         case 'contains': isMatch = leftValue.includes(rightValue) || (rightValue.length > 0 && rightValue.includes(leftValue)); break;
-                        case 'startswith': isMatch = leftValue.startsWith(rightValue); break;
-                        case 'endswith': isMatch = leftValue.endsWith(rightValue); break;
+                        case 'startswith': isMatch = leftValue.startsWith(rightValue) && rightValue !== ""; break;
+                        case 'endswith': isMatch = leftValue.endsWith(rightValue) && rightValue !== ""; break;
                         case 'regex':
-                            try { const regex = new RegExp(rightValue, ''); isMatch = regex.test(leftValue); }
+                            try { const regex = new RegExp(rightValue, 'i'); isMatch = regex.test(leftValue); }
                             catch(e) { isMatch = false; }
                             break;
                     }
                     if (isMatch) matchCount++;
                 }
             }
-            stats.push({ rule, matchCount, totalComparisons, leftCol: rule.leftColumn, rightCol: rule.rightColumn, leftSource: rule.leftSource, rightSource: rule.rightSource, matchType: rule.matchType });
+            stats.push({ rule, matchCount, totalComparisons, leftCol: rule.leftColumn, rightCol: rule.rightColumn });
         }
         return stats;
     }
 
     function renderTableWithHighlights() {
         const container = document.getElementById('dataTableWrapper');
-        if (!currentTableData.length) { container.innerHTML = '<div class="empty-placeholder">No data</div>'; return; }
+        if (!currentTableData.length) { container.innerHTML = '<div class="empty-placeholder">No matching rows found based on composite keys</div>'; return; }
         evaluateAllRules();
         let html = `<table class="table table-custom table-bordered"><thead><tr>`;
         for (const h of currentHeaders) html += `<th class="text-nowrap">${h.displayName}</th>`;
@@ -611,7 +739,7 @@
         let summaryHtml = '';
         stats.forEach((stat, idx) => {
             const pct = stat.totalComparisons > 0 ? ((stat.matchCount / stat.totalComparisons) * 100).toFixed(1) : 0;
-            summaryHtml += `<span class="rule-badge me-2 mb-1">${idx+1}. ${escapeHtml(stat.leftCol)} (${stat.leftSource}) → ${escapeHtml(stat.rightCol)} (${stat.rightSource}): <strong>${stat.matchCount} matches</strong> (${pct}%)</span>`;
+            summaryHtml += `<span class="rule-badge me-2 mb-1">${idx+1}. ${escapeHtml(stat.leftCol)} (A) → ${escapeHtml(stat.rightCol)} (B): <strong>${stat.matchCount} matches</strong> (${pct}%)</span>`;
         });
         summaryList.innerHTML = summaryHtml;
         summaryDiv.style.display = 'block';
@@ -627,73 +755,76 @@
         }
         let html = '';
         matchRules.forEach((rule, idx) => {
-           html += `<div class="match-rule-card border rounded p-3 mb-3" data-rule-index="${idx}">
-    <div class="row g-3">
-
-        <!-- Left Column -->
-        <div class="col-md-3">
-            <label class="small fw-semibold">Left Column</label>
-            <select class="form-select form-select-sm rule-left-source" data-rule-idx="${idx}">
-                <option value="A" ${rule.leftSource === 'A' ? 'selected' : ''} ${!hasFileA ? 'disabled' : ''}>File A</option>
-                <option value="B" ${rule.leftSource === 'B' ? 'selected' : ''} ${!hasFileB ? 'disabled' : ''}>File B</option>
-            </select>
-            <select class="form-select form-select-sm mt-1 rule-left-col" data-rule-idx="${idx}">
-                ${generateColumnOptions(rule.leftSource, rule.leftColumn)}
-            </select>
-        </div>
-
-        <!-- Right Column -->
-        <div class="col-md-3">
-            <label class="small fw-semibold">Right Column</label>
-            <select class="form-select form-select-sm rule-right-source" data-rule-idx="${idx}">
-                <option value="A" ${rule.rightSource === 'A' ? 'selected' : ''} ${!hasFileA ? 'disabled' : ''}>File A</option>
-                <option value="B" ${rule.rightSource === 'B' ? 'selected' : ''} ${!hasFileB ? 'disabled' : ''}>File B</option>
-            </select>
-            <select class="form-select form-select-sm mt-1 rule-right-col" data-rule-idx="${idx}">
-                ${generateColumnOptions(rule.rightSource, rule.rightColumn)}
+           html += `
+<div class="match-rule-card border rounded p-3 mb-3" data-rule-index="${idx}">
+    
+    <!-- Row 1: Select Fields -->
+    <div class="row g-3 mb-2">
+        <div class="col-md-4">
+            <label class="small fw-semibold">
+                <i class="fas fa-database text-primary"></i> File A Column
+            </label>
+            <select class="form-select form-select-sm rule-left-col" data-rule-idx="${idx}">
+                ${generateColumnOptions('A', rule.leftColumn)}
             </select>
         </div>
 
-        <!-- Match Type -->
-        <div class="col-md-2">
+        <div class="col-md-4">
+            <label class="small fw-semibold">
+                <i class="fas fa-arrow-right"></i>
+                <i class="fas fa-database text-success"></i> File B Column
+            </label>
+            <select class="form-select form-select-sm rule-right-col" data-rule-idx="${idx}">
+                ${generateColumnOptions('B', rule.rightColumn)}
+            </select>
+        </div>
+
+        <div class="col-md-4">
             <label class="small">Match Type</label>
             <select class="form-select form-select-sm rule-type" data-rule-idx="${idx}">
                 <option value="exact" ${rule.matchType === 'exact' ? 'selected' : ''}>Exact</option>
                 <option value="contains" ${rule.matchType === 'contains' ? 'selected' : ''}>Contains</option>
-                <option value="startswith" ${rule.matchType === 'startswith' ? 'selected' : ''}>Starts</option>
-                <option value="endswith" ${rule.matchType === 'endswith' ? 'selected' : ''}>Ends</option>
+                <option value="startswith" ${rule.matchType === 'startswith' ? 'selected' : ''}>Starts With</option>
+                <option value="endswith" ${rule.matchType === 'endswith' ? 'selected' : ''}>Ends With</option>
                 <option value="regex" ${rule.matchType === 'regex' ? 'selected' : ''}>Regex</option>
             </select>
         </div>
+    </div>
 
-        <!-- Checkbox Row -->
-        <div class="col-md-4">
+    <!-- Row 2: Options + Delete -->
+    <div class="row align-items-center">
+        <div class="col-md-10">
             <label class="small fw-semibold d-block mb-1">Options</label>
 
-            <div class="d-flex flex-wrap gap-3">
-                <div class="form-check">
-                    <input class="form-check-input rule-case-sensitive" type="checkbox" data-rule-idx="${idx}" ${rule.ignoreCase ? '' : 'checked'}>
-                    <label class="form-check-label small">Case Sensitive</label>
-                </div>
-
-                <div class="form-check">
-                    <input class="form-check-input rule-ignore-spaces" type="checkbox" data-rule-idx="${idx}" ${rule.ignoreSpaces ? 'checked' : ''}>
-                    <label class="form-check-label small">Ignore Spaces</label>
-                </div>
-
-                <div class="form-check">
-                    <input class="form-check-input rule-ignore-brackets" type="checkbox" data-rule-idx="${idx}" ${rule.ignoreBrackets ? 'checked' : ''}>
-                    <label class="form-check-label small">Ignore Punct</label>
-                </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input rule-case-sensitive" type="checkbox"
+                    data-rule-idx="${idx}" ${rule.ignoreCase ? '' : 'checked'}>
+                <label class="form-check-label small">Case Sensitive</label>
             </div>
 
-            <button class="btn btn-outline-danger btn-sm mt-3 remove-rule-btn" data-rule-idx="${idx}">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input rule-ignore-spaces" type="checkbox"
+                    data-rule-idx="${idx}" ${rule.ignoreSpaces ? 'checked' : ''}>
+                <label class="form-check-label small">Ignore Spaces</label>
+            </div>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input rule-ignore-brackets" type="checkbox"
+                    data-rule-idx="${idx}" ${rule.ignoreBrackets ? 'checked' : ''}>
+                <label class="form-check-label small">Ignore Punct</label>
+            </div>
+        </div>
+
+        <div class="col-md-2 text-end">
+            <button class="btn btn-outline-danger btn-sm remove-rule-btn"
+                data-rule-idx="${idx}">
                 <i class="fas fa-trash me-1"></i> Remove
             </button>
         </div>
-
     </div>
-</div>`;
+
+</div>
+`;
         });
         container.innerHTML = html;
         for (let i = 0; i < matchRules.length; i++) attachRuleEvents(i);
@@ -701,13 +832,11 @@
 
     function generateColumnOptions(source, selectedVal) {
         const headers = source === 'A' ? loadedFileAHeaders : loadedFileBHeaders;
-        if (!headers || !headers.length) return '<option disabled>No columns</option>';
+        if (!headers || !headers.length) return '<option disabled>No columns available</option>';
         return headers.map(h => `<option value="${escapeHtml(h)}" ${selectedVal === h ? 'selected' : ''}>${escapeHtml(h)}</option>`).join('');
     }
 
     function attachRuleEvents(idx) {
-        const leftSource = document.querySelector(`.rule-left-source[data-rule-idx="${idx}"]`);
-        const rightSource = document.querySelector(`.rule-right-source[data-rule-idx="${idx}"]`);
         const leftCol = document.querySelector(`.rule-left-col[data-rule-idx="${idx}"]`);
         const rightCol = document.querySelector(`.rule-right-col[data-rule-idx="${idx}"]`);
         const typeSel = document.querySelector(`.rule-type[data-rule-idx="${idx}"]`);
@@ -716,13 +845,6 @@
         const bracketChk = document.querySelector(`.rule-ignore-brackets[data-rule-idx="${idx}"]`);
         const removeBtn = document.querySelector(`.remove-rule-btn[data-rule-idx="${idx}"]`);
         
-        const updateCols = () => {
-            if (leftCol) leftCol.innerHTML = generateColumnOptions(leftSource.value, matchRules[idx].leftColumn);
-            if (rightCol) rightCol.innerHTML = generateColumnOptions(rightSource.value, matchRules[idx].rightColumn);
-        };
-        
-        if (leftSource) leftSource.addEventListener('change', () => { matchRules[idx].leftSource = leftSource.value; updateCols(); });
-        if (rightSource) rightSource.addEventListener('change', () => { matchRules[idx].rightSource = rightSource.value; updateCols(); });
         if (leftCol) leftCol.addEventListener('change', e => matchRules[idx].leftColumn = e.target.value);
         if (rightCol) rightCol.addEventListener('change', e => matchRules[idx].rightColumn = e.target.value);
         if (typeSel) typeSel.addEventListener('change', e => matchRules[idx].matchType = e.target.value);
@@ -733,13 +855,11 @@
     }
 
     function addMatchRule() {
-        const defaultLeft = hasFileA ? 'A' : (hasFileB ? 'B' : 'A');
-        const defaultRight = (hasFileB && hasFileA) ? 'B' : defaultLeft;
         matchRules.push({
-            leftSource: defaultLeft,
-            leftColumn: (defaultLeft === 'A' && loadedFileAHeaders) ? loadedFileAHeaders[0] : (loadedFileBHeaders ? loadedFileBHeaders[0] : ''),
-            rightSource: defaultRight,
-            rightColumn: (defaultRight === 'B' && loadedFileBHeaders) ? loadedFileBHeaders[0] : (loadedFileAHeaders ? loadedFileAHeaders[0] : ''),
+            leftSource: 'A',
+            leftColumn: loadedFileAHeaders && loadedFileAHeaders.length > 0 ? loadedFileAHeaders[0] : '',
+            rightSource: 'B',
+            rightColumn: loadedFileBHeaders && loadedFileBHeaders.length > 0 ? loadedFileBHeaders[0] : '',
             matchType: 'exact',
             ignoreCase: true,
             ignoreSpaces: false,
@@ -760,7 +880,7 @@
             let statsHtml = '';
             stats.forEach((stat, idx) => {
                 const pct = stat.totalComparisons > 0 ? ((stat.matchCount / stat.totalComparisons) * 100).toFixed(1) : 0;
-                statsHtml += `<div class="rule-stat-item"><strong>Rule ${idx+1}:</strong> ${escapeHtml(stat.leftCol)} (${stat.leftSource}) ${stat.matchType} ${escapeHtml(stat.rightCol)} (${stat.rightSource})<br>✅ ${stat.matchCount} matching cells out of ${stat.totalComparisons} (${pct}%)</div>`;
+                statsHtml += `<div class="rule-stat-item"><strong>Rule ${idx+1}:</strong> ${escapeHtml(stat.leftCol)} (A) ${stat.rule.matchType} ${escapeHtml(stat.rightCol)} (B)<br>✅ ${stat.matchCount} matching cells out of ${stat.totalComparisons} (${pct}%)</div>`;
             });
             statsList.innerHTML = statsHtml;
             statsContainer.style.display = 'block';
@@ -771,18 +891,17 @@
     }
 
     function showNoDataMessage() {
-        const container = document.querySelector('.container');
-        if(container) container.innerHTML = `<div class="alert alert-warning text-center p-5 mt-5"><h4>No Data Found</h4><p>Please go back to the Excel Matcher, upload files, and click "Analyze" button first.</p><button class="btn btn-primary mt-3" onclick="window.location.href='index.html'">Go to Matcher</button></div>`;
+        const container = document.querySelector('.container-fluid');
+        if(container) container.innerHTML = `<div class="alert alert-warning text-center p-5 mt-5"><h4>No Data Found</h4><p>Please go back to the Excel Matcher, upload both files, define composite keys, and click "Analyze" button first.</p><button class="btn btn-primary mt-3" onclick="window.location.href='index.html'">Go to Matcher</button></div>`;
     }
 
     function escapeHtml(str) { return String(str ?? '').replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
 
     document.addEventListener('DOMContentLoaded', () => {
-        if (loadDataFromStorage() && (hasFileA || hasFileB)) setTimeout(() => generateDataTable(), 100);
+        if (loadDataFromStorage() && hasFileA && hasFileB) setTimeout(() => generateDataTable(), 100);
         document.getElementById('generateTablesBtn').addEventListener('click', generateDataTable);
         document.getElementById('backToMainBtn').addEventListener('click', () => window.location.href = 'index.html');
         
-        // Fixed Select/Deselect button handlers
         const selectAllABtn = document.getElementById('selectAllA');
         const deselectAllABtn = document.getElementById('deselectAllA');
         const selectAllBBtn = document.getElementById('selectAllB');
@@ -793,7 +912,14 @@
         if (selectAllBBtn) selectAllBBtn.addEventListener('click', () => selectAllColumns('B'));
         if (deselectAllBBtn) deselectAllBBtn.addEventListener('click', () => deselectAllColumns('B'));
         
-        document.getElementById('matchColumnsBtn').addEventListener('click', () => { renderMatchRulesModal(); new bootstrap.Modal(document.getElementById('matchModal')).show(); });
+        document.getElementById('matchColumnsBtn').addEventListener('click', () => { 
+            if (hasFileA && hasFileB) {
+                renderMatchRulesModal(); 
+                new bootstrap.Modal(document.getElementById('matchModal')).show();
+            } else {
+                alert("Both files are required to define match rules.");
+            }
+        });
         document.getElementById('addMatchRuleBtn').addEventListener('click', addMatchRule);
         document.getElementById('clearAllRulesBtn').addEventListener('click', clearAllRules);
         document.getElementById('applyMatchRulesBtn').addEventListener('click', applyMatchRulesAndHighlight);
