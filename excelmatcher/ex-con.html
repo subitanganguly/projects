@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XML/TXT to Excel Converter</title>
+<link rel="icon" type="image/png" href="../sumadhu.png">
+<link href="style.css" rel="stylesheet">
+<!-- Bootstrap + Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<!-- SheetJS -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+
+<style>
+body {
+    background: linear-gradient(245deg, #1300c025, #00b8be42, #c702f842);
+    font-family: 'Segoe UI', Roboto, system-ui;
+}
+
+.card {
+    background: linear-gradient(245deg, #00c0c011, #ff00c81a, #007bff13);
+    border-radius: 28px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.08), inset 0 5px 50px rgba(41,41,41,0.2);
+    border: none;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #001f3f, #0a58ca);
+    color: white;
+    font-weight: 600;
+}
+
+.upload-area {
+    border: 2px dashed #001e42;
+    border-radius: 24px;
+    background: #f8fafc6e;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.upload-area:hover {
+    background: #eef2ff;
+    border-color: #0d6efd;
+}
+
+.preview-table {
+    max-height: 220px;
+    overflow: auto;
+    background: rgba(255, 255, 255, 0.041);
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.8rem;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container py-4">
+
+    <!-- Header -->
+    <div class="text-center mb-4">
+        <h4 class="fw-bold">
+            <i class="fas fa-file-code me-2"></i>
+            XML / TXT → Excel Converter
+        </h4>
+    </div>
+
+    <!-- Upload Card -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-upload me-2"></i> Upload File
+        </div>
+
+        <div class="card-body text-center">
+
+            <div class="upload-area p-4" id="dropZone">
+                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-2"></i>
+                <p class="mb-1">Click or drag XML / TXT file</p>
+
+                <input type="file" id="fileInput" accept=".xml,.txt" class="d-none">
+
+                <button class="btn btn-outline-primary btn-sm mt-2" id="browseBtn">
+                    <i class="fas fa-folder-open"></i> Browse
+                </button>
+            </div>
+
+            <div id="status" class="mt-2 small fw-semibold"></div>
+
+            <div id="preview" class="preview-table mt-3" style="display:none;"></div>
+
+            <button class="btn button12 fw-bold w-100 text-light mt-4" id="convertBtn" disabled>
+                <i class="fas fa-download me-2"></i> Convert & Download Excel
+            </button>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+let parsedData = [];
+let fileName = "";
+
+const fileInput = document.getElementById("fileInput");
+const browseBtn = document.getElementById("browseBtn");
+const dropZone = document.getElementById("dropZone");
+const status = document.getElementById("status");
+const preview = document.getElementById("preview");
+const convertBtn = document.getElementById("convertBtn");
+
+// ---------- UI Events ----------
+browseBtn.onclick = () => fileInput.click();
+
+fileInput.onchange = e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+};
+
+dropZone.ondragover = e => {
+    e.preventDefault();
+    dropZone.classList.add("border-primary");
+};
+dropZone.ondragleave = () => dropZone.classList.remove("border-primary");
+
+dropZone.ondrop = e => {
+    e.preventDefault();
+    dropZone.classList.remove("border-primary");
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+};
+
+// ---------- Clean ----------
+function cleanValue(val) {
+    return String(val || "")
+        .trim()
+        .replace(/^"+|"+$/g, '')
+        .replace(/^'+|'+$/g, '');
+}
+
+// ---------- File Read ----------
+function handleFile(file) {
+    fileName = file.name;
+    const reader = new FileReader();
+
+    reader.onload = e => {
+        const content = e.target.result;
+
+        if (file.name.endsWith(".xml")) parseXML(content);
+        else parseTXT(content);
+
+        renderPreview();
+        convertBtn.disabled = false;
+
+        status.innerHTML = `<i class="fas fa-check text-success"></i> ${file.name} (${parsedData.length} rows)`;
+    };
+
+    reader.readAsText(file);
+}
+
+// ---------- XML ----------
+function parseXML(xmlText) {
+    const xml = new DOMParser().parseFromString(xmlText, "text/xml");
+
+    const rows = xml.querySelectorAll("row"); // change if needed
+    parsedData = [];
+
+    rows.forEach(r => {
+        let obj = {};
+        r.children.forEach(n => {
+            obj[n.tagName] = cleanValue(n.textContent);
+        });
+        parsedData.push(obj);
+    });
+}
+
+// ---------- TXT ----------
+function parseTXT(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    const headers = lines[0].split(",").map(cleanValue);
+
+    parsedData = lines.slice(1).map(line => {
+        const values = line.split(",");
+        let obj = {};
+        headers.forEach((h,i)=> obj[h] = cleanValue(values[i]));
+        return obj;
+    });
+}
+
+// ---------- Preview ----------
+function renderPreview() {
+    if (!parsedData.length) return;
+
+    const headers = Object.keys(parsedData[0]);
+    const rows = parsedData.slice(0,5);
+
+    let html = `<table class="table table-sm table-bordered"><thead><tr>`;
+    headers.forEach(h => html += `<th>${h}</th>`);
+    html += `</tr></thead><tbody>`;
+
+    rows.forEach(r => {
+        html += `<tr>`;
+        headers.forEach(h => html += `<td>${r[h]}</td>`);
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    preview.innerHTML = html;
+    preview.style.display = "block";
+}
+
+// ---------- Convert ----------
+convertBtn.onclick = () => {
+    const headers = Object.keys(parsedData[0]);
+
+    const sheetData = [
+        headers,
+        ...parsedData.map(r =>
+            headers.map(h => ({
+                t: "s",  // 🔥 force text
+                v: cleanValue(r[h])
+            }))
+        )
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    ws['!cols'] = headers.map(() => ({ wch: 25 }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Converted");
+
+    XLSX.writeFile(wb, "converted.xlsx");
+};
+</script>
+
+</body>
+</html>
