@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>PDF Redactor Pro </title>
+  <link rel="icon" type="image/png" href="../sumadhu.png">
+  <link href="style.css" rel="stylesheet">
+  <!-- Bootstrap 5 + Icons + PDF.js + pdf-lib -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script type="module" src="sg-plugin.js"></script>
+  <style>
+    body {
+      background: linear-gradient(245deg, #1300c025, #00b8be42, #c702f842);
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .main-card {
+      border-radius: 2rem;
+      background: rgba(245, 245, 245, 0.096);
+      box-shadow: 0 10px 25px 10px rgba(0,0,0,0.12);
+      border: 1px solid white;
+    }
+    .upload-area {
+      border: 2px dashed #afafaf;
+      background: #ffffff56;
+      border-radius: 1.8rem;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .upload-area:hover {
+      background-color: #f8fafdad;
+      border-color: #3b82f6;
+    }
+    .preview-scroll {
+      max-height: 560px;
+      overflow-y: auto;
+      background: #f1f5f9;
+      border-radius: 1.5rem;
+      padding: 1rem;
+    }
+    .page-wrapper {
+      background: rgba(255, 255, 255, 0.699);
+      border-radius: 1.2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .page-canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .badge-clean {
+      background: #e9ecef;
+      color: #1e293b;
+      font-size: 0.7rem;
+      border-radius: 30px;
+      padding: 4px 12px;
+      font-weight: 500;
+    }
+
+    .pattern-item {
+      background: rgba(245, 245, 245, 0.404);
+      border-radius: 1rem;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid #ffffff;
+      transition: all 0.2s;
+      box-shadow: inset 0 0 40px 3px rgba(82, 82, 82, 0.164);
+    }
+    .pattern-item:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .hide-type-select {
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .color-preview {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      cursor: pointer;
+    }
+    footer {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+    .blur-sample {
+      filter: blur(10px);
+      background: #e2e8f0;
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+    }
+    @media (max-width: 768px) {
+      .preview-scroll {
+        max-height: 460px;
+      }
+    }
+  </style>
+</head>
+<body class="py-1">
+
+<div class="container my-1 my-md-4">
+  <div class="text-center mb-4">
+    <h6 class="fw-bold display-6 sg-text"><i class="bi bi-file-pdf-fill me-2"></i>Hide with Style</h6>
+    <small class="text-secondary mt-2">Upload PDF → Add patterns → Choose <strong>White-Out / Blur / Highlight</strong> → Auto-apply to ALL pages → Download</small>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-5">
+      <div class="main-card p-4 h-100">
+        <label class="fw-semibold fs-5 mb-2"><i class="bi bi-cloud-upload me-1"></i> 1. Select PDF</label>
+        <div class="upload-area p-4 text-center" id="uploadTrigger">
+          <i class="bi bi-file-earmark-pdf fs-1 text-danger"></i>
+          <p class="mt-2 mb-1 fw-medium">Click or drag & drop</p>
+          <small class="text-secondary">Supports 100+ pages • All pages processed</small>
+          <input type="file" id="pdfInput" accept="application/pdf" class="d-none">
+        </div>
+        <div id="fileNameDisplay" class="small text-center mt-2 text-muted"></div>
+
+        <!-- Patterns Section -->
+        <div class="mt-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="fw-semibold"><i class="bi bi-textarea-t"></i> 2. Patterns to Hide</label>
+            <button type="button" id="addPatternBtn" class="btn button13 text-light rounded-pill">
+              <i class="bi bi-plus-lg"></i> Add Pattern
+            </button>
+          </div>
+          
+          <div class="alert alert-info py-1 px-2 mb-2 small">
+            <i class="bi bi-lightbulb"></i> Enter exact text (e.g., "Mobile - xxxxxxxxxx") - matches across all pages
+          </div>
+          
+          <div id="patternsList" style="max-height: 320px; overflow-y: auto;">
+            <div class="pattern-item" data-pattern-id="0">
+              <div class="d-flex gap-2 mb-2">
+                <input type="text" class="form-control form-control-sm pattern-text" value="" placeholder="Mobile - xxxxxxxxxx" style="flex:1;">
+                <button type="button" class="btn btn-sm btn-outline-danger remove-pattern-btn">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+              <div class="row g-2 align-items-center">
+                <div class="col-4">
+                  <label class="small text-muted">Hide Type</label>
+                  <select class="form-select form-select-sm hide-type-select">
+                    <option value="whiteout">⬜ White-Out</option>
+                    <option value="blur">🌀 Blur</option>
+                    <option value="highlight">🟡 Highlight</option>
+                  </select>
+                </div>
+                <div class="col-4">
+                  <label class="small text-muted">Extra Width (px)</label>
+                  <input type="range" class="form-range pad-x-slider" min="0" max="80" value="0" step="1">
+                  <div class="d-flex justify-content-between">
+                    <span class="small">0</span>
+                    <span class="small pad-x-val">30</span>
+                    <span class="small">80</span>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <label class="small text-muted">Extra Height (px)</label>
+                  <input type="range" class="form-range pad-y-slider" min="0" max="50" value="0" step="1">
+                  <div class="d-flex justify-content-between">
+                    <span class="small">0</span>
+                    <span class="small pad-y-val">8</span>
+                    <span class="small">50</span>
+                  </div>
+                </div>
+              </div>
+              <div class="row mt-2 highlight-color-row" style="display: none;">
+                <div class="col-12">
+                  <label class="small text-muted">Highlight Color</label>
+                  <div class="d-flex gap-2 align-items-center">
+                    <input type="color" class="form-control form-control-sm highlight-color" style="width: 60px;" value="#ffeb3b">
+                    <span class="small">Yellow (#ffeb3b)</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary reset-highlight" style="margin-left: auto;">Reset</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-grid gap-3 mt-3">
+          <button id="processBtn" class="btn button12 text-white" disabled>
+            <i class="bi bi-brush"></i> Apply to ALL Pages
+          </button>
+          <button id="downloadBtn" class="btn button14" disabled>
+            <i class="bi bi-download"></i> Download PDF
+          </button>
+        </div>
+        
+        <hr class="my-3">
+        <div class="text-muted small text-center">
+          <i class="bi bi-shield-lock"></i> 100% local • <i class="bi bi-palette"></i> White • Blur • Highlight
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="main-card p-3 d-flex flex-column h-100">
+        <div class="d-flex justify-content-between align-items-center px-2 pt-1 pb-2 flex-wrap">
+          <h5 class="fw-semibold mb-0"><i class="bi bi-card-image"></i> Preview (after processing)</h5>
+          <span id="pageCounterBadge" class="badge bg-secondary rounded-pill">Not processed</span>
+        </div>
+        <div id="previewArea" class="preview-scroll mt-2 flex-grow-1 text-center">
+          <div class="py-5 text-secondary">
+            <i class="bi bi-file-earmark-x fs-1"></i>
+            <p class="mt-2">Upload PDF, add patterns, choose hide type, then click "Apply to ALL Pages"</p>
+            <div class="mt-3">
+              <span class="badge bg-dark me-2">⬜ White-Out</span>
+              <span class="badge bg-secondary me-2">🌀 Blur Effect</span>
+              <span class="badge bg-warning text-dark">🟡 Highlight</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="text-center mt-4">
+    <i class="bi bi-check-lg text-success"></i> Automatically finds and applies selected effect to matching text on every page
+  </footer>
+</div>
+
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+  let originalPdfBytes = null;
+  let redactedPdfBlob = null;
+  let totalPages = 0;
+
+  const fileInput = document.getElementById('pdfInput');
+  const uploadTrigger = document.getElementById('uploadTrigger');
+  const processBtn = document.getElementById('processBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const previewArea = document.getElementById('previewArea');
+  const pageCounterBadge = document.getElementById('pageCounterBadge');
+  const fileNameDisplay = document.getElementById('fileNameDisplay');
+  const patternsList = document.getElementById('patternsList');
+  const addPatternBtn = document.getElementById('addPatternBtn');
+
+  // Helper: normalize text for matching
+  function normalizeText(text) {
+    return text.toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  // Check if text matches any pattern
+  function getMatchingPattern(text, patterns) {
+    if (!text) return null;
+    const normalizedText = normalizeText(text);
+    
+    for (let pattern of patterns) {
+      const normalizedPattern = normalizeText(pattern.text);
+      if (normalizedText.includes(normalizedPattern)) {
+        return pattern;
+      }
+      const noSpaceText = normalizedText.replace(/\s/g, '');
+      const noSpacePattern = normalizedPattern.replace(/\s/g, '');
+      if (noSpaceText.includes(noSpacePattern)) {
+        return pattern;
+      }
+      if (normalizedPattern.match(/\d{10}/)) {
+        const regex = new RegExp(normalizedPattern.replace(/\d{10}/, '\\d{10}'), 'i');
+        if (regex.test(normalizedText)) return pattern;
+      }
+    }
+    return null;
+  }
+
+  // Apply effect to canvas context
+  function applyEffectToZone(ctx, zone, effectType, highlightColor = '#ffeb3b') {
+    const { x, y, width, height } = zone;
+    
+    if (effectType === 'whiteout') {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(x, y, width, height);
+    } 
+    else if (effectType === 'blur') {
+      // Save the area, apply blur filter, then restore
+      ctx.save();
+      ctx.shadowBlur = 0;
+      ctx.filter = 'blur(6px)';
+      ctx.fillStyle = 'rgba(200,200,200,0.8)';
+      ctx.fillRect(x, y, width, height);
+      ctx.filter = 'none';
+      ctx.restore();
+      // Additional blur effect: draw semi-transparent to enhance blur look
+      ctx.fillStyle = 'rgba(240,240,245,0.6)';
+      ctx.fillRect(x, y, width, height);
+    }
+    else if (effectType === 'highlight') {
+      ctx.fillStyle = highlightColor;
+      ctx.globalAlpha = 0.6;
+      ctx.fillRect(x, y, width, height);
+      ctx.globalAlpha = 1.0;
+    }
+  }
+
+  function updatePatternUI(patternDiv) {
+    const select = patternDiv.querySelector('.hide-type-select');
+    const highlightRow = patternDiv.querySelector('.highlight-color-row');
+    if (select.value === 'highlight') {
+      highlightRow.style.display = 'flex';
+    } else {
+      highlightRow.style.display = 'none';
+    }
+  }
+
+  function addNewPattern(patternText = "New pattern here") {
+    const patternId = Date.now();
+    const patternDiv = document.createElement('div');
+    patternDiv.className = 'pattern-item';
+    patternDiv.setAttribute('data-pattern-id', patternId);
+    patternDiv.innerHTML = `
+      <div class="d-flex gap-2 mb-2">
+        <input type="text" class="form-control form-control-sm pattern-text" value="${escapeHtml(patternText)}" placeholder="Text to hide" style="flex:1;">
+        <button type="button" class="btn btn-sm btn-outline-danger remove-pattern-btn">
+          <i class="bi bi-trash3"></i>
+        </button>
+      </div>
+      <div class="row g-2 align-items-center">
+        <div class="col-4">
+          <label class="small text-muted">Hide Type</label>
+          <select class="form-select form-select-sm hide-type-select">
+            <option value="whiteout">⬜ White-Out</option>
+            <option value="blur">🌀 Blur</option>
+            <option value="highlight">🟡 Highlight</option>
+          </select>
+        </div>
+        <div class="col-4">
+          <label class="small text-muted">Extra Width (px)</label>
+          <input type="range" class="form-range pad-x-slider" min="0" max="80" value="25" step="1">
+          <div class="d-flex justify-content-between">
+            <span class="small">0</span>
+            <span class="small pad-x-val">25</span>
+            <span class="small">80</span>
+          </div>
+        </div>
+        <div class="col-4">
+          <label class="small text-muted">Extra Height (px)</label>
+          <input type="range" class="form-range pad-y-slider" min="0" max="50" value="5" step="1">
+          <div class="d-flex justify-content-between">
+            <span class="small">0</span>
+            <span class="small pad-y-val">5</span>
+            <span class="small">50</span>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-2 highlight-color-row" style="display: none;">
+        <div class="col-12">
+          <label class="small text-muted">Highlight Color</label>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="color" class="form-control form-control-sm highlight-color" style="width: 60px;" value="#ffeb3b">
+            <span class="small">Pick color</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary reset-highlight" style="margin-left: auto;">Reset</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    const select = patternDiv.querySelector('.hide-type-select');
+    const highlightRow = patternDiv.querySelector('.highlight-color-row');
+    const resetBtn = patternDiv.querySelector('.reset-highlight');
+    const colorInput = patternDiv.querySelector('.highlight-color');
+    
+    select.addEventListener('change', () => {
+      if (select.value === 'highlight') {
+        highlightRow.style.display = 'flex';
+      } else {
+        highlightRow.style.display = 'none';
+      }
+    });
+    
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        colorInput.value = '#ffeb3b';
+      });
+    }
+    
+    const xSlider = patternDiv.querySelector('.pad-x-slider');
+    const ySlider = patternDiv.querySelector('.pad-y-slider');
+    const xVal = patternDiv.querySelector('.pad-x-val');
+    const yVal = patternDiv.querySelector('.pad-y-val');
+    
+    xSlider.addEventListener('input', () => { xVal.textContent = xSlider.value; });
+    ySlider.addEventListener('input', () => { yVal.textContent = ySlider.value; });
+    
+    const removeBtn = patternDiv.querySelector('.remove-pattern-btn');
+    removeBtn.addEventListener('click', () => {
+      if (document.querySelectorAll('.pattern-item').length > 1) {
+        patternDiv.remove();
+      } else {
+        alert("Keep at least one pattern.");
+      }
+    });
+    
+    patternsList.appendChild(patternDiv);
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
+  addPatternBtn.addEventListener('click', () => addNewPattern("Another pattern"));
+
+  // Initialize existing patterns
+  function initPatterns() {
+    document.querySelectorAll('.pattern-item').forEach(item => {
+      const select = item.querySelector('.hide-type-select');
+      const highlightRow = item.querySelector('.highlight-color-row');
+      const resetBtn = item.querySelector('.reset-highlight');
+      const colorInput = item.querySelector('.highlight-color');
+      
+      if (select) {
+        select.addEventListener('change', () => {
+          if (select.value === 'highlight') {
+            highlightRow.style.display = 'flex';
+          } else {
+            highlightRow.style.display = 'none';
+          }
+        });
+        if (select.value === 'highlight') highlightRow.style.display = 'flex';
+      }
+      
+      if (resetBtn && colorInput) {
+        resetBtn.addEventListener('click', () => { colorInput.value = '#ffeb3b'; });
+      }
+      
+      const xSlider = item.querySelector('.pad-x-slider');
+      const ySlider = item.querySelector('.pad-y-slider');
+      const xVal = item.querySelector('.pad-x-val');
+      const yVal = item.querySelector('.pad-y-val');
+      if (xSlider) xSlider.addEventListener('input', () => { xVal.textContent = xSlider.value; });
+      if (ySlider) ySlider.addEventListener('input', () => { yVal.textContent = ySlider.value; });
+      
+      const removeBtn = item.querySelector('.remove-pattern-btn');
+      if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+          if (document.querySelectorAll('.pattern-item').length > 1) {
+            item.remove();
+          } else {
+            alert("Keep at least one pattern.");
+          }
+        });
+      }
+    });
+  }
+  
+  initPatterns();
+
+  function getPatternsConfig() {
+    const patterns = [];
+    const patternItems = document.querySelectorAll('.pattern-item');
+    for (let item of patternItems) {
+      const textInput = item.querySelector('.pattern-text');
+      let rawPattern = textInput.value.trim();
+      if (rawPattern === "") continue;
+      
+      const padX = parseInt(item.querySelector('.pad-x-slider').value, 10);
+      const padY = parseInt(item.querySelector('.pad-y-slider').value, 10);
+      const hideType = item.querySelector('.hide-type-select').value;
+      let highlightColor = '#ffeb3b';
+      if (hideType === 'highlight') {
+        const colorInput = item.querySelector('.highlight-color');
+        if (colorInput) highlightColor = colorInput.value;
+      }
+      
+      patterns.push({
+        text: rawPattern,
+        padX: padX,
+        padY: padY,
+        type: hideType,
+        highlightColor: highlightColor
+      });
+    }
+    return patterns;
+  }
+
+  async function renderPreviewFromBlob(blob, maxShow = 5) {
+    const arrayBuffer = await blob.arrayBuffer();
+    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const total = pdfDoc.numPages;
+    const pagesToRender = Math.min(total, maxShow);
+    previewArea.innerHTML = '';
+    
+    for (let i = 1; i <= pagesToRender; i++) {
+      try {
+        const page = await pdfDoc.getPage(i);
+        const viewport = page.getViewport({ scale: 0.65 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.classList.add('page-canvas');
+        canvas.style.width = '100%';
+        canvas.style.height = 'auto';
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'page-wrapper p-2';
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'd-flex justify-content-between px-2 pt-1 pb-2';
+        headerDiv.innerHTML = `
+          <span class="fw-semibold small"><i class="bi bi-file-text"></i> Page ${i}</span>
+          <span class="badge-clean"><i class="bi bi-eraser"></i> effect applied</span>
+        `;
+        wrapper.appendChild(headerDiv);
+        wrapper.appendChild(canvas);
+        previewArea.appendChild(wrapper);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    if (total > pagesToRender) {
+      const extraMsg = document.createElement('div');
+      extraMsg.className = 'text-center text-secondary small mt-1';
+      extraMsg.innerHTML = `<i class="bi bi-three-dots"></i> + ${total - pagesToRender} more pages`;
+      previewArea.appendChild(extraMsg);
+    }
+    pageCounterBadge.innerText = `${total} page${total !== 1 ? 's' : ''}`;
+  }
+
+  // Main redaction function with multiple effect types
+  async function applyEffectsToPDF(originalByteArray, patterns) {
+    const pdfDocument = await pdfjsLib.getDocument({ data: originalByteArray.slice(0) }).promise;
+    const totalPagesCount = pdfDocument.numPages;
+    const pageImages = [];
+
+    for (let pageNum = 1; pageNum <= totalPagesCount; pageNum++) {
+      const page = await pdfDocument.getPage(pageNum);
+      const scale = 2.2;
+      const viewport = page.getViewport({ scale: scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+
+      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+      const textContent = await page.getTextContent();
+      const items = textContent.items;
+      const zonesToProcess = [];
+
+      // Process individual text items
+      for (let item of items) {
+        if (!item.str) continue;
+        const matchedPattern = getMatchingPattern(item.str, patterns);
+        if (matchedPattern) {
+          const transform = item.transform;
+          const x = transform[4] * scale;
+          const pdfY = transform[5];
+          const yCanvas = viewport.height - (pdfY * scale);
+          const fontSize = (item.height || item.transform[3] || 12) * scale;
+          const width = (item.width || item.str.length * fontSize * 0.55) * scale;
+          const height = fontSize + 4;
+          
+          zonesToProcess.push({
+            x: x - matchedPattern.padX,
+            y: yCanvas - height - matchedPattern.padY,
+            width: width + (matchedPattern.padX * 2),
+            height: height + (matchedPattern.padY * 2),
+            type: matchedPattern.type,
+            highlightColor: matchedPattern.highlightColor
+          });
+        }
+      }
+
+      // Process combined line text
+      const itemsWithPos = [];
+      for (let item of items) {
+        if (!item.str) continue;
+        const transform = item.transform;
+        const x = transform[4] * scale;
+        const pdfY = transform[5];
+        const yCanvas = viewport.height - (pdfY * scale);
+        itemsWithPos.push({
+          str: item.str,
+          x: x,
+          y: yCanvas,
+          width: (item.width || 50) * scale,
+          height: (item.height || 12) * scale
+        });
+      }
+      
+      const lines = [];
+      for (let ip of itemsWithPos) {
+        let added = false;
+        for (let line of lines) {
+          if (Math.abs(line.y - ip.y) < 20) {
+            line.items.push(ip);
+            added = true;
+            break;
+          }
+        }
+        if (!added) lines.push({ y: ip.y, items: [ip] });
+      }
+      
+      for (let line of lines) {
+        line.items.sort((a,b) => a.x - b.x);
+        const combinedText = line.items.map(i => i.str).join(' ');
+        const matchedPattern = getMatchingPattern(combinedText, patterns);
+        if (matchedPattern) {
+          for (let item of line.items) {
+            zonesToProcess.push({
+              x: item.x - matchedPattern.padX,
+              y: item.y - item.height - matchedPattern.padY,
+              width: item.width + (matchedPattern.padX * 2),
+              height: item.height + (matchedPattern.padY * 2),
+              type: matchedPattern.type,
+              highlightColor: matchedPattern.highlightColor
+            });
+          }
+        }
+      }
+
+      // Apply effects to all zones
+      ctx.save();
+      for (let zone of zonesToProcess) {
+        applyEffectToZone(ctx, zone, zone.type, zone.highlightColor);
+      }
+      ctx.restore();
+
+      const imgBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+      pageImages.push({
+        blob: imgBlob,
+        width: viewport.width,
+        height: viewport.height
+      });
+    }
+    
+    const { PDFDocument } = await import('https://cdn.skypack.dev/pdf-lib@1.17.1');
+    const newPdf = await PDFDocument.create();
+    for (const img of pageImages) {
+      const imgBytes = await img.blob.arrayBuffer();
+      const embedded = await newPdf.embedJpg(imgBytes);
+      const page = newPdf.addPage([img.width, img.height]);
+      page.drawImage(embedded, { x: 0, y: 0, width: img.width, height: img.height });
+    }
+    const pdfBytes = await newPdf.save();
+    return new Blob([pdfBytes], { type: 'application/pdf' });
+  }
+
+  async function processRedaction(file) {
+    if (!file) return;
+    
+    const patterns = getPatternsConfig();
+    if (patterns.length === 0) {
+      alert("Please add at least one pattern to hide.");
+      return;
+    }
+    
+    processBtn.disabled = true;
+    processBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing all pages...';
+    downloadBtn.disabled = true;
+    previewArea.innerHTML = `<div class="py-5 text-center"><div class="spinner-border text-primary mb-2"></div><p>Applying ${patterns.length} pattern(s) with selected effects...</p></div>`;
+    
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      originalPdfBytes = uint8Array;
+      
+      redactedPdfBlob = await applyEffectsToPDF(uint8Array, patterns);
+      
+      await renderPreviewFromBlob(redactedPdfBlob, 5);
+      
+      downloadBtn.disabled = false;
+      processBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Complete!';
+      processBtn.disabled = false;
+      
+      const successDiv = document.createElement('div');
+      successDiv.className = 'alert alert-success mt-3 py-2';
+      successDiv.innerHTML = `<i class="bi bi-check-lg me-2"></i> Successfully applied effects to ${patterns.length} pattern(s) across all pages.`;
+      const targetParent = document.querySelector('.main-card .info-banner') || document.querySelector('.main-card');
+      if (targetParent) targetParent.parentNode.insertBefore(successDiv, targetParent.nextSibling);
+      setTimeout(() => successDiv.remove(), 4000);
+      
+    } catch (err) {
+      console.error("Error:", err);
+      previewArea.innerHTML = `<div class="alert alert-danger m-3">Error: ${err.message}</div>`;
+      processBtn.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Retry';
+      processBtn.disabled = false;
+      downloadBtn.disabled = true;
+      redactedPdfBlob = null;
+    }
+  }
+
+  function downloadPDF() {
+    if (redactedPdfBlob) {
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(redactedPdfBlob);
+      link.href = url;
+      link.download = 'redacted_document.pdf';
+      link.click();
+      URL.revokeObjectURL(url);
+    } else {
+      alert("Process the PDF first.");
+    }
+  }
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      processBtn.disabled = false;
+      downloadBtn.disabled = true;
+      redactedPdfBlob = null;
+      fileNameDisplay.innerHTML = `<i class="bi bi-check-circle text-success"></i> ${file.name}`;
+      previewArea.innerHTML = `<div class="py-5 text-secondary"><i class="bi bi-check-circle"></i> File ready. Configure patterns and click "Apply to ALL Pages".</div>`;
+      pageCounterBadge.innerText = "Ready";
+    } else {
+      processBtn.disabled = true;
+      fileNameDisplay.innerHTML = '<span class="text-danger">Invalid PDF</span>';
+    }
+  });
+
+  processBtn.addEventListener('click', async () => {
+    if (!fileInput.files || fileInput.files.length === 0) {
+      alert("Select a PDF file first.");
+      return;
+    }
+    await processRedaction(fileInput.files[0]);
+  });
+
+  downloadBtn.addEventListener('click', downloadPDF);
+
+  uploadTrigger.addEventListener('click', () => fileInput.click());
+  uploadTrigger.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadTrigger.classList.add('bg-light');
+  });
+  uploadTrigger.addEventListener('dragleave', () => uploadTrigger.classList.remove('bg-light'));
+  uploadTrigger.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadTrigger.classList.remove('bg-light');
+    const files = e.dataTransfer.files;
+    if (files.length && files[0].type === 'application/pdf') {
+      fileInput.files = files;
+      fileInput.dispatchEvent(new Event('change'));
+    } else {
+      alert("PDF files only");
+    }
+  });
+</script>
+</body>
+</html>
