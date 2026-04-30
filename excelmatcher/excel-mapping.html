@@ -164,7 +164,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
 function addColumn(){
   document.getElementById('mappingArea').insertAdjacentHTML('beforeend',`
     <div class="glass-card dark shine p-4 mb-3">
-      <button class="btn btn-sm btn-danger  remove-btn" onclick="this.closest('.card').remove()">❌</button>
+      <button class="btn btn-sm btn-light  remove-btn" onclick="this.closest('.glass-card').remove()">❌</button>
 
       <input class="form-control mb-2 mt-2 header" placeholder="Header Name">
 
