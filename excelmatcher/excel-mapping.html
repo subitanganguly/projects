@@ -264,7 +264,7 @@ function processData(){
         return row[col.trim()] ?? "";
       });
 
-      text = text.replace(/\n/g, "<br>");
+      text = text.replace(/\n/g, "\n");
 
       obj[header] = text;
     });
@@ -367,9 +367,7 @@ function downloadPDF(){
   // ✅ TABLE
   doc.autoTable({
     head: [keys],
-    body: tableData.map(r => 
-    keys.map(k => String(r[k]).replace(/<br>/g, " "))
-  ),
+    body: tableData.map(r => keys.map(k => r[k])),
 
     startY: startY,
 
