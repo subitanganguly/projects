@@ -367,7 +367,9 @@ function downloadPDF(){
   // ✅ TABLE
   doc.autoTable({
     head: [keys],
-    body: tableData.map(r => keys.map(k => r[k])),
+    body: tableData.map(r => 
+    keys.map(k => String(r[k]).replace(/<br>/g, " "))
+  ),
 
     startY: startY,
 
