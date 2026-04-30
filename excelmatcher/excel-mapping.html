@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Excel Mapping App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="../sumadhu.png">
+<link href="style.css" rel="stylesheet">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script type="module" src="sg-plugin.js"></script>
+<style>
+body { 
+    background:linear-gradient(245deg, #1300c025, #00b8be42, #c702f842); 
+}
+/* .card { 
+    border-radius:12px; 
+    position:relative; 
+    background-color: rgba(0, 255, 255, 0.041);
+    border: 1px solid white;
+    box-shadow: 0 5px 8px 5px rgba(0, 0, 0, 0.226), inset 0 0 30px 10px rgba(0, 0, 0, 0.178);
+}
+.card:hover{
+    box-shadow: 0 5px 8px 5px rgba(0, 0, 0, 0.226), inset 0 0 30px 10px rgba(255, 255, 255, 0.178);
+} */
+.remove-btn { position:absolute; top:0px; right:0px;}
+th { cursor:pointer; }
+</style>
+</head>
+
+<body class="p-2">
+
+<div class="container">
+
+<div class="d-flex justify-content-between mb-3">
+  <h3>📊 <span class="sg-text" style="font-size: 28px;">Excel Mapping</span></h3>
+  <button class="btn button11" data-bs-toggle="offcanvas" data-bs-target="#filterPanel">🔍 Filters</button>
+</div>
+
+<input type="file" id="fileInput" class="form-control mb-3">
+
+<button class="btn button9 fw-bold mb-3" onclick="addColumn()">➕ Add Column</button>
+
+<div id="mappingArea"></div>
+
+<button class="btn w-100 button12 text-light fw-bold mt-2" onclick="processData()">Sync Excel Data</button>
+
+<hr>
+
+<!-- SUBJECT -->
+<div class="row mb-3">
+
+  <!-- LEFT COLUMN -->
+<div class="col-md-6">
+  <label class="fw-semibold mb-1">Subject</label>
+
+  <textarea id="subjectText" class="form-control mb-2" placeholder="Enter Subject"></textarea>
+
+  <!-- ALIGNMENT BUTTONS -->
+  <div class="btn-group mb-2">
+    <button class="btn btn-outline-secondary btn-sm align-btn active" data-align="left">⬅</button>
+    <button class="btn btn-outline-secondary btn-sm align-btn" data-align="center">⬆</button>
+    <button class="btn btn-outline-secondary btn-sm align-btn" data-align="right">➡</button>
+  </div>
+
+  <div class="form-check">
+    <input type="checkbox" class="form-check-input" id="repeatSubject">
+    <label class="form-check-label">Repeat on every PDF page</label>
+  </div>
+</div>
+
+  <!-- RIGHT COLUMN -->
+  <div class="col-md-2">
+
+    <!-- Font Size -->
+    <div class="mb-2 d-flex align-items-center gap-2">
+      <label class="fw-semibold">Font Size:</label>
+      <select id="fontSize" class="form-select w-auto">
+        <option value="8">Small</option>
+        <option value="10" selected>Normal</option>
+        <option value="12">Large</option>
+        <option value="14">Extra Large</option>
+      </select>
+    </div>
+
+
+  </div>
+
+
+    <div class="col-md-4">
+
+
+    <!-- Buttons -->
+    <div class="d-flex gap-2 flex-wrap mt-3">
+      <button class="btn btn-danger" onclick="downloadPDF()">📄 PDF</button>
+      <button class="btn btn-success" onclick="downloadExcel()">📊 Excel</button>
+      <button class="btn btn-warning" onclick="openDistribution()">📐 Column Size</button>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="table-responsive mt-3">
+  <table class="table table-bordered" id="resultTable"></table>
+</div>
+
+</div>
+
+<!-- FILTER PANEL -->
+<div class="offcanvas offcanvas-end" id="filterPanel">
+  <div class="offcanvas-header">
+    <h5>Filters</h5>
+    <button class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body" id="filterArea"></div>
+</div>
+
+
+<div class="modal fade" id="distModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5>Column Distribution (%)</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" id="distBody"></div>
+
+      <div class="modal-footer">
+        <button class="btn btn-success" onclick="saveDistribution()">Save</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- LIBRARIES -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+let excelData = [];
+let tableData = [];
+let sortDirection = {};
+
+// Upload
+document.getElementById('fileInput').addEventListener('change', e => {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+    excelData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    populateDropdowns();
+    generateFilters();
+    alert("Excel Loaded");
+  };
+  reader.readAsArrayBuffer(e.target.files[0]);
+});
+
+// Add Column
+function addColumn(){
+  document.getElementById('mappingArea').insertAdjacentHTML('beforeend',`
+    <div class="glass-card dark shine p-4 mb-3">
+      <button class="btn btn-sm btn-danger  remove-btn" onclick="this.closest('.card').remove()">❌</button>
+
+      <input class="form-control mb-2 mt-2 header" placeholder="Header Name">
+
+      <div class="d-flex gap-2 mb-2">
+        <select class="form-select column-select"></select>
+        <button class="btn btn-primary add-col">Add</button>
+      </div>
+
+      <textarea class="form-control mapping" placeholder="Use <Column>"></textarea>
+    </div>
+  `);
+  populateDropdowns();
+}
+
+// Populate dropdown
+function populateDropdowns(){
+  if(!excelData.length) return;
+
+  const cols = Object.keys(excelData[0]);
+
+  document.querySelectorAll('.column-select').forEach(s=>{
+    s.innerHTML = cols.map(c=>`<option value="${c}">${c}</option>`).join('');
+  });
+}
+
+// Insert column tag
+document.addEventListener('click',e=>{
+  if(e.target.classList.contains('add-col')){
+    const c=e.target.closest('.card');
+    const col=c.querySelector('select').value;
+    const t=c.querySelector('textarea');
+
+    t.value += (t.value ? " " : "") + `<${col}>`;
+  }
+});
+
+// Filters
+function generateFilters(){
+  let html="";
+
+  Object.keys(excelData[0]).forEach(col=>{
+    const vals=[...new Set(excelData.map(r=>r[col]))];
+
+    html+=`
+    <div class="mb-2">
+      <label class="small">${col}</label>
+      <select multiple class="form-select filter" data-col="${col}">
+        ${vals.map(v=>`<option value="${v}">${v}</option>`).join("")}
+      </select>
+    </div>`;
+  });
+
+  filterArea.innerHTML=html;
+}
+
+// Filter logic
+function getFiltered(){
+  return excelData.filter(r=>{
+    return [...document.querySelectorAll('.filter')].every(f=>{
+      const selected=[...f.selectedOptions].map(o=>o.value);
+      if(!selected.length) return true;
+      return selected.includes(String(r[f.dataset.col]));
+    });
+  });
+}
+
+// 🔥 FIXED PROCESS FUNCTION
+function processData(){
+
+  const headerInputs = document.querySelectorAll('.header');
+  const mappingInputs = document.querySelectorAll('.mapping');
+
+  const filtered = getFiltered();
+
+  tableData = filtered.map((row,rowIndex)=>{
+
+    let obj = {};
+    obj["SL"] = rowIndex + 1;
+
+    mappingInputs.forEach((m,i)=>{
+
+      let header = headerInputs[i].value.trim();
+
+      // Fix empty header
+      if(!header){
+        header = "Column " + (i+1);
+      }
+
+      // Fix duplicate header
+      if(obj.hasOwnProperty(header)){
+        header = header + "_" + (i+1);
+      }
+
+      let text = m.value;
+
+      text = text.replace(/<([^>]+)>/g,(match,col)=>{
+        return row[col.trim()] ?? "";
+      });
+
+      text = text.replace(/\n/g, "\n");
+
+      obj[header] = text;
+    });
+
+    return obj;
+  });
+
+  renderTable();
+}
+
+// Render
+function renderTable(){
+  if(!tableData.length) return;
+
+  const keys = Object.keys(tableData[0]);
+
+  let html="<thead><tr>";
+
+  keys.forEach(k=>{
+    html+=`<th style="background:#e0e0e0;font-weight:bold;" onclick="sortTable('${k}')">${k}</th>`;
+  });
+
+  html+="</tr></thead><tbody>";
+
+  tableData.forEach(row=>{
+    html+="<tr>";
+
+    keys.forEach(k=>{
+      html+=`<td>${row[k] ?? ""}</td>`;
+    });
+
+    html+="</tr>";
+  });
+
+  html+="</tbody>";
+
+  resultTable.innerHTML=html;
+}
+
+// Sort
+function sortTable(col){
+  sortDirection[col]=!sortDirection[col];
+
+  tableData.sort((a,b)=>{
+    if(a[col]<b[col]) return sortDirection[col]?-1:1;
+    if(a[col]>b[col]) return sortDirection[col]?1:-1;
+    return 0;
+  });
+
+  tableData.forEach((r,i)=> r.SL=i+1);
+
+  renderTable();
+}
+
+// PDF
+function downloadPDF(){
+  if(!tableData.length) return alert("No data");
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const subject = document.getElementById('subjectText').value || "";
+  const keys = Object.keys(tableData[0]);
+  const fontSize = Number(document.getElementById('fontSize').value);
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const usableWidth = pageWidth - 20;
+
+  // ✅ Column width from %
+  let columnStyles = {};
+  keys.forEach((k, index) => {
+    let percent = columnPercent[k] || (100 / keys.length);
+    columnStyles[index] = {
+      cellWidth: (percent / 100) * usableWidth
+    };
+  });
+
+  // ✅ SUBJECT DRAW FUNCTION
+  function drawSubject(){
+    doc.setFontSize(fontSize + 2);
+
+    // multi-line support
+    const lines = doc.splitTextToSize(subject, usableWidth);
+
+    if(subjectAlign === "center"){
+      doc.text(lines, pageWidth / 2, 10, { align: "center" });
+    }
+    else if(subjectAlign === "right"){
+      doc.text(lines, pageWidth - 10, 10, { align: "right" });
+    }
+    else {
+      doc.text(lines, 10, 10); // default left
+    }
+
+    return 10 + (lines.length * (fontSize + 1)); // return Y position
+  }
+
+  const startY = drawSubject() + 5;
+
+  // ✅ TABLE
+  doc.autoTable({
+    head: [keys],
+    body: tableData.map(r => keys.map(k => r[k])),
+
+    startY: startY,
+
+    styles: {
+      fontSize: fontSize,
+      lineWidth: 0.2,
+      lineColor: [0,0,0],
+      cellPadding: 2
+    },
+
+    headStyles: {
+      fillColor: [200,200,200],
+      textColor: [0,0,0],
+      fontStyle: 'bold',
+      lineWidth: 0.3
+    },
+
+    columnStyles: columnStyles,
+
+    didDrawPage: () => {
+      if(document.getElementById('repeatSubject').checked){
+        drawSubject();
+      }
+    }
+  });
+
+  doc.save("report.pdf");
+}
+
+// Excel
+function downloadExcel(){
+  if(!tableData.length) return alert("No data");
+
+  const cleanData = tableData.map(row => {
+    let obj = {};
+    Object.keys(row).forEach(k => {
+      obj[k] = String(row[k]).replace(/<br>/g, "\n");
+    });
+    return obj;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(cleanData);
+
+  // 🔥 Enable wrap text
+  Object.keys(ws).forEach(cell => {
+    if(cell[0] === '!') return;
+    ws[cell].s = { alignment: { wrapText: true } };
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Report");
+
+  XLSX.writeFile(wb, "report.xlsx");
+}
+
+// Init
+window.onload=()=>addColumn();
+
+
+
+
+let columnPercent = {}; // store %
+
+function openDistribution(){
+  if(!tableData.length) return alert("Generate table first");
+
+  const keys = Object.keys(tableData[0]);
+  let html = "";
+
+  keys.forEach(k=>{
+    html += `
+      <div class="mb-2">
+        <label>${k}</label>
+        <input type="number" class="form-control dist-input" 
+          data-col="${k}" value="${columnPercent[k] || ''}" placeholder="%">
+      </div>
+    `;
+  });
+
+  document.getElementById('distBody').innerHTML = html;
+
+  new bootstrap.Modal(document.getElementById('distModal')).show();
+}
+
+
+// Save %
+function saveDistribution(){
+  const inputs = document.querySelectorAll('.dist-input');
+
+  let total = 0;
+  columnPercent = {};
+
+  inputs.forEach(i=>{
+    const val = Number(i.value) || 0;
+    columnPercent[i.dataset.col] = val;
+    total += val;
+  });
+
+  // Auto adjust if not 100
+  if(total !== 100){
+    const keys = Object.keys(columnPercent);
+    const remaining = 100 - total;
+
+    // Add remaining to last column
+    const lastKey = keys[keys.length - 1];
+    columnPercent[lastKey] += remaining;
+  }
+
+  alert("Saved!");
+  bootstrap.Modal.getInstance(document.getElementById('distModal')).hide();
+}
+
+
+let subjectAlign = "left";
+
+document.addEventListener("click", function(e){
+  if(e.target.classList.contains("align-btn")){
+    document.querySelectorAll(".align-btn").forEach(b=>b.classList.remove("active"));
+    e.target.classList.add("active");
+
+    subjectAlign = e.target.dataset.align;
+  }
+});
+</script>
+
+</body>
+</html>
