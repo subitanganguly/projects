@@ -163,7 +163,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
 // Add Column
 function addColumn(){
   document.getElementById('mappingArea').insertAdjacentHTML('beforeend',`
-    <div class="glass-card dark shine p-4 mb-3">
+    <div class="glass-card dark shine card p-4 mb-3">
       <button class="btn btn-sm btn-light  remove-btn" onclick="this.closest('.glass-card').remove()">❌</button>
 
       <input class="form-control mb-2 mt-2 header" placeholder="Header Name">
@@ -264,7 +264,7 @@ function processData(){
         return row[col.trim()] ?? "";
       });
 
-      text = text.replace(/\n/g, "\n");
+      text = text.replace(/\n/g, "<br>");
 
       obj[header] = text;
     });
