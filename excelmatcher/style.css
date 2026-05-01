@@ -90,11 +90,10 @@
     color: #ffffff;
 }
 
-.form-control::placeholder {
-  font-weight: bold;
-  opacity: 0.8;
+/* .form-control::placeholder {
+  opacity: 0.4;
   color: rgb(255, 255, 255);
-}
+} */
 
 /* Hover Effect */
 .form-control:hover {
