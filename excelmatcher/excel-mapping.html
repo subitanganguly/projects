@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,6 +13,11 @@
 <style>
 body { 
     background:linear-gradient(245deg, #1300c025, #00b8be42, #c702f842); 
+}
+.filter-input-bg{
+  background:linear-gradient(245deg, #958aff25, #00b8be42, #c702f842); 
+  box-shadow: inset 0 0 30px 20px rgba(0, 0, 0, 0.11);
+
 }
 /* .card { 
     border-radius:12px; 
@@ -57,7 +63,10 @@ th { cursor:pointer; }
 
 <div id="mappingArea"></div>
 
-<button class="btn w-100 button12 text-light fw-bold mt-2" onclick="processData()">Sync Excel Data</button>
+<button id="syncBtn" class="btn w-100 button12 text-light fw-bold mt-2" onclick="processData()">
+  <span class="btn-text">Sync Excel Data</span>
+  <span class="spinner-border spinner-border-sm d-none"></span>
+</button>
 
 <hr>
 
@@ -65,15 +74,15 @@ th { cursor:pointer; }
 <div class="row mb-3">
 
   <!-- LEFT COLUMN -->
-<div class="col-md-6">
+<div class="col-md-9 glass-card p-2">
   <label class="fw-semibold mb-1">Subject</label>
 
   <textarea id="subjectText" class="form-control mb-2" placeholder="Enter Subject"></textarea>
 
   <!-- ALIGNMENT BUTTONS -->
   <div class="btn-group mb-2">
-    <button class="btn btn-outline-secondary btn-sm align-btn active" data-align="left">⬅</button>
-    <button class="btn btn-outline-secondary btn-sm align-btn" data-align="center">⬆</button>
+    <button class="btn btn-outline-secondary btn-sm align-btn" data-align="left">⬅</button>
+    <button class="btn btn-outline-secondary btn-sm align-btn active" data-align="center">⬆</button>
     <button class="btn btn-outline-secondary btn-sm align-btn" data-align="right">➡</button>
   </div>
 
@@ -89,7 +98,7 @@ th { cursor:pointer; }
     <!-- Font Size -->
     <div class="mb-2 d-flex align-items-center gap-2">
       <label class="fw-semibold">Font Size:</label>
-      <select id="fontSize" class="form-select w-auto">
+      <select id="fontSize" class="form-select w-auto w-100">
         <option value="8">Small</option>
         <option value="10" selected>Normal</option>
         <option value="12">Large</option>
@@ -101,20 +110,35 @@ th { cursor:pointer; }
   </div>
 
 
-    <div class="col-md-3">
+<div class="col-md-12">
 
+  <div class="d-flex justify-content-between flex-wrap mt-3">
 
-    <!-- Buttons -->
-    <div class="d-flex gap-2 flex-wrap mt-3">
+    <!-- Left Buttons -->
+    <div class="d-flex gap-2 flex-wrap">
       <button class="btn button10" id="pdfBtn" onclick="downloadPDF()">
-    <span class="btn-text">📄 PDF</span>
-    <span class="spinner-border spinner-border-sm d-none" role="status"></span>
-    </button>
+        <span class="btn-text">📄 PDF</span>
+        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+      </button>
+
       <button class="btn button12" onclick="downloadExcel()">𓊂 Excel</button>
       <button class="btn button14" onclick="openDistribution()">⚙️ Column</button>
     </div>
 
+    <!-- Right Buttons -->
+    <div class="d-flex gap-2 flex-wrap ms-auto">
+      <button class="btn button10 text-light fw-bold" onclick="printBySelection()">
+        🖨 PRINT BY FILTER
+      </button>
+
+      <button class="btn button12 text-light fw-bold" onclick="downloadExcelBySelection()">
+        📊 Excel by Filter
+      </button>
+    </div>
+
   </div>
+
+</div>
 
 </div>
 
@@ -126,10 +150,21 @@ th { cursor:pointer; }
 
 <!-- FILTER PANEL -->
 <div class="offcanvas offcanvas-end" id="filterPanel">
-  <div class="offcanvas-header">
-    <h5 class="sg-text">Filters</h5>
+  <div class="offcanvas-header flex-column align-items-start gap-1">
+  
+  <!-- Top row: Title + Close button -->
+  <div class="w-100 d-flex justify-content-between align-items-center">
+    <h5 class="sg-text mb-0">Filters</h5>
     <button class="btn-close" data-bs-dismiss="offcanvas"></button>
   </div>
+
+  <!-- Description -->
+  <p class="text-muted mb-0" style="font-size: 0.85rem;">
+    Select the desired fields and click anywhere outside the panel. 
+    The panel will close automatically, and the selected filters will be applied.
+  </p>
+
+</div>
   <div class="offcanvas-body" id="filterArea"></div>
 </div>
 
@@ -164,56 +199,68 @@ let excelData = [];
 let tableData = [];
 let sortDirection = {};
 let columnPercent = {}; // store %
+let currentSortColumn = null;
+let currentSortOrder = 'asc'; // 'asc' or 'desc'
 
 // Upload
 document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
   const reader = new FileReader();
   reader.onload = e => {
-    const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-    excelData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, {type:'array'});
+    const firstSheet = wb.Sheets[wb.SheetNames[0]];
+    excelData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
     populateDropdowns();
     generateFilters();
-    alert("Excel Loaded");
+    // Clear previous table data when new file loaded
+    tableData = [];
+    document.getElementById('resultTable').innerHTML = '';
+    // Reset column percentages
+    columnPercent = {};
+    alert("Excel Loaded Successfully!");
   };
-  reader.readAsArrayBuffer(e.target.files[0]);
+  reader.readAsArrayBuffer(file);
 });
 
 // Add Column
 function addColumn(){
-  document.getElementById('mappingArea').insertAdjacentHTML('beforeend',`
-    <div class="glass-card dark shine card p-4 mb-3">
-      <button class="btn btn-sm btn-light remove-btn" onclick="removeColumn(this)">❌</button>
-      <div class="row g-2 align-items-center mb-2 mt-2">
-        <div class="col-md-6">
-          <input class="form-control header" placeholder="Header Name">
-        </div>
-        <div class="col-md-6">
-          <div class="row g-2">
-            <div class="col-8">
-              <select class="form-select column-select"></select>
-            </div>
-            <div class="col-4">
-              <button class="btn btn-primary w-100 add-col">Add</button>
-            </div>
+  const mappingArea = document.getElementById('mappingArea');
+  const cards = mappingArea.querySelectorAll('.glass-card');
+  
+  const newCard = document.createElement('div');
+  newCard.className = 'glass-card dark shine card p-4 mb-3';
+  newCard.innerHTML = `
+    <button class="btn btn-sm btn-light remove-btn" onclick="removeColumn(this)">❌</button>
+    <div class="row g-2 align-items-center mb-2 mt-2">
+      <div class="col-md-6">
+        <input class="form-control header" placeholder="Header Name">
+      </div>
+      <div class="col-md-6">
+        <div class="row g-2">
+          <div class="col-8">
+            <select class="form-select column-select"></select>
+          </div>
+          <div class="col-4">
+            <button class="btn btn-primary w-100 add-col">Add</button>
           </div>
         </div>
       </div>
-      <textarea class="form-control mapping" placeholder="Use <Column>"></textarea>
     </div>
-  `);
+    <textarea class="form-control mapping" placeholder="Use <Column>"></textarea>
+  `;
+  mappingArea.appendChild(newCard);
   populateDropdowns();
 }
 
 function removeColumn(btn){
   const allCards = document.querySelectorAll('#mappingArea .glass-card');
-
-  // 🚨 If only one column left
   if(allCards.length <= 1){
     alert("At least one column is required!");
     return;
   }
-
-  // ✅ Remove normally
   btn.closest('.glass-card').remove();
 }
 
@@ -229,206 +276,359 @@ function populateDropdowns(){
 // Insert column tag
 document.addEventListener('click',e=>{
   if(e.target.classList.contains('add-col')){
-    const c=e.target.closest('.card');
-    const col=c.querySelector('select').value;
-    const t=c.querySelector('textarea');
-    t.value += (t.value ? "" : "") + `<${col}>`;
+    const card = e.target.closest('.glass-card');
+    const select = card.querySelector('select');
+    const textarea = card.querySelector('textarea');
+    const col = select.value;
+    textarea.value += `<${col}>`;
+    textarea.focus();
   }
 });
 
-// Filters
-// function generateFilters(){
-//   let html="";
-//   Object.keys(excelData[0]).forEach(col=>{
-//     const vals=[...new Set(excelData.map(r=>r[col]))];
-//     html+=`
-//     <div class="mb-2">
-//       <label class="small">${col}</label>
-//       <select multiple class="form-select filter" data-col="${col}">
-//         ${vals.map(v=>`<option value="${v}">${v}</option>`).join("")}
-//       </select>
-//     </div>`;
-//   });
-//   filterArea.innerHTML=html;
-// }
-
+// Generate Filters with proper event handling
 function generateFilters(){
+  if(!excelData || excelData.length === 0){
+    document.getElementById("filterArea").innerHTML = "<div class='text-danger'>No data available</div>";
+    return;
+  }
+
+  const columns = Object.keys(excelData[0]);
   let html = "";
 
-  Object.keys(excelData[0]).forEach(col=>{
-    const vals = [...new Set(excelData.map(r=>r[col]))];
+  columns.forEach(col=>{
+    const vals = [...new Set(
+      excelData
+        .map(r => r[col])
+        .filter(v => v !== undefined && v !== null && v !== "")
+    )];
 
     html += `
-    <div class="mb-3">
-      
-      <!-- Header + Buttons -->
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <label class="fw-semibold mb-0">${col}</label>
-        <div>
-          <button class="btn btn-sm btn-outline-primary select-all" data-col="${col}">All</button>
-          <button class="btn btn-sm btn-outline-danger clear-all" data-col="${col}">Clear</button>
-        </div>
-      </div>
+<div class="mb-3 p-2">
+  <div class="d-flex justify-content-between align-items-center mb-1">
+    <label class="fw-semibold mb-0">${col}</label>
+    <div>
+      <button class="btn btn-sm btn-outline-primary select-all-btn" data-col="${col}">All</button>
+      <button class="btn btn-sm btn-outline-danger clear-all-btn" data-col="${col}">Clear</button>
+    </div>
+  </div>
 
-      <!-- Checkbox List -->
-      <div class="border rounded p-2" style="max-height:200px; overflow:auto;">
-        ${vals.map((v,i)=>`
-          <div class="form-check">
-            <input class="form-check-input filter-checkbox" 
-                   type="checkbox" 
-                   value="${v}" 
-                   data-col="${col}" 
-                   id="${col}_${i}">
-            <label class="form-check-label" for="${col}_${i}">
-              ${v}
-            </label>
-          </div>
-        `).join("")}
-      </div>
+  <!-- 🔍 SEARCH BOX -->
+  <input type="text" 
+         class="form-control form-control-sm mb-2 filter-search" 
+         placeholder="Search ${col}..." 
+         data-col="${col}">
 
-    </div>`;
+  <div class="border filter-input-bg rounded p-2" style="max-height:200px; overflow:auto;">
+    ${vals.map((v,i)=>`
+      <div class="form-check">
+        <input class="form-check-input filter-checkbox" 
+               type="checkbox" 
+               value="${String(v).replace(/"/g, '&quot;')}" 
+               data-col="${col}" 
+               id="${col}_${i}">
+        <label class="form-check-label" for="${col}_${i}">
+          ${String(v)}
+        </label>
+      </div>
+    `).join("")}
+  </div>
+</div>`;
   });
 
-  filterArea.innerHTML = html;
-}
+  document.getElementById("filterArea").innerHTML = html;
+  
+  // Attach event listeners for Select All and Clear All buttons
+  document.querySelectorAll('.select-all-btn').forEach(btn => {
+    btn.removeEventListener('click', handleSelectAll);
+    btn.addEventListener('click', handleSelectAll);
+  });
+  
+  document.querySelectorAll('.clear-all-btn').forEach(btn => {
+    btn.removeEventListener('click', handleClearAll);
+    btn.addEventListener('click', handleClearAll);
+  });
 
-// Filter logic
-// function getFiltered(){
-//   return excelData.filter(r=>{
-//     return [...document.querySelectorAll('.filter')].every(f=>{
-//       const selected=[...f.selectedOptions].map(o=>o.value);
-//       if(!selected.length) return true;
-//       return selected.includes(String(r[f.dataset.col]));
-//     });
-//   });
-// }
+  // 🔍 SEARCH + AUTO SELECT
+document.querySelectorAll('.filter-search').forEach(input => {
 
-document.addEventListener('click', e => {
+  input.addEventListener('input', function(){
+    const col = this.dataset.col;
+    const search = this.value.toLowerCase().trim();
 
-  // SELECT ALL
-  if(e.target.classList.contains('select-all')){
-    const col = e.target.dataset.col;
+    const checkboxes = document.querySelectorAll(`.filter-checkbox[data-col="${col}"]`);
 
-    document.querySelectorAll(`.filter-checkbox[data-col="${col}"]`)
-      .forEach(cb => cb.checked = true);
-  }
+    checkboxes.forEach(cb => {
+      const label = document.querySelector(`label[for="${cb.id}"]`);
+      const text = label ? label.textContent.toLowerCase() : "";
 
-  // CLEAR ALL
-  if(e.target.classList.contains('clear-all')){
-    const col = e.target.dataset.col;
+      if(search === ""){
+        // if empty → do nothing (keep current selection)
+        return;
+      }
 
-    document.querySelectorAll(`.filter-checkbox[data-col="${col}"]`)
-      .forEach(cb => cb.checked = false);
-  }
+      if(text.includes(search)){
+        cb.checked = true;   // ✅ AUTO SELECT MATCH
+      } else {
+        cb.checked = false;  // ❌ UNSELECT NON-MATCH
+      }
+    });
+  });
 
 });
+}
 
+function handleSelectAll(e) {
+  e.stopPropagation();
+  const col = e.target.dataset.col;
+  document.querySelectorAll(`.filter-checkbox[data-col="${col}"]`)
+    .forEach(cb => cb.checked = true);
+}
+
+function handleClearAll(e) {
+  e.stopPropagation();
+  const col = e.target.dataset.col;
+  document.querySelectorAll(`.filter-checkbox[data-col="${col}"]`)
+    .forEach(cb => cb.checked = false);
+}
+
+// Get filtered data based on checkbox selections
 function getFiltered(){
+  if(!excelData.length) return [];
+  
   return excelData.filter(row => {
-
-    return Object.keys(excelData[0]).every(col => {
-
-      const checked = [
-        ...document.querySelectorAll(`.filter-checkbox[data-col="${col}"]:checked`)
-      ].map(cb => cb.value);
-
-      if(!checked.length) return true;
-
-      return checked.includes(String(row[col]));
-
+    const allCheckboxes = document.querySelectorAll('.filter-checkbox');
+    if(allCheckboxes.length === 0) return true;
+    
+    // Group checkboxes by column
+    const columnChecks = {};
+    allCheckboxes.forEach(cb => {
+      const col = cb.dataset.col;
+      if(!columnChecks[col]) columnChecks[col] = [];
+      columnChecks[col].push(cb);
     });
-
+    
+    // Check each column that has any checked boxes
+    for(const col in columnChecks) {
+      const checkedBoxes = columnChecks[col].filter(cb => cb.checked);
+      if(checkedBoxes.length > 0) {
+        const selectedValues = checkedBoxes.map(cb => cb.value);
+        const cellValue = String(row[col] ?? '');
+        if(!selectedValues.includes(cellValue)) {
+          return false;
+        }
+      }
+    }
+    return true;
   });
 }
 
-// PROCESS FUNCTION
+// Update the columnPercent initialization when processing data
+// function processData(){
+//   if(!excelData || excelData.length === 0){
+//     alert("Please upload an Excel file first!");
+//     return;
+//   }
+
+//   const headerInputs = document.querySelectorAll('.header');
+//   const mappingInputs = document.querySelectorAll('.mapping');
+
+//   let hasEmptyHeader = false;
+//   headerInputs.forEach((input) => {
+//     if(!input.value.trim()) {
+//       input.style.border = '1px solid red';
+//       hasEmptyHeader = true;
+//     } else {
+//       input.style.border = '';
+//     }
+//   });
+
+//   if(hasEmptyHeader) {
+//     alert("Please fill in all header names!");
+//     return;
+//   }
+
+//   const filtered = getFiltered();
+
+//   if(!filtered.length){
+//     alert("No data found after applying filters!");
+//     return;
+//   }
+
+//   tableData = filtered.map((row, rowIndex) => {
+//     let obj = {};
+//     obj["_raw"] = row; // 🔥 store original row
+//     obj["SL"] = rowIndex + 1;
+
+//     mappingInputs.forEach((m, i) => {
+//       let header = headerInputs[i].value.trim();
+//       let finalHeader = header;
+//       let counter = 1;
+
+//       while(obj.hasOwnProperty(finalHeader)) {
+//         finalHeader = `${header}_${counter++}`;
+//       }
+
+//       let text = m.value.replace(/<([^>]+)>/g, (match, col) => {
+//         return row[col.trim()] ?? "";
+//       });
+
+//       obj[finalHeader] = text;
+//     });
+
+//     return obj;
+//   });
+
+//   renderTable();
+// }
+
 function processData(){
 
-    // 🚨 CHECK: No file loaded
-  if(!excelData || excelData.length === 0){
-    alertError("Please upload an Excel file first!");
-    return;
-  }
+  const btn = document.getElementById("syncBtn");
+  const text = btn.querySelector(".btn-text");
+  const spinner = btn.querySelector(".spinner-border");
 
-  const headerInputs = document.querySelectorAll('.header');
-  const mappingInputs = document.querySelectorAll('.mapping');
-  const filtered = getFiltered();
+  // 🔥 SHOW SPINNER
+  text.classList.add("d-none");
+  spinner.classList.remove("d-none");
+  btn.disabled = true;
 
-    // 🚨 CHECK: No data after filter
-  if(!filtered.length){
-    alert("⚠️ No data found after applying filters!");
-    return;
-  }
+  // ⏳ Allow UI to update before heavy work
+  setTimeout(() => {
+    try {
 
-  tableData = filtered.map((row,rowIndex)=>{
-    let obj = {};
-    obj["SL"] = rowIndex + 1;
-
-    mappingInputs.forEach((m,i)=>{
-      let header = headerInputs[i].value.trim();
-      if(!header){
-        header = "Column " + (i+1);
+      if(!excelData || excelData.length === 0){
+        alert("Please upload an Excel file first!");
+        return;
       }
-      if(obj.hasOwnProperty(header)){
-        header = header + "_" + (i+1);
-      }
-      let text = m.value;
-      text = text.replace(/<([^>]+)>/g,(match,col)=>{
-        return row[col.trim()] ?? "";
+
+      const headerInputs = document.querySelectorAll('.header');
+      const mappingInputs = document.querySelectorAll('.mapping');
+
+      let hasEmptyHeader = false;
+      headerInputs.forEach((input) => {
+        if(!input.value.trim()) {
+          input.style.border = '1px solid red';
+          hasEmptyHeader = true;
+        } else {
+          input.style.border = '';
+        }
       });
-      text = text.replace(/\n/g, "\n");
-      obj[header] = text;
-    });
-    return obj;
-  });
 
-  // Reset columnPercent based on new headers
-  const keys = Object.keys(tableData[0]);
-  if(Object.keys(columnPercent).length !== keys.length) {
-    columnPercent = {};
+      if(hasEmptyHeader) {
+        alert("Please fill in all header names!");
+        return;
+      }
+
+      const filtered = getFiltered();
+
+      if(!filtered.length){
+        alert("No data found after applying filters!");
+        return;
+      }
+
+      tableData = filtered.map((row, rowIndex) => {
+        let obj = {};
+        obj["_raw"] = row;
+        obj["SL"] = rowIndex + 1;
+
+        mappingInputs.forEach((m, i) => {
+          let header = headerInputs[i].value.trim();
+          let finalHeader = header;
+          let counter = 1;
+
+          while(obj.hasOwnProperty(finalHeader)) {
+            finalHeader = `${header}_${counter++}`;
+          }
+
+          let textVal = m.value.replace(/<([^>]+)>/g, (match, col) => {
+            return row[col.trim()] ?? "";
+          });
+
+          obj[finalHeader] = textVal;
+        });
+
+        return obj;
+      });
+
+      renderTable();
+
+    } catch (err) {
+      console.error(err);
+      alert("Error: " + err.message);
+    } finally {
+      // 🔥 HIDE SPINNER (ALWAYS RUNS)
+      text.classList.remove("d-none");
+      spinner.classList.add("d-none");
+      btn.disabled = false;
+    }
+
+  }, 100); // small delay to show spinner
+}
+
+// Render Table with proper sorting indicators
+function renderTable(){
+  if(!tableData.length) {
+    document.getElementById('resultTable').innerHTML = '<tbody><tr><td class="text-center">No data to display</td></tr></tbody>';
+    return;
+  }
+  
+  const keys = Object.keys(tableData[0]).filter(k => k !== "_raw");
+  let html = "<thead><tr>";
+  keys.forEach(k => {
+    const sortIndicator = (currentSortColumn === k) ? (currentSortOrder === 'asc' ? ' ▲' : ' ▼') : '';
+    html += `<th style="background:#e0e0e0;font-weight:bold;cursor:pointer;" onclick="sortTable('${k.replace(/'/g, "\\'")}')">${k}${sortIndicator}</th>`;
+  });
+  html += "</tr></thead><tbody>";
+  
+  tableData.forEach(row => {
+    html += "<tr>";
     keys.forEach(k => {
-      columnPercent[k] = 100 / keys.length;
+      let cellValue = row[k] ?? "";
+      html += `<td>${String(cellValue).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
     });
+    html += "</tr>";
+  });
+  html += "</tbody>";
+  document.getElementById('resultTable').innerHTML = html;
+}
+
+// Sort Table
+function sortTable(col){
+  if(col === "_raw") return; // ignore
+
+  if(currentSortColumn === col) {
+    currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSortColumn = col;
+    currentSortOrder = 'asc';
   }
 
-  renderTable();
-}
+  tableData.sort((a, b) => {
+    let valA = String(a[col] ?? "");
+    let valB = String(b[col] ?? "");
 
-// Render
-function renderTable(){
-  if(!tableData.length) return;
-  const keys = Object.keys(tableData[0]);
-  let html="<thead><table>";
-  keys.forEach(k=>{
-    html+=`<th style="background:#e0e0e0;font-weight:bold;" onclick="sortTable('${k}')">${k}</th>`;
-  });
-  html+="</tr></thead><tbody>";
-  tableData.forEach(row=>{
-    html+="<tr>";
-    keys.forEach(k=>{
-      html+=`<td>${row[k] ?? ""}</td>`;
-    });
-    html+="</tr>";
-  });
-  html+="</tbody>";
-  resultTable.innerHTML=html;
-}
+    if(col === 'SL'){
+      valA = Number(valA) || 0;
+      valB = Number(valB) || 0;
+    }
 
-// Sort
-function sortTable(col){
-  sortDirection[col]=!sortDirection[col];
-  tableData.sort((a,b)=>{
-    if(a[col]<b[col]) return sortDirection[col]?-1:1;
-    if(a[col]>b[col]) return sortDirection[col]?1:-1;
+    if(valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+    if(valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
     return 0;
   });
-  tableData.forEach((r,i)=> r.SL=i+1);
+
+  tableData.forEach((r, i) => r.SL = i + 1);
+
   renderTable();
 }
 
-// PDF - FIXED VERSION
+// PDF Generation - Fixed
 function downloadPDF(){
-  if(!tableData.length) return alert("No data");
+
+  if(!tableData.length) {
+    alert("No data to generate PDF! Please sync Excel data first.");
+    return;
+  }
 
   const btn = document.getElementById("pdfBtn");
   const text = btn.querySelector(".btn-text");
@@ -439,120 +639,323 @@ function downloadPDF(){
   btn.disabled = true;
 
   setTimeout(() => {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+      const subject = document.getElementById('subjectText').value || "";
+      const fontSize = Number(document.getElementById('fontSize').value);
+      const repeatSubject = document.getElementById('repeatSubject').checked;
+      let subjectAlign = document.querySelector('.align-btn.active')?.dataset.align || "left";
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const usableWidth = pageWidth - 20;
+
+      // ✅ REMOVE _raw
+      const keys = Object.keys(tableData[0]).filter(k => k !== "_raw");
+
+      // =========================
+      // ✅ COLUMN WIDTH LOGIC
+      // =========================
+      let totalPercent = 0;
+      let validPercentages = true;
+
+      keys.forEach(k => {
+        let percent = columnPercent[k];
+
+        // ✅ SL default 5%
+        if (k === "SL" && (!percent || percent <= 0 || isNaN(percent))) {
+          percent = 5;
+          columnPercent[k] = 5;
+        }
+
+        if (!percent || percent <= 0 || isNaN(percent)) {
+          validPercentages = false;
+        } else {
+          totalPercent += percent;
+        }
+      });
+
+      let columnWidths = [];
+
+      if (validPercentages && Math.abs(totalPercent - 100) < 0.1) {
+
+        keys.forEach(k => {
+          let width = (columnPercent[k] / 100) * usableWidth;
+          columnWidths.push(width);
+        });
+
+      } else {
+
+        // ✅ fallback → SL = 5%, rest equal
+        let remainingWidth = usableWidth;
+        let slWidth = 0;
+
+        if (keys.includes("SL")) {
+          slWidth = (5 / 100) * usableWidth;
+          remainingWidth -= slWidth;
+        }
+
+        let otherCols = keys.length - (keys.includes("SL") ? 1 : 0);
+        let equalWidth = otherCols > 0 ? remainingWidth / otherCols : usableWidth;
+
+        keys.forEach(k => {
+          if (k === "SL") {
+            columnWidths.push(slWidth);
+          } else {
+            columnWidths.push(equalWidth);
+          }
+        });
+      }
+
+      let totalWidth = columnWidths.reduce((a, b) => a + b, 0);
+      let startX = (pageWidth - totalWidth) / 2;
+      if (startX < 10) startX = 10;
+
+      // =========================
+      // SUBJECT DRAW
+      // =========================
+      function drawSubject(yPos = 10) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(fontSize + 2);
+
+        const lines = doc.splitTextToSize(subject, usableWidth);
+
+        if(subjectAlign === "center"){
+          doc.text(lines, pageWidth / 2, yPos, { align: "center" });
+        } else if(subjectAlign === "right"){
+          doc.text(lines, pageWidth - 10, yPos, { align: "right" });
+        } else {
+          doc.text(lines, 10, yPos);
+        }
+
+        doc.setFont("helvetica", "normal");
+        return yPos + (lines.length * ((fontSize + 2) / 2.5));
+      }
+
+      let currentY = drawSubject(10) + 5;
+
+      // =========================
+      // COLUMN STYLE MAP
+      // =========================
+      let columnStyles = {};
+      columnWidths.forEach((width, idx) => {
+        columnStyles[idx] = { cellWidth: width };
+      });
+
+      // =========================
+      // TABLE
+      // =========================
+      doc.autoTable({
+        head: [keys],
+        body: tableData.map(r => keys.map(k => r[k])),
+        startY: currentY,
+        margin: { left: startX, right: pageWidth - startX - totalWidth },
+        styles: {
+          fontSize: fontSize,
+          lineWidth: 0.2,
+          lineColor: [0,0,0],
+          cellPadding: 2,
+          overflow: 'linebreak',
+          valign: 'middle'
+        },
+        headStyles: {
+          fillColor: [200,200,200],
+          textColor: [0,0,0],
+          fontStyle: 'bold',
+          lineWidth: 0.3,
+          halign: 'center',
+          valign: 'middle'
+        },
+        columnStyles: columnStyles,
+        didDrawPage: (data) => {
+          if(repeatSubject && data.pageNumber > 1){
+            drawSubject(10);
+          }
+        }
+      });
+
+      doc.save("report.pdf");
+
+    } catch(error) {
+      console.error("PDF Error:", error);
+      alert("Error generating PDF: " + error.message);
+    } finally {
+      text.classList.remove("d-none");
+      spinner.classList.add("d-none");
+      btn.disabled = false;
+    }
+
+  }, 100);
+}
+// Print by Selection - Generate separate PDFs for each filter combination
+async function printBySelection(){
+
+  const useZip = askDownloadType(); // true = ZIP, false = separate
+
+  const btn = document.querySelector('[onclick="printBySelection()"]');
+  if(btn) btn.disabled = true;
+
+  if(!tableData.length){
+    alert("Sync data first!");
+    if(btn) btn.disabled = false;
+    return;
+  }
+
+  let zip = new JSZip();
+
+  const selectedGroups = {};
+  document.querySelectorAll('.filter-checkbox:checked').forEach(cb => {
+    const col = cb.dataset.col;
+    const val = cb.value;
+
+    if(!selectedGroups[col]) selectedGroups[col] = [];
+    selectedGroups[col].push(val);
+  });
+
+  if(Object.keys(selectedGroups).length === 0){
+    alert("Select at least one filter value!");
+    if(btn) btn.disabled = false;
+    return;
+  }
+
+  function getCombinations(groups){
+    const cols = Object.keys(groups);
+
+    function helper(index, current){
+      if(index === cols.length) return [current];
+
+      const col = cols[index];
+      const values = groups[col];
+      let result = [];
+
+      values.forEach(val => {
+        result = result.concat(helper(index+1, { ...current, [col]: val }));
+      });
+
+      return result;
+    }
+
+    return helper(0, {});
+  }
+
+  const combinations = getCombinations(selectedGroups);
+  let successCount = 0;
+
+  // ✅ IMPORTANT: use for...of (NOT forEach)
+  for(const combo of combinations){
+
+    let filteredRows = tableData.filter(row => {
+      return Object.keys(combo).every(col => {
+        return String(row._raw[col] ?? '') === combo[col];
+      });
+    });
+
+    if(!filteredRows.length) continue;
+
+    let localTable = filteredRows.map((row, i) => {
+      let newRow = { ...row };
+      newRow.SL = i + 1;
+      delete newRow._raw;
+      return newRow;
+    });
+
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const subject = document.getElementById('subjectText').value || "";
-    const keys = Object.keys(tableData[0]);
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
     const fontSize = Number(document.getElementById('fontSize').value);
     const repeatSubject = document.getElementById('repeatSubject').checked;
     let subjectAlign = document.querySelector('.align-btn.active')?.dataset.align || "left";
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const usableWidth = pageWidth - 20;
+    const keys = Object.keys(localTable[0]);
 
-    // Calculate column widths based on percentages
-    let totalPercent = 0;
-    let validPercentages = true;
-    
-    keys.forEach(k => {
-      let percent = columnPercent[k];
-      if (!percent || percent <= 0 || isNaN(percent)) {
-        validPercentages = false;
-      } else {
-        totalPercent += percent;
-      }
-    });
-    
-    // If percentages are invalid or not set, distribute equally
-    let columnWidths = [];
-    if (validPercentages && Math.abs(totalPercent - 100) < 0.1) {
-      // Use the stored percentages
-      keys.forEach(k => {
-        let width = (columnPercent[k] / 100) * usableWidth;
-        columnWidths.push(width);
-      });
-    } else {
-      // Distribute equally
-      let equalWidth = usableWidth / keys.length;
-      keys.forEach(() => columnWidths.push(equalWidth));
-    }
-    
-    // Calculate start position to center the table
-    let totalWidth = columnWidths.reduce((a, b) => a + b, 0);
-    let startX = (pageWidth - totalWidth) / 2;
-    if (startX < 10) startX = 10;
+    let subject = document.getElementById('subjectText').value || "";
+    const comboValues = Object.values(combo);
+    subject = subject ? subject + " - " + comboValues.join(" - ") : comboValues.join(" - ");
 
-    function drawSubject(){
+    function drawSubject(yPos = 10) {
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(fontSize + 2);
+
       const lines = doc.splitTextToSize(subject, usableWidth);
-      
+
       if(subjectAlign === "center"){
-        doc.text(lines, pageWidth / 2, 10, { align: "center" });
+        doc.text(lines, pageWidth / 2, yPos, { align: "center" });
       } else if(subjectAlign === "right"){
-        doc.text(lines, pageWidth - 10, 10, { align: "right" });
+        doc.text(lines, pageWidth - 10, yPos, { align: "right" });
       } else {
-        doc.text(lines, 10, 10);
+        doc.text(lines, 10, yPos);
       }
-      return 10 + (lines.length * (fontSize + 1));
+
+      doc.setFont("helvetica", "normal");
+      return yPos + (lines.length * ((fontSize + 2) / 2.5));
     }
 
-    const startY = drawSubject() + 5;
-    
-    // Prepare column styles for autoTable
-    let columnStyles = {};
-    columnWidths.forEach((width, idx) => {
-      columnStyles[idx] = { cellWidth: width };
-    });
+    let currentY = drawSubject(10) + 5;
 
     doc.autoTable({
       head: [keys],
-      body: tableData.map(r => keys.map(k => r[k])),
-      startY: startY,
-      margin: { left: startX, right: pageWidth - startX - totalWidth },
+      body: localTable.map(r => keys.map(k => r[k])),
+      startY: currentY,
       styles: {
         fontSize: fontSize,
         lineWidth: 0.2,
-        lineColor: [0,0,0],
         cellPadding: 2,
-        overflow: 'linebreak',
-        valign: 'middle'
+        overflow: 'linebreak'
       },
       headStyles: {
         fillColor: [200,200,200],
         textColor: [0,0,0],
         fontStyle: 'bold',
-        lineWidth: 0.3,
-        halign: 'center',
-        valign: 'middle'
+        halign: 'center'
       },
-      columnStyles: columnStyles,
-      rowPageBreak: 'avoid',
       didDrawPage: (data) => {
         if(repeatSubject && data.pageNumber > 1){
-          doc.setFontSize(fontSize + 2);
-          const lines = doc.splitTextToSize(subject, usableWidth);
-          if(subjectAlign === "center"){
-            doc.text(lines, pageWidth / 2, 10, { align: "center" });
-          } else if(subjectAlign === "right"){
-            doc.text(lines, pageWidth - 10, 10, { align: "right" });
-          } else {
-            doc.text(lines, 10, 10);
-          }
+          drawSubject(10);
         }
       }
     });
 
-    doc.save("report.pdf");
-    
-    text.classList.remove("d-none");
-    spinner.classList.add("d-none");
-    btn.disabled = false;
-  }, 100);
-}
+    let fileName = comboValues.join("_").replace(/[\\/:*?"<>|]/g, "_");
 
-// Excel
+    // ✅ ZIP or direct download
+    if(useZip){
+      const pdfBlob = doc.output("blob");
+      zip.file(fileName + ".pdf", pdfBlob);
+    } else {
+      doc.save(fileName + ".pdf");
+    }
+
+    successCount++;
+  }
+
+  // ✅ AFTER LOOP → ZIP DOWNLOAD
+  if(useZip && successCount > 0){
+    const content = await zip.generateAsync({ type: "blob" });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(content);
+    a.download = "PDF_Files.zip";
+    a.click();
+  }
+
+  if(successCount === 0){
+    alert("No data found!");
+  } else {
+    alert(`Generated ${successCount} file(s)!`);
+  }
+
+  if(btn) btn.disabled = false;
+}
+// Download Excel
 function downloadExcel(){
-  if(!tableData.length) return alert("No data");
+  if(!tableData.length) {
+    alert("No data to export! Please sync Excel data first.");
+    return;
+  }
+  
   const cleanData = tableData.map(row => {
     let obj = {};
     Object.keys(row).forEach(k => {
@@ -560,86 +963,312 @@ function downloadExcel(){
     });
     return obj;
   });
+  
   const ws = XLSX.utils.json_to_sheet(cleanData);
-  Object.keys(ws).forEach(cell => {
-    if(cell[0] === '!') return;
-    ws[cell].s = { alignment: { wrapText: true } };
-  });
+  ws['!cols'] = Object.keys(cleanData[0] || {}).map(() => ({ wch: 15 }));
+  
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Report");
   XLSX.writeFile(wb, "report.xlsx");
 }
 
+
+
+
+async function downloadExcelBySelection(){
+
+  const useZip = askDownloadType(); // true = ZIP
+
+  const btn = document.querySelector('[onclick="downloadExcelBySelection()"]');
+  if(btn) btn.disabled = true;
+
+  if(!tableData.length){
+    alert("Sync data first!");
+    if(btn) btn.disabled = false;
+    return;
+  }
+
+  let zip = new JSZip();
+
+  const selectedGroups = {};
+  document.querySelectorAll('.filter-checkbox:checked').forEach(cb => {
+    const col = cb.dataset.col;
+    const val = cb.value;
+
+    if(!selectedGroups[col]) selectedGroups[col] = [];
+    selectedGroups[col].push(val);
+  });
+
+  if(Object.keys(selectedGroups).length === 0){
+    alert("Select at least one filter value!");
+    if(btn) btn.disabled = false;
+    return;
+  }
+
+  function getCombinations(groups){
+    const cols = Object.keys(groups);
+
+    function helper(index, current){
+      if(index === cols.length) return [current];
+
+      const col = cols[index];
+      const values = groups[col];
+      let result = [];
+
+      values.forEach(val => {
+        result = result.concat(helper(index+1, { ...current, [col]: val }));
+      });
+
+      return result;
+    }
+
+    return helper(0, {});
+  }
+
+  const combinations = getCombinations(selectedGroups);
+  let successCount = 0;
+
+  // ✅ IMPORTANT: use for...of
+  for(const combo of combinations){
+
+    let filteredRows = tableData.filter(row => {
+      return Object.keys(combo).every(col => {
+        return String(row._raw[col] ?? '') === combo[col];
+      });
+    });
+
+    if(!filteredRows.length) continue;
+
+    let localData = filteredRows.map((row, i) => {
+      let newRow = { ...row };
+      newRow.SL = i + 1;
+      delete newRow._raw;
+      return newRow;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(localData);
+
+    ws['!cols'] = Object.keys(localData[0] || {}).map(() => ({ wch: 20 }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
+
+    let fileName = Object.values(combo)
+      .join("_")
+      .replace(/[\\/:*?"<>|]/g, "_");
+
+    // ✅ ZIP or direct download
+    if(useZip){
+      const excelBlob = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      zip.file(fileName + ".xlsx", excelBlob);
+    } else {
+      XLSX.writeFile(wb, fileName + ".xlsx");
+    }
+
+    successCount++;
+  }
+
+  // ✅ AFTER LOOP → ZIP download
+  if(useZip && successCount > 0){
+    const content = await zip.generateAsync({ type: "blob" });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(content);
+    a.download = "Excel_Files.zip";
+    a.click();
+  }
+
+  if(successCount === 0){
+    alert("No data found!");
+  } else {
+    alert(`Generated ${successCount} file(s)!`);
+  }
+
+  if(btn) btn.disabled = false;
+}
+
 // Open Distribution Modal
+// Update openDistribution function to show SL with 5% default
+// function openDistribution(){
+//   if(!tableData.length) {
+//     alert("Please sync Excel data first!");
+//     return;
+//   }
+  
+//   const keys = Object.keys(tableData[0]);
+//   let html = "";
+//   keys.forEach(k => {
+//     let percentValue = columnPercent[k] || (k === "SL" ? 5 : (100 / keys.length).toFixed(2));
+//     // If SL column exists and no percentage set, use 5%
+//     if(k === "SL" && (!columnPercent[k] || columnPercent[k] === 0)) {
+//       percentValue = 5;
+//     }
+//     html += `
+//       <div class="mb-3">
+//         <label class="fw-semibold">${k}</label>
+//         <input type="number" class="form-control dist-input" 
+//           data-col="${k.replace(/"/g, '&quot;')}" value="${typeof percentValue === 'number' ? percentValue.toFixed(2) : percentValue}" placeholder="%" step="any" min="0" max="100">
+//       </div>
+//     `;
+//   });
+//   html += `<div class="alert alert-info mt-2">Total: <span id="distTotal">0</span>%</div>`;
+//   document.getElementById('distBody').innerHTML = html;
 function openDistribution(){
-  if(!tableData.length) return alert("Generate table first");
-  const keys = Object.keys(tableData[0]);
+  if(!tableData.length) {
+    alert("Please sync Excel data first!");
+    return;
+  }
+  
+  // ❌ REMOVE _raw here
+  const keys = Object.keys(tableData[0]).filter(k => k !== "_raw");
+
   let html = "";
-  keys.forEach(k=>{
-    let percentValue = columnPercent[k] || '';
+  keys.forEach(k => {
+    let percentValue = columnPercent[k] || (k === "SL" ? 5 : (100 / keys.length).toFixed(2));
+
+    if(k === "SL" && (!columnPercent[k] || columnPercent[k] === 0)) {
+      percentValue = 5;
+    }
+
     html += `
       <div class="mb-3">
         <label class="fw-semibold">${k}</label>
         <input type="number" class="form-control dist-input" 
-          data-col="${k}" value="${percentValue}" placeholder="%" step="any">
+          data-col="${k.replace(/"/g, '&quot;')}" 
+          value="${typeof percentValue === 'number' ? percentValue.toFixed(2) : percentValue}" 
+          step="any" min="0" max="100">
       </div>
     `;
   });
+
+  html += `<div class="alert alert-info mt-2">Total: <span id="distTotal">0</span>%</div>`;
   document.getElementById('distBody').innerHTML = html;
+  
+  // Add live total calculation
+  const inputs = document.querySelectorAll('.dist-input');
+  const updateTotal = () => {
+    let total = 0;
+    inputs.forEach(i => {
+      total += parseFloat(i.value) || 0;
+    });
+    const totalSpan = document.getElementById('distTotal');
+    if(totalSpan) totalSpan.textContent = total.toFixed(2);
+  };
+  
+  inputs.forEach(i => {
+    i.addEventListener('input', updateTotal);
+  });
+  updateTotal();
+  
   new bootstrap.Modal(document.getElementById('distModal')).show();
 }
 
+
 // Save Distribution Percentages
+// Update saveDistribution function to ensure SL doesn't get 0%
 function saveDistribution(){
   const inputs = document.querySelectorAll('.dist-input');
   let total = 0;
   let newPercent = {};
   
-  inputs.forEach(i=>{
+  inputs.forEach(i => {
     let val = parseFloat(i.value) || 0;
+    if(val < 0) val = 0;
+    
+    // Ensure SL column doesn't get 0% (minimum 1%)
+    if(i.dataset.col === "SL" && val === 0) {
+      val = 1;
+      i.value = 1;
+    }
+    
     newPercent[i.dataset.col] = val;
     total += val;
   });
   
-  // Normalize to 100% if total is not 100
-  if(Math.abs(total - 100) > 0.01 && total > 0){
-    const ratio = 100 / total;
-    inputs.forEach(i=>{
-      newPercent[i.dataset.col] = parseFloat((newPercent[i.dataset.col] * ratio).toFixed(2));
-    });
-  } else if(total === 0){
-    // Equal distribution if all zeros
+  if(total === 0) {
     const keys = Object.keys(newPercent);
-    const equalValue = parseFloat((100 / keys.length).toFixed(2));
     keys.forEach(k => {
-      newPercent[k] = equalValue;
+      if(k === "SL") {
+        newPercent[k] = 5;
+      } else {
+        newPercent[k] = (100 - 5) / (keys.length - 1);
+      }
+    });
+    total = 100;
+  } else if(Math.abs(total - 100) > 0.01) {
+    const ratio = 100 / total;
+    inputs.forEach(i => {
+      let newVal = parseFloat((newPercent[i.dataset.col] * ratio).toFixed(2));
+      // Ensure SL doesn't become 0 after normalization
+      if(i.dataset.col === "SL" && newVal < 1) {
+        newVal = 1;
+      }
+      newPercent[i.dataset.col] = newVal;
     });
   }
   
   columnPercent = newPercent;
   
-  // Update display values
-  inputs.forEach(i=>{
-    i.value = columnPercent[i.dataset.col];
+  inputs.forEach(i => {
+    columnPercent[i.dataset.col] = parseFloat(columnPercent[i.dataset.col].toFixed(2));
+    i.value = columnPercent[i.dataset.col].toFixed(2);
   });
   
-  alert("Column distribution saved!");
+  alert("Column distribution saved! SL column default is 5%.");
   bootstrap.Modal.getInstance(document.getElementById('distModal')).hide();
+  
+  // Re-render table to apply new distribution
+  if(tableData.length) renderTable();
 }
 
-// Initialize
-window.onload=()=>{
+// Also update the initialization when window loads
+window.onload = () => {
+  addColumn();
+  
+  // Set default columnPercent for SL if needed
+  if(!columnPercent["SL"]) {
+    columnPercent["SL"] = 5;
+  }
+  
+  // Alignment button event listeners
+  document.querySelectorAll('.align-btn').forEach(btn => {
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+  
+  // Set default active alignment
+  const defaultAlignBtn = document.querySelector('.align-btn[data-align="center"]');
+  if(defaultAlignBtn) defaultAlignBtn.classList.add('active');
+};
+
+// Initialize on window load
+window.onload = () => {
   addColumn();
   
   // Alignment button event listeners
   document.querySelectorAll('.align-btn').forEach(btn => {
     btn.addEventListener('click', function(){
-      document.querySelectorAll('.align-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
     });
   });
+  
+  // Set default active alignment
+  const defaultAlignBtn = document.querySelector('.align-btn[data-align="center"]');
+  if(defaultAlignBtn) defaultAlignBtn.classList.add('active');
 };
-</script>
 
+// Helper function for alerts
+function alertError(message) {
+  alert(message);
+}
+
+function askDownloadType(){
+  return confirm("Click OK for ZIP download\nClick Cancel for multiple files");
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
