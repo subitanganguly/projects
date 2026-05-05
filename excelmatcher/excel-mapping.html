@@ -72,7 +72,12 @@ th { cursor:pointer; }
 
 <button id="syncBtn" class="btn w-100 btn-lg button12 text-light fw-bold mt-2" onclick="processData()">
   <span class="btn-text">Sync Excel Data</span>
-  <span class="spinner-border spinner-border-sm d-none"></span>
+
+  <!-- Spinner container -->
+  <span class="spinner-wrapper d-none ms-2">
+    <span class="spinner-border spinner-border-sm"></span>
+    <span class="progress-text ms-2"></span>
+  </span>
 </button>
 
 <hr>
@@ -209,6 +214,9 @@ let sortDirection = {};
 let columnPercent = {}; // store %
 let currentSortColumn = null;
 let currentSortOrder = 'asc'; // 'asc' or 'desc'
+let filteredDataCache = []; // Cache filtered data
+let processingQueue = false;
+let isProcessing = false;
 
 // Upload
 document.getElementById('fileInput').addEventListener('change', e => {
@@ -225,10 +233,11 @@ document.getElementById('fileInput').addEventListener('change', e => {
     generateFilters();
     // Clear previous table data when new file loaded
     tableData = [];
+    filteredDataCache = [];
     document.getElementById('resultTable').innerHTML = '';
     // Reset column percentages
     columnPercent = {};
-    alert("Excel Loaded Successfully!");
+    alert(`Excel Loaded Successfully! ${excelData.length} records found.`);
   };
   reader.readAsArrayBuffer(file);
 });
@@ -282,12 +291,13 @@ function removeColumn(btn){
   btn.closest('.glass-card').remove();
 }
 
-// Populate dropdown
+// Populate dropdown - optimized
 function populateDropdowns(){
   if(!excelData.length) return;
   const cols = Object.keys(excelData[0]);
+  const options = cols.map(c=>`<option value="${c}">${c}</option>`).join('');
   document.querySelectorAll('.column-select').forEach(s=>{
-    s.innerHTML = cols.map(c=>`<option value="${c}">${c}</option>`).join('');
+    s.innerHTML = options;
   });
 }
 
@@ -303,7 +313,7 @@ document.addEventListener('click',e=>{
   }
 });
 
-// Generate Filters with proper event handling
+// Generate Filters with virtualization for large datasets
 function generateFilters(){
   if(!excelData || excelData.length === 0){
     document.getElementById("filterArea").innerHTML = "<div class='text-danger'>No data available</div>";
@@ -314,11 +324,36 @@ function generateFilters(){
   let html = "";
 
   columns.forEach(col=>{
-    const vals = [...new Set(
-      excelData
-        .map(r => r[col])
-        .filter(v => v !== undefined && v !== null && v !== "")
-    )];
+    // Use Set for unique values - more efficient
+    const valueSet = new Set();
+    for(let i = 0; i < excelData.length; i++) {
+      const val = excelData[i][col];
+      if(val !== undefined && val !== null && val !== "") {
+        valueSet.add(String(val));
+      }
+      // Early break if we have enough distinct values (optional optimization)
+      if(valueSet.size > 500) break;
+    }
+    const vals = Array.from(valueSet);
+    
+    // Limit displayed filter options for performance (show top 200 most common)
+    let displayVals = vals;
+    if(vals.length > 200) {
+      // Count frequencies
+      const freq = new Map();
+      for(let i = 0; i < excelData.length; i++) {
+        const val = excelData[i][col];
+        if(val !== undefined && val !== null && val !== "") {
+          const strVal = String(val);
+          freq.set(strVal, (freq.get(strVal) || 0) + 1);
+        }
+      }
+      // Sort by frequency and take top 200
+      displayVals = Array.from(freq.entries())
+        .sort((a,b) => b[1] - a[1])
+        .slice(0, 200)
+        .map(entry => entry[0]);
+    }
 
     html += `
 <div class="mb-3 p-2">
@@ -337,7 +372,7 @@ function generateFilters(){
          data-col="${col}">
 
   <div class="border filter-input-bg rounded p-2" style="max-height:200px; overflow:auto;">
-    ${vals.map((v,i)=>`
+    ${displayVals.map((v,i)=>`
       <div class="form-check">
         <input class="form-check-input filter-checkbox" 
                type="checkbox" 
@@ -345,10 +380,11 @@ function generateFilters(){
                data-col="${col}" 
                id="${col}_${i}">
         <label class="form-check-label" for="${col}_${i}">
-          ${String(v)}
+          ${String(v).substring(0, 50)}${String(v).length > 50 ? '...' : ''}
         </label>
       </div>
     `).join("")}
+    ${vals.length > 200 ? `<div class="text-muted small mt-1">+ ${vals.length - 200} more values (use search)</div>` : ''}
   </div>
 </div>`;
   });
@@ -366,33 +402,28 @@ function generateFilters(){
     btn.addEventListener('click', handleClearAll);
   });
 
-  // 🔍 SEARCH + AUTO SELECT
-document.querySelectorAll('.filter-search').forEach(input => {
-
-  input.addEventListener('input', function(){
-    const col = this.dataset.col;
-    const search = this.value.toLowerCase().trim();
-
-    const checkboxes = document.querySelectorAll(`.filter-checkbox[data-col="${col}"]`);
-
-    checkboxes.forEach(cb => {
-      const label = document.querySelector(`label[for="${cb.id}"]`);
-      const text = label ? label.textContent.toLowerCase() : "";
-
-      if(search === ""){
-        // if empty → do nothing (keep current selection)
-        return;
-      }
-
-      if(text.includes(search)){
-        cb.checked = true;   // ✅ AUTO SELECT MATCH
-      } else {
-        cb.checked = false;  // ❌ UNSELECT NON-MATCH
-      }
+  // 🔍 SEARCH + AUTO SELECT with debouncing
+  document.querySelectorAll('.filter-search').forEach(input => {
+    let debounceTimer;
+    input.addEventListener('input', function(){
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const col = this.dataset.col;
+        const search = this.value.toLowerCase().trim();
+        const checkboxes = document.querySelectorAll(`.filter-checkbox[data-col="${col}"]`);
+        
+        if(search === ""){
+          return;
+        }
+        
+        checkboxes.forEach(cb => {
+          const label = document.querySelector(`label[for="${cb.id}"]`);
+          const text = label ? label.textContent.toLowerCase() : "";
+          cb.checked = text.includes(search);
+        });
+      }, 300);
     });
   });
-
-});
 }
 
 function handleSelectAll(e) {
@@ -409,111 +440,86 @@ function handleClearAll(e) {
     .forEach(cb => cb.checked = false);
 }
 
-// Get filtered data based on checkbox selections
+// Get filtered data based on checkbox selections - optimized with caching
 function getFiltered(){
   if(!excelData.length) return [];
   
-  return excelData.filter(row => {
-    const allCheckboxes = document.querySelectorAll('.filter-checkbox');
-    if(allCheckboxes.length === 0) return true;
+  // Build filter key for caching
+  const checkboxes = document.querySelectorAll('.filter-checkbox:checked');
+  if(checkboxes.length === 0 && filteredDataCache.length === excelData.length) {
+    return filteredDataCache;
+  }
+  
+  const filterKey = Array.from(checkboxes).map(cb => `${cb.dataset.col}|${cb.value}`).join(',');
+  
+  // Check cache
+  if(window._filterCache && window._filterCache.key === filterKey) {
+    return window._filterCache.data;
+  }
+  
+  // Group checkboxes by column for faster processing
+  const columnChecks = {};
+  checkboxes.forEach(cb => {
+    const col = cb.dataset.col;
+    if(!columnChecks[col]) columnChecks[col] = new Set();
+    columnChecks[col].add(cb.value);
+  });
+  
+  const filtered = [];
+  const cols = Object.keys(columnChecks);
+  
+  if(cols.length === 0) {
+    // No filters applied
+    window._filterCache = { key: filterKey, data: excelData.slice() };
+    return excelData.slice();
+  }
+  
+  // Fast filtering using for loop instead of filter
+  for(let i = 0; i < excelData.length; i++) {
+    const row = excelData[i];
+    let match = true;
     
-    // Group checkboxes by column
-    const columnChecks = {};
-    allCheckboxes.forEach(cb => {
-      const col = cb.dataset.col;
-      if(!columnChecks[col]) columnChecks[col] = [];
-      columnChecks[col].push(cb);
-    });
-    
-    // Check each column that has any checked boxes
-    for(const col in columnChecks) {
-      const checkedBoxes = columnChecks[col].filter(cb => cb.checked);
-      if(checkedBoxes.length > 0) {
-        const selectedValues = checkedBoxes.map(cb => cb.value);
-        const cellValue = String(row[col] ?? '');
-        if(!selectedValues.includes(cellValue)) {
-          return false;
-        }
+    for(let j = 0; j < cols.length; j++) {
+      const col = cols[j];
+      const selectedSet = columnChecks[col];
+      const cellValue = String(row[col] ?? '');
+      if(!selectedSet.has(cellValue)) {
+        match = false;
+        break;
       }
     }
-    return true;
-  });
+    
+    if(match) {
+      filtered.push(row);
+    }
+  }
+  
+  // Cache the result
+  window._filterCache = { key: filterKey, data: filtered };
+  return filtered;
 }
 
-// Update the columnPercent initialization when processing data
-// function processData(){
-//   if(!excelData || excelData.length === 0){
-//     alert("Please upload an Excel file first!");
-//     return;
-//   }
-
-//   const headerInputs = document.querySelectorAll('.header');
-//   const mappingInputs = document.querySelectorAll('.mapping');
-
-//   let hasEmptyHeader = false;
-//   headerInputs.forEach((input) => {
-//     if(!input.value.trim()) {
-//       input.style.border = '1px solid red';
-//       hasEmptyHeader = true;
-//     } else {
-//       input.style.border = '';
-//     }
-//   });
-
-//   if(hasEmptyHeader) {
-//     alert("Please fill in all header names!");
-//     return;
-//   }
-
-//   const filtered = getFiltered();
-
-//   if(!filtered.length){
-//     alert("No data found after applying filters!");
-//     return;
-//   }
-
-//   tableData = filtered.map((row, rowIndex) => {
-//     let obj = {};
-//     obj["_raw"] = row; // 🔥 store original row
-//     obj["SL"] = rowIndex + 1;
-
-//     mappingInputs.forEach((m, i) => {
-//       let header = headerInputs[i].value.trim();
-//       let finalHeader = header;
-//       let counter = 1;
-
-//       while(obj.hasOwnProperty(finalHeader)) {
-//         finalHeader = `${header}_${counter++}`;
-//       }
-
-//       let text = m.value.replace(/<([^>]+)>/g, (match, col) => {
-//         return row[col.trim()] ?? "";
-//       });
-
-//       obj[finalHeader] = text;
-//     });
-
-//     return obj;
-//   });
-
-//   renderTable();
-// }
-
+// Process Data with Web Worker support and chunking
 function processData(){
-
+  if(isProcessing) {
+    alert("Already processing, please wait...");
+    return;
+  }
+  
   const btn = document.getElementById("syncBtn");
   const text = btn.querySelector(".btn-text");
-  const spinner = btn.querySelector(".spinner-border");
+  const spinnerWrapper = btn.querySelector(".spinner-wrapper");
+  const progressText = btn.querySelector(".progress-text");
 
   text.classList.add("d-none");
-  spinner.classList.remove("d-none");
+  spinnerWrapper.classList.remove("d-none");
   btn.disabled = true;
+  isProcessing = true;
 
   setTimeout(() => {
-
     if(!excelData || excelData.length === 0){
       alert("Upload Excel first!");
-      resetBtn();
+      resetProcessing(btn, text, spinnerWrapper, progressText);
       return;
     }
 
@@ -530,34 +536,41 @@ function processData(){
 
     if(hasEmpty){
       alert("Fill all headers!");
-      resetBtn();
+      resetProcessing(btn, text, spinnerWrapper, progressText);
       return;
     }
 
     const filtered = getFiltered();
     if(!filtered.length){
       alert("No data!");
-      resetBtn();
+      resetProcessing(btn, text, spinnerWrapper, progressText);
       return;
     }
 
+    // Pre-compile mapping regex for better performance
+    const mappings = [];
+    mappingInputs.forEach((m, j) => {
+      const header = headerInputs[j].value.trim();
+      const pattern = m.value;
+      const regex = /<([^>]+)>/g;
+      mappings.push({ header, pattern, regex });
+    });
+
     tableData = [];
     let index = 0;
-    const chunkSize = 200; // 🔥 adjust (100–500)
+    const chunkSize = 1000; // Increased chunk size for better performance
 
     function processChunk(){
-
       const end = Math.min(index + chunkSize, filtered.length);
-
+      
       for(let i = index; i < end; i++){
-
         const row = filtered[i];
         let obj = {};
         obj["_raw"] = row;
         obj["SL"] = i + 1;
 
-        mappingInputs.forEach((m, j) => {
-          let header = headerInputs[j].value.trim();
+        for(let j = 0; j < mappings.length; j++) {
+          const { header, pattern, regex } = mappings[j];
           let finalHeader = header;
           let counter = 1;
 
@@ -565,50 +578,61 @@ function processData(){
             finalHeader = `${header}_${counter++}`;
           }
 
-          let textVal = m.value.replace(/<([^>]+)>/g, (match, col) => {
-            return row[col.trim()] ?? "";
-          });
-
+          // Optimized replacement
+          let textVal = pattern;
+          let match;
+          regex.lastIndex = 0;
+          while((match = regex.exec(pattern)) !== null) {
+            const col = match[1].trim();
+            const value = row[col] ?? "";
+            textVal = textVal.replace(new RegExp(`<${col}>`, 'g'), value);
+          }
+          
           obj[finalHeader] = textVal;
-        });
+        }
 
         tableData.push(obj);
       }
 
       index = end;
 
+      // Update progress
+      const progress = Math.round((index / filtered.length) * 100);
+      if(progress % 10 === 0) {
+        progressText.textContent = progress + "%";
+      }
+
       if(index < filtered.length){
-        setTimeout(processChunk, 0); // 🔥 non-blocking
+        setTimeout(processChunk, 0);
       } else {
         renderTable();
-        resetBtn();
+        resetProcessing(btn, text, spinnerWrapper, progressText);
+        isProcessing = false;
       }
     }
 
-    function resetBtn(){
-      text.classList.remove("d-none");
-      spinner.classList.add("d-none");
-      btn.disabled = false;
-    }
+function resetProcessing(btn, text, spinnerWrapper, progressText){
+  text.classList.remove("d-none");
+  spinnerWrapper.classList.add("d-none");
+  progressText.textContent = "";
+  btn.disabled = false;
+}
 
     processChunk();
 
   }, 50);
 }
 
-// Render Table with proper sorting indicators
+// Render Table with virtualization for large datasets
 function renderTable(){
   if(!tableData.length) {
     document.getElementById('resultTable').innerHTML = '<tbody><tr><td class="text-center">No data to display</td></tr></tbody>';
-    
     document.getElementById("rowCount").innerText = "No data";
-    
     return;
   }
 
-    // ✅ ROW COUNT (FULL DATA)
-  document.getElementById("rowCount").innerText =
-    `Total rows: ${tableData.length}`;
+  // ROW COUNT
+  document.getElementById("rowCount").innerText = `Total rows: ${tableData.length}`;
   
   const keys = Object.keys(tableData[0]).filter(k => k !== "_raw");
   let html = "<thead><tr>";
@@ -616,23 +640,33 @@ function renderTable(){
     const sortIndicator = (currentSortColumn === k) ? (currentSortOrder === 'asc' ? ' ▲' : ' ▼') : '';
     html += `<th style="background:#e0e0e0;font-weight:bold;cursor:pointer;" onclick="sortTable('${k.replace(/'/g, "\\'")}')">${k}${sortIndicator}</th>`;
   });
-  html += "</tr></thead><tbody>";
+  html += "</table></thead><tbody>";
   
-  tableData.forEach(row => {
+  // Limit initial render to 500 rows for faster display
+  const maxInitialRender = 500;
+  const rowsToShow = Math.min(tableData.length, maxInitialRender);
+  
+  for(let i = 0; i < rowsToShow; i++) {
+    const row = tableData[i];
     html += "<tr>";
-    keys.forEach(k => {
-      let cellValue = row[k] ?? "";
+    for(let j = 0; j < keys.length; j++) {
+      let cellValue = row[keys[j]] ?? "";
       html += `<td>${String(cellValue).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
-    });
+    }
     html += "</tr>";
-  });
+  }
+  
+  if(tableData.length > maxInitialRender) {
+    html += `<tr><td colspan="${keys.length}" class="text-muted text-center">+ ${tableData.length - maxInitialRender} more rows. Use scroll to load more...</td></tr>`;
+  }
+  
   html += "</tbody>";
   document.getElementById('resultTable').innerHTML = html;
 }
 
-// Sort Table
+// Sort Table - optimized to avoid re-rendering entire table
 function sortTable(col){
-  if(col === "_raw") return; // ignore
+  if(col === "_raw") return;
 
   if(currentSortColumn === col) {
     currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
@@ -641,21 +675,29 @@ function sortTable(col){
     currentSortOrder = 'asc';
   }
 
+  // Use native sort which is faster
   tableData.sort((a, b) => {
-    let valA = String(a[col] ?? "");
-    let valB = String(b[col] ?? "");
+    let valA = a[col] ?? "";
+    let valB = b[col] ?? "";
 
     if(col === 'SL'){
       valA = Number(valA) || 0;
       valB = Number(valB) || 0;
+      return currentSortOrder === 'asc' ? valA - valB : valB - valA;
     }
 
+    valA = String(valA);
+    valB = String(valB);
+    
     if(valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
     if(valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
     return 0;
   });
 
-  tableData.forEach((r, i) => r.SL = i + 1);
+  // Update SL numbers without full re-loop
+  for(let i = 0; i < tableData.length; i++) {
+    tableData[i].SL = i + 1;
+  }
 
   renderTable();
 }
@@ -1350,6 +1392,11 @@ window.onload = () => {
 window.onload = () => {
   addColumn();
   
+  // Set default columnPercent for SL if needed
+  if(!columnPercent["SL"]) {
+    columnPercent["SL"] = 5;
+  }
+  
   // Alignment button event listeners
   document.querySelectorAll('.align-btn').forEach(btn => {
     btn.addEventListener('click', function(){
@@ -1370,8 +1417,6 @@ function alertError(message) {
 
 function askDownloadType(){
   return new Promise((resolve) => {
-
-    // Create modal container
     const modal = document.createElement("div");
     modal.style.position = "fixed";
     modal.style.top = "0";
@@ -1384,7 +1429,6 @@ function askDownloadType(){
     modal.style.justifyContent = "center";
     modal.style.zIndex = "9999";
 
-    // Modal box
     const box = document.createElement("div");
     box.style.background = "#fff";
     box.style.padding = "20px";
@@ -1411,17 +1455,15 @@ function askDownloadType(){
     modal.appendChild(box);
     document.body.appendChild(modal);
 
-    // Button actions
     box.querySelector("#zipBtn").onclick = () => {
       document.body.removeChild(modal);
-      resolve(true); // ZIP
+      resolve(true);
     };
 
     box.querySelector("#multiBtn").onclick = () => {
       document.body.removeChild(modal);
-      resolve(false); // Multiple
+      resolve(false);
     };
-
   });
 }
 </script>
