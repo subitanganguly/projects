@@ -15,9 +15,11 @@ body {
     background:linear-gradient(245deg, #1300c025, #00b8be42, #c702f842); 
 }
 .filter-input-bg{
-  background:linear-gradient(245deg, #958aff25, #00b8be42, #c702f842); 
+  background-color: blanchedalmond;
   box-shadow: inset 0 0 30px 20px rgba(0, 0, 0, 0.11);
-
+}
+.filter-search{
+  border: 1px solid rgb(0, 0, 82);
 }
 /* .card { 
     border-radius:12px; 
@@ -31,6 +33,11 @@ body {
 } */
 .remove-btn { position:absolute; top:0px; right:0px;}
 th { cursor:pointer; }
+.offcanvas{
+  border: 2px dashed rgb(197, 183, 183);
+  background-color: antiquewhite;
+  box-shadow: inset 0 0 30px 20px rgba(0, 0, 0, 0.13);
+}
 </style>
 </head>
 
@@ -42,15 +49,15 @@ th { cursor:pointer; }
 
   <!-- LEFT -->
   <h3 class="mb-0">
-    📊 <span class="sg-text" style="font-size: 28px;">Excel Mapping</span>
+    📊 <span class="sg-text" style="font-size: 28px;">Excel Report Master</span>
   </h3>
 
   <!-- RIGHT -->
   <div class="d-flex gap-2">
-    <button class="btn button13 text-light fw-bold" data-bs-toggle="offcanvas" data-bs-target="#filterPanel">
+    <button class="btn button2 text-light fw-bold" data-bs-toggle="offcanvas" data-bs-target="#filterPanel">
       🔍 Filters
     </button>
-    <button class="btn button9 fw-bold" onclick="addColumn()">
+    <button class="btn button4 fw-bold" onclick="addColumn()">
       ➕ Add Column
     </button>
   </div>
@@ -63,7 +70,7 @@ th { cursor:pointer; }
 
 <div id="mappingArea"></div>
 
-<button id="syncBtn" class="btn w-100 button12 text-light fw-bold mt-2" onclick="processData()">
+<button id="syncBtn" class="btn w-100 btn-lg button12 text-light fw-bold mt-2" onclick="processData()">
   <span class="btn-text">Sync Excel Data</span>
   <span class="spinner-border spinner-border-sm d-none"></span>
 </button>
@@ -128,20 +135,21 @@ th { cursor:pointer; }
     <!-- Right Buttons -->
     <div class="d-flex gap-2 flex-wrap ms-auto">
       <button class="btn button10 text-light fw-bold" onclick="printBySelection()">
-        🖨 PRINT BY FILTER
+        📄 PDF BY FILTER
       </button>
 
       <button class="btn button12 text-light fw-bold" onclick="downloadExcelBySelection()">
-        📊 Excel by Filter
+        📊 EXCEL BY FILTER
       </button>
     </div>
 
   </div>
-
+<hr>
 </div>
 
 </div>
 
+<div id="rowCount" class="mb-2 fw-semibold text-primary"></div>
 <div class="table-responsive mt-3">
   <table class="table table-bordered" id="resultTable"></table>
 </div>
@@ -150,16 +158,16 @@ th { cursor:pointer; }
 
 <!-- FILTER PANEL -->
 <div class="offcanvas offcanvas-end" id="filterPanel">
-  <div class="offcanvas-header flex-column align-items-start gap-1">
+  <div class="offcanvas-header flex-column align-items-start gap-1" style="border-bottom: 2px dashed rgb(91, 164, 247);">
   
   <!-- Top row: Title + Close button -->
   <div class="w-100 d-flex justify-content-between align-items-center">
-    <h5 class="sg-text mb-0">Filters</h5>
+    <h5 class="sg-text mb-0" style="font-size: 18px; font-weight: 600;">Filters</h5>
     <button class="btn-close" data-bs-dismiss="offcanvas"></button>
   </div>
 
   <!-- Description -->
-  <p class="text-muted mb-0" style="font-size: 0.85rem;">
+  <p class="mb-0 bg-primary rounded p-1 text-light" style="font-size: 0.85rem;">
     Select the desired fields and click anywhere outside the panel. 
     The panel will close automatically, and the selected filters will be applied.
   </p>
@@ -229,15 +237,23 @@ document.getElementById('fileInput').addEventListener('change', e => {
 function addColumn(){
   const mappingArea = document.getElementById('mappingArea');
   const cards = mappingArea.querySelectorAll('.glass-card');
-  
+
+  // ✅ Auto column number
+  const columnNumber = cards.length + 1;
+  const defaultHeader = `Column ${columnNumber}`;
+
   const newCard = document.createElement('div');
   newCard.className = 'glass-card dark shine card p-4 mb-3';
+
   newCard.innerHTML = `
     <button class="btn btn-sm btn-light remove-btn" onclick="removeColumn(this)">❌</button>
+
     <div class="row g-2 align-items-center mb-2 mt-2">
       <div class="col-md-6">
-        <input class="form-control header" placeholder="Header Name">
+        <!-- ✅ Auto-filled header -->
+        <input class="form-control header" value="${defaultHeader}" placeholder="Header Name">
       </div>
+
       <div class="col-md-6">
         <div class="row g-2">
           <div class="col-8">
@@ -249,8 +265,10 @@ function addColumn(){
         </div>
       </div>
     </div>
+
     <textarea class="form-control mapping" placeholder="Use <Column>"></textarea>
   `;
+
   mappingArea.appendChild(newCard);
   populateDropdowns();
 }
@@ -305,7 +323,7 @@ function generateFilters(){
     html += `
 <div class="mb-3 p-2">
   <div class="d-flex justify-content-between align-items-center mb-1">
-    <label class="fw-semibold mb-0">${col}</label>
+    <label class="fw-semibold mb-0 bg-warning rounded p-1 px-2">${col}</label>
     <div>
       <button class="btn btn-sm btn-outline-primary select-all-btn" data-col="${col}">All</button>
       <button class="btn btn-sm btn-outline-danger clear-all-btn" data-col="${col}">Clear</button>
@@ -487,56 +505,63 @@ function processData(){
   const text = btn.querySelector(".btn-text");
   const spinner = btn.querySelector(".spinner-border");
 
-  // 🔥 SHOW SPINNER
   text.classList.add("d-none");
   spinner.classList.remove("d-none");
   btn.disabled = true;
 
-  // ⏳ Allow UI to update before heavy work
   setTimeout(() => {
-    try {
 
-      if(!excelData || excelData.length === 0){
-        alert("Please upload an Excel file first!");
-        return;
-      }
+    if(!excelData || excelData.length === 0){
+      alert("Upload Excel first!");
+      resetBtn();
+      return;
+    }
 
-      const headerInputs = document.querySelectorAll('.header');
-      const mappingInputs = document.querySelectorAll('.mapping');
+    const headerInputs = document.querySelectorAll('.header');
+    const mappingInputs = document.querySelectorAll('.mapping');
 
-      let hasEmptyHeader = false;
-      headerInputs.forEach((input) => {
-        if(!input.value.trim()) {
-          input.style.border = '1px solid red';
-          hasEmptyHeader = true;
-        } else {
-          input.style.border = '';
-        }
-      });
+    let hasEmpty = false;
+    headerInputs.forEach(input => {
+      if(!input.value.trim()){
+        input.style.border = "1px solid red";
+        hasEmpty = true;
+      } else input.style.border = "";
+    });
 
-      if(hasEmptyHeader) {
-        alert("Please fill in all header names!");
-        return;
-      }
+    if(hasEmpty){
+      alert("Fill all headers!");
+      resetBtn();
+      return;
+    }
 
-      const filtered = getFiltered();
+    const filtered = getFiltered();
+    if(!filtered.length){
+      alert("No data!");
+      resetBtn();
+      return;
+    }
 
-      if(!filtered.length){
-        alert("No data found after applying filters!");
-        return;
-      }
+    tableData = [];
+    let index = 0;
+    const chunkSize = 200; // 🔥 adjust (100–500)
 
-      tableData = filtered.map((row, rowIndex) => {
+    function processChunk(){
+
+      const end = Math.min(index + chunkSize, filtered.length);
+
+      for(let i = index; i < end; i++){
+
+        const row = filtered[i];
         let obj = {};
         obj["_raw"] = row;
-        obj["SL"] = rowIndex + 1;
+        obj["SL"] = i + 1;
 
-        mappingInputs.forEach((m, i) => {
-          let header = headerInputs[i].value.trim();
+        mappingInputs.forEach((m, j) => {
+          let header = headerInputs[j].value.trim();
           let finalHeader = header;
           let counter = 1;
 
-          while(obj.hasOwnProperty(finalHeader)) {
+          while(obj.hasOwnProperty(finalHeader)){
             finalHeader = `${header}_${counter++}`;
           }
 
@@ -547,30 +572,43 @@ function processData(){
           obj[finalHeader] = textVal;
         });
 
-        return obj;
-      });
+        tableData.push(obj);
+      }
 
-      renderTable();
+      index = end;
 
-    } catch (err) {
-      console.error(err);
-      alert("Error: " + err.message);
-    } finally {
-      // 🔥 HIDE SPINNER (ALWAYS RUNS)
+      if(index < filtered.length){
+        setTimeout(processChunk, 0); // 🔥 non-blocking
+      } else {
+        renderTable();
+        resetBtn();
+      }
+    }
+
+    function resetBtn(){
       text.classList.remove("d-none");
       spinner.classList.add("d-none");
       btn.disabled = false;
     }
 
-  }, 100); // small delay to show spinner
+    processChunk();
+
+  }, 50);
 }
 
 // Render Table with proper sorting indicators
 function renderTable(){
   if(!tableData.length) {
     document.getElementById('resultTable').innerHTML = '<tbody><tr><td class="text-center">No data to display</td></tr></tbody>';
+    
+    document.getElementById("rowCount").innerText = "No data";
+    
     return;
   }
+
+    // ✅ ROW COUNT (FULL DATA)
+  document.getElementById("rowCount").innerText =
+    `Total rows: ${tableData.length}`;
   
   const keys = Object.keys(tableData[0]).filter(k => k !== "_raw");
   let html = "<thead><tr>";
@@ -791,7 +829,8 @@ function downloadPDF(){
 // Print by Selection - Generate separate PDFs for each filter combination
 async function printBySelection(){
 
-  const useZip = askDownloadType(); // true = ZIP, false = separate
+  //const useZip = askDownloadType();
+  const useZip = await askDownloadType();
 
   const btn = document.querySelector('[onclick="printBySelection()"]');
   if(btn) btn.disabled = true;
@@ -842,7 +881,6 @@ async function printBySelection(){
   const combinations = getCombinations(selectedGroups);
   let successCount = 0;
 
-  // ✅ IMPORTANT: use for...of (NOT forEach)
   for(const combo of combinations){
 
     let filteredRows = tableData.filter(row => {
@@ -895,10 +933,75 @@ async function printBySelection(){
 
     let currentY = drawSubject(10) + 5;
 
+    // =========================
+    // ✅ COLUMN WIDTH LOGIC
+    // =========================
+    let totalPercent = 0;
+    let validPercentages = true;
+
+    keys.forEach(k => {
+      let percent = columnPercent[k];
+
+      if (k === "SL" && (!percent || percent <= 0 || isNaN(percent))) {
+        percent = 5;
+        columnPercent[k] = 5;
+      }
+
+      if (!percent || percent <= 0 || isNaN(percent)) {
+        validPercentages = false;
+      } else {
+        totalPercent += percent;
+      }
+    });
+
+    let columnWidths = [];
+
+    if (validPercentages && Math.abs(totalPercent - 100) < 0.1) {
+
+      keys.forEach(k => {
+        let width = (columnPercent[k] / 100) * usableWidth;
+        columnWidths.push(width);
+      });
+
+    } else {
+
+      let remainingWidth = usableWidth;
+      let slWidth = 0;
+
+      if (keys.includes("SL")) {
+        slWidth = (5 / 100) * usableWidth;
+        remainingWidth -= slWidth;
+      }
+
+      let otherCols = keys.length - (keys.includes("SL") ? 1 : 0);
+      let equalWidth = otherCols > 0 ? remainingWidth / otherCols : usableWidth;
+
+      keys.forEach(k => {
+        if (k === "SL") {
+          columnWidths.push(slWidth);
+        } else {
+          columnWidths.push(equalWidth);
+        }
+      });
+    }
+
+    let totalWidth = columnWidths.reduce((a, b) => a + b, 0);
+    let startX = (pageWidth - totalWidth) / 2;
+    if (startX < 10) startX = 10;
+
+    let columnStyles = {};
+    columnWidths.forEach((width, idx) => {
+      columnStyles[idx] = { cellWidth: width };
+    });
+
+    // =========================
+    // ✅ TABLE
+    // =========================
     doc.autoTable({
       head: [keys],
       body: localTable.map(r => keys.map(k => r[k])),
       startY: currentY,
+      margin: { left: startX, right: pageWidth - startX - totalWidth },
       styles: {
         fontSize: fontSize,
         lineWidth: 0.2,
@@ -911,6 +1014,7 @@ async function printBySelection(){
         fontStyle: 'bold',
         halign: 'center'
       },
+      columnStyles: columnStyles,
       didDrawPage: (data) => {
         if(repeatSubject && data.pageNumber > 1){
           drawSubject(10);
@@ -920,7 +1024,6 @@ async function printBySelection(){
 
     let fileName = comboValues.join("_").replace(/[\\/:*?"<>|]/g, "_");
 
-    // ✅ ZIP or direct download
     if(useZip){
       const pdfBlob = doc.output("blob");
       zip.file(fileName + ".pdf", pdfBlob);
@@ -931,7 +1034,6 @@ async function printBySelection(){
     successCount++;
   }
 
-  // ✅ AFTER LOOP → ZIP DOWNLOAD
   if(useZip && successCount > 0){
     const content = await zip.generateAsync({ type: "blob" });
 
@@ -977,7 +1079,8 @@ function downloadExcel(){
 
 async function downloadExcelBySelection(){
 
-  const useZip = askDownloadType(); // true = ZIP
+ // const useZip = askDownloadType(); // true = ZIP
+ const useZip = await askDownloadType();
 
   const btn = document.querySelector('[onclick="downloadExcelBySelection()"]');
   if(btn) btn.disabled = true;
@@ -1266,7 +1369,60 @@ function alertError(message) {
 }
 
 function askDownloadType(){
-  return confirm("Click OK for ZIP download\nClick Cancel for multiple files");
+  return new Promise((resolve) => {
+
+    // Create modal container
+    const modal = document.createElement("div");
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.background = "rgba(0,0,0,0.5)";
+    modal.style.display = "flex";
+    modal.style.alignItems = "center";
+    modal.style.justifyContent = "center";
+    modal.style.zIndex = "9999";
+
+    // Modal box
+    const box = document.createElement("div");
+    box.style.background = "#fff";
+    box.style.padding = "20px";
+    box.style.borderRadius = "10px";
+    box.style.textAlign = "center";
+    box.style.minWidth = "280px";
+    box.style.boxShadow = "0 5px 15px rgba(0,0,0,0.3)";
+
+    box.innerHTML = `
+      <h5 style="margin-bottom:15px;">Download Type</h5>
+      <p style="font-size:14px;margin-bottom:20px;">
+        Choose how you want to download files
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button id="zipBtn" style="padding:8px 12px;border:none;background:#198754;color:#fff;border-radius:5px;cursor:pointer;">
+          ZIP Download
+        </button>
+        <button id="multiBtn" style="padding:8px 12px;border:none;background:#0d6efd;color:#fff;border-radius:5px;cursor:pointer;">
+          Multiple Files
+        </button>
+      </div>
+    `;
+
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+
+    // Button actions
+    box.querySelector("#zipBtn").onclick = () => {
+      document.body.removeChild(modal);
+      resolve(true); // ZIP
+    };
+
+    box.querySelector("#multiBtn").onclick = () => {
+      document.body.removeChild(modal);
+      resolve(false); // Multiple
+    };
+
+  });
 }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
