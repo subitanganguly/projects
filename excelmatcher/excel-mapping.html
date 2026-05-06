@@ -217,6 +217,7 @@ let currentSortOrder = 'asc'; // 'asc' or 'desc'
 let filteredDataCache = []; // Cache filtered data
 let processingQueue = false;
 let isProcessing = false;
+let separateFlags = {}; // Store separate toggle state for each column
 
 // Upload
 document.getElementById('fileInput').addEventListener('change', e => {
@@ -237,6 +238,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
     document.getElementById('resultTable').innerHTML = '';
     // Reset column percentages
     columnPercent = {};
+    separateFlags = {};
     alert(`Excel Loaded Successfully! ${excelData.length} records found.`);
   };
   reader.readAsArrayBuffer(file);
@@ -313,7 +315,7 @@ document.addEventListener('click',e=>{
   }
 });
 
-// Generate Filters with virtualization for large datasets
+// Generate Filters with Separate toggle
 function generateFilters(){
   if(!excelData || excelData.length === 0){
     document.getElementById("filterArea").innerHTML = "<div class='text-danger'>No data available</div>";
@@ -324,6 +326,11 @@ function generateFilters(){
   let html = "";
 
   columns.forEach(col=>{
+    // Initialize separate flag if not exists (default: true)
+    if(separateFlags[col] === undefined) {
+      separateFlags[col] = true;
+    }
+    
     // Use Set for unique values - more efficient
     const valueSet = new Set();
     for(let i = 0; i < excelData.length; i++) {
@@ -360,6 +367,12 @@ function generateFilters(){
   <div class="d-flex justify-content-between align-items-center mb-1">
     <label class="fw-semibold mb-0 bg-warning rounded p-1 px-2">${col}</label>
     <div>
+      <div class="form-check form-switch d-inline-block me-2">
+        <input class="form-check-input separate-toggle" type="checkbox" 
+               id="separate_${col}" data-col="${col}" 
+               ${separateFlags[col] ? 'checked' : ''}>
+        <label class="form-check-label small" for="separate_${col}">Separate</label>
+      </div>
       <button class="btn btn-sm btn-outline-primary select-all-btn" data-col="${col}">All</button>
       <button class="btn btn-sm btn-outline-danger clear-all-btn" data-col="${col}">Clear</button>
     </div>
@@ -401,29 +414,42 @@ function generateFilters(){
     btn.removeEventListener('click', handleClearAll);
     btn.addEventListener('click', handleClearAll);
   });
-
-  // 🔍 SEARCH + AUTO SELECT with debouncing
-  document.querySelectorAll('.filter-search').forEach(input => {
-    let debounceTimer;
-    input.addEventListener('input', function(){
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        const col = this.dataset.col;
-        const search = this.value.toLowerCase().trim();
-        const checkboxes = document.querySelectorAll(`.filter-checkbox[data-col="${col}"]`);
-        
-        if(search === ""){
-          return;
-        }
-        
-        checkboxes.forEach(cb => {
-          const label = document.querySelector(`label[for="${cb.id}"]`);
-          const text = label ? label.textContent.toLowerCase() : "";
-          cb.checked = text.includes(search);
-        });
-      }, 300);
-    });
+  
+  // Attach event listeners for Separate toggles
+  document.querySelectorAll('.separate-toggle').forEach(toggle => {
+    toggle.removeEventListener('change', handleSeparateToggle);
+    toggle.addEventListener('change', handleSeparateToggle);
   });
+  document.querySelectorAll('.filter-search').forEach(input => {
+  let debounceTimer;
+
+  input.addEventListener('input', function () {
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(() => {
+      const col = this.dataset.col;
+      const search = this.value.toLowerCase().trim();
+      const items = document.querySelectorAll(`.filter-checkbox[data-col="${col}"]`);
+
+      items.forEach(cb => {
+        const wrapper = cb.closest('.form-check');
+        const label = document.querySelector(`label[for="${cb.id}"]`);
+        const text = label ? label.textContent.toLowerCase() : "";
+
+        if (search === "") {
+          wrapper.style.display = "";
+          cb.checked = false;
+        } else if (text.includes(search)) {
+          wrapper.style.display = "";
+          cb.checked = true;   // auto select
+        } else {
+          wrapper.style.display = "none";
+          cb.checked = false;
+        }
+      });
+    }, 300);
+  });
+});
 }
 
 function handleSelectAll(e) {
@@ -438,6 +464,106 @@ function handleClearAll(e) {
   const col = e.target.dataset.col;
   document.querySelectorAll(`.filter-checkbox[data-col="${col}"]`)
     .forEach(cb => cb.checked = false);
+}
+
+function handleSeparateToggle(e) {
+  const col = e.target.dataset.col;
+  separateFlags[col] = e.target.checked;
+}
+
+function getSeparateFlags() {
+  const flags = {};
+  document.querySelectorAll('.separate-toggle').forEach(toggle => {
+    flags[toggle.dataset.col] = toggle.checked;
+  });
+  return flags;
+}
+
+function getSelectedFilterValues() {
+  const selectedGroups = {};
+  document.querySelectorAll('.filter-checkbox:checked').forEach(cb => {
+    const col = cb.dataset.col;
+    const val = cb.value;
+    if(!selectedGroups[col]) selectedGroups[col] = [];
+    selectedGroups[col].push(val);
+  });
+  return selectedGroups;
+}
+
+function generateFilterCombinations(selectedGroups, separateFlags) {
+  const cols = Object.keys(selectedGroups);
+  if(cols.length === 0) return [];
+  
+  const separateCols = cols.filter(col => separateFlags[col] === true);
+  const combinedCols = cols.filter(col => separateFlags[col] === false);
+  
+  if(separateCols.length === 0) {
+    const combo = {};
+    combinedCols.forEach(col => {
+      combo[col] = selectedGroups[col];
+    });
+    return [combo];
+  }
+  
+  function buildCombinations(index, current) {
+    if(index === separateCols.length) {
+      const finalCombo = { ...current };
+      combinedCols.forEach(col => {
+        finalCombo[col] = selectedGroups[col];
+      });
+      return [finalCombo];
+    }
+    
+    const col = separateCols[index];
+    const values = selectedGroups[col];
+    let results = [];
+    
+    values.forEach(val => {
+      const newCurrent = { ...current, [col]: val };
+      results = results.concat(buildCombinations(index + 1, newCurrent));
+    });
+    
+    return results;
+  }
+  
+  return buildCombinations(0, {});
+}
+
+// Helper function to get file name (limit to 5 values)
+function getFileName(combo) {
+  const allValues = [];
+  for(const [col, val] of Object.entries(combo)) {
+    if(Array.isArray(val)) {
+      allValues.push(...val);
+    } else {
+      allValues.push(val);
+    }
+  }
+  
+  if(allValues.length > 5) {
+    const first5 = allValues.slice(0, 5);
+    return first5.join('_') + '_more';
+  }
+  return allValues.join('_');
+}
+
+// Helper function to get heading text (all values)
+function getHeadingText(combo) {
+  const allValues = [];
+
+  for(const [col, val] of Object.entries(combo)) {
+    if(Array.isArray(val)) {
+      allValues.push(...val);
+    } else {
+      allValues.push(val);
+    }
+  }
+
+  if(allValues.length > 5) {
+    return allValues.slice(0, 5).join(' - ') + ' - more';
+  }
+
+  return allValues.join(' - ');
 }
 
 // Get filtered data based on checkbox selections - optimized with caching
@@ -640,7 +766,7 @@ function renderTable(){
     const sortIndicator = (currentSortColumn === k) ? (currentSortOrder === 'asc' ? ' ▲' : ' ▼') : '';
     html += `<th style="background:#e0e0e0;font-weight:bold;cursor:pointer;" onclick="sortTable('${k.replace(/'/g, "\\'")}')">${k}${sortIndicator}</th>`;
   });
-  html += "</table></thead><tbody>";
+  html += "</thead><tbody>";
   
   // Limit initial render to 500 rows for faster display
   const maxInitialRender = 500;
@@ -702,7 +828,7 @@ function sortTable(col){
   renderTable();
 }
 
-// PDF Generation - Fixed
+// PDF Generation - Fixed with footer
 function downloadPDF(){
 
   if(!tableData.length) {
@@ -718,7 +844,7 @@ function downloadPDF(){
   spinner.classList.remove("d-none");
   btn.disabled = true;
 
-  setTimeout(() => {
+  setTimeout(async () => {
     try {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -826,7 +952,7 @@ function downloadPDF(){
       // =========================
       // TABLE
       // =========================
-      doc.autoTable({
+      await doc.autoTable({
         head: [keys],
         body: tableData.map(r => keys.map(k => r[k])),
         startY: currentY,
@@ -848,12 +974,35 @@ function downloadPDF(){
           valign: 'middle'
         },
         columnStyles: columnStyles,
-        didDrawPage: (data) => {
-          if(repeatSubject && data.pageNumber > 1){
-            drawSubject(10);
-          }
-        }
+didDrawPage: function (data) {
+  if(repeatSubject && data.pageNumber > 1){
+    drawSubject(10);
+  }
+
+  let totalPages = doc.internal.getNumberOfPages();
+
+  if (typeof doc.putTotalPages === 'function') {
+    totalPages = '{total_pages_count_string}';
+  }
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+
+  doc.text(
+    `Page ${data.pageNumber} of ${totalPages}`,
+    pageWidth / 1.8,
+    pageHeight - 10,
+    { align: 'center' }
+  );
+}
       });
+
+          if (typeof doc.putTotalPages === 'function') {
+  doc.putTotalPages('{total_pages_count_string}');
+}
 
       doc.save("report.pdf");
 
@@ -868,10 +1017,10 @@ function downloadPDF(){
 
   }, 100);
 }
+
 // Print by Selection - Generate separate PDFs for each filter combination
 async function printBySelection(){
 
-  //const useZip = askDownloadType();
   const useZip = await askDownloadType();
 
   const btn = document.querySelector('[onclick="printBySelection()"]');
@@ -885,14 +1034,8 @@ async function printBySelection(){
 
   let zip = new JSZip();
 
-  const selectedGroups = {};
-  document.querySelectorAll('.filter-checkbox:checked').forEach(cb => {
-    const col = cb.dataset.col;
-    const val = cb.value;
-
-    if(!selectedGroups[col]) selectedGroups[col] = [];
-    selectedGroups[col].push(val);
-  });
+  const selectedGroups = getSelectedFilterValues();
+  const separateFlagsObj = getSeparateFlags();
 
   if(Object.keys(selectedGroups).length === 0){
     alert("Select at least one filter value!");
@@ -900,34 +1043,18 @@ async function printBySelection(){
     return;
   }
 
-  function getCombinations(groups){
-    const cols = Object.keys(groups);
-
-    function helper(index, current){
-      if(index === cols.length) return [current];
-
-      const col = cols[index];
-      const values = groups[col];
-      let result = [];
-
-      values.forEach(val => {
-        result = result.concat(helper(index+1, { ...current, [col]: val }));
-      });
-
-      return result;
-    }
-
-    return helper(0, {});
-  }
-
-  const combinations = getCombinations(selectedGroups);
+  const combinations = generateFilterCombinations(selectedGroups, separateFlagsObj);
   let successCount = 0;
 
   for(const combo of combinations){
 
     let filteredRows = tableData.filter(row => {
       return Object.keys(combo).every(col => {
-        return String(row._raw[col] ?? '') === combo[col];
+        const filterValues = combo[col];
+        if(Array.isArray(filterValues)) {
+          return filterValues.includes(String(row._raw[col] ?? ''));
+        }
+        return String(row._raw[col] ?? '') === filterValues;
       });
     });
 
@@ -952,8 +1079,9 @@ async function printBySelection(){
     const keys = Object.keys(localTable[0]);
 
     let subject = document.getElementById('subjectText').value || "";
-    const comboValues = Object.values(combo);
-    subject = subject ? subject + " - " + comboValues.join(" - ") : comboValues.join(" - ");
+    // Heading shows ALL values (full text)
+    const headingText = getHeadingText(combo);
+    subject = subject ? subject + " - " + headingText : headingText;
 
     function drawSubject(yPos = 10) {
       doc.setFont("helvetica", "bold");
@@ -1039,7 +1167,7 @@ async function printBySelection(){
     // =========================
     // ✅ TABLE
     // =========================
-    doc.autoTable({
+    await doc.autoTable({
       head: [keys],
       body: localTable.map(r => keys.map(k => r[k])),
       startY: currentY,
@@ -1057,14 +1185,37 @@ async function printBySelection(){
         halign: 'center'
       },
       columnStyles: columnStyles,
-      didDrawPage: (data) => {
-        if(repeatSubject && data.pageNumber > 1){
-          drawSubject(10);
-        }
-      }
+      didDrawPage: function (data) {
+  if(repeatSubject && data.pageNumber > 1){
+    drawSubject(10);
+  }
+
+  let totalPages = doc.internal.getNumberOfPages();
+
+  // FIX for correct total pages
+  if (typeof doc.putTotalPages === 'function') {
+    totalPages = '{total_pages_count_string}';
+  }
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text(
+    `Page ${data.pageNumber} of ${totalPages}`,
+    pageWidth / 1.8,
+    doc.internal.pageSize.getHeight() - 10,
+    { align: 'center' }
+  );
+}
+
     });
 
-    let fileName = comboValues.join("_").replace(/[\\/:*?"<>|]/g, "_");
+    if (typeof doc.putTotalPages === 'function') {
+  doc.putTotalPages('{total_pages_count_string}');
+}
+
+    // File name uses limited values (first 5)
+    const fileNameText = getFileName(combo);
+    let fileName = fileNameText.replace(/[\\/:*?"<>|]/g, "_");
 
     if(useZip){
       const pdfBlob = doc.output("blob");
@@ -1093,6 +1244,7 @@ async function printBySelection(){
 
   if(btn) btn.disabled = false;
 }
+
 // Download Excel
 function downloadExcel(){
   if(!tableData.length) {
@@ -1100,13 +1252,15 @@ function downloadExcel(){
     return;
   }
   
-  const cleanData = tableData.map(row => {
-    let obj = {};
-    Object.keys(row).forEach(k => {
+const cleanData = tableData.map(row => {
+  let obj = {};
+  Object.keys(row).forEach(k => {
+    if(k !== "_raw"){ // ❌ remove _raw
       obj[k] = String(row[k]).replace(/<br>/g, "\n");
-    });
-    return obj;
+    }
   });
+  return obj;
+});
   
   const ws = XLSX.utils.json_to_sheet(cleanData);
   ws['!cols'] = Object.keys(cleanData[0] || {}).map(() => ({ wch: 15 }));
@@ -1116,12 +1270,8 @@ function downloadExcel(){
   XLSX.writeFile(wb, "report.xlsx");
 }
 
-
-
-
 async function downloadExcelBySelection(){
 
- // const useZip = askDownloadType(); // true = ZIP
  const useZip = await askDownloadType();
 
   const btn = document.querySelector('[onclick="downloadExcelBySelection()"]');
@@ -1135,14 +1285,8 @@ async function downloadExcelBySelection(){
 
   let zip = new JSZip();
 
-  const selectedGroups = {};
-  document.querySelectorAll('.filter-checkbox:checked').forEach(cb => {
-    const col = cb.dataset.col;
-    const val = cb.value;
-
-    if(!selectedGroups[col]) selectedGroups[col] = [];
-    selectedGroups[col].push(val);
-  });
+  const selectedGroups = getSelectedFilterValues();
+  const separateFlagsObj = getSeparateFlags();
 
   if(Object.keys(selectedGroups).length === 0){
     alert("Select at least one filter value!");
@@ -1150,35 +1294,18 @@ async function downloadExcelBySelection(){
     return;
   }
 
-  function getCombinations(groups){
-    const cols = Object.keys(groups);
-
-    function helper(index, current){
-      if(index === cols.length) return [current];
-
-      const col = cols[index];
-      const values = groups[col];
-      let result = [];
-
-      values.forEach(val => {
-        result = result.concat(helper(index+1, { ...current, [col]: val }));
-      });
-
-      return result;
-    }
-
-    return helper(0, {});
-  }
-
-  const combinations = getCombinations(selectedGroups);
+  const combinations = generateFilterCombinations(selectedGroups, separateFlagsObj);
   let successCount = 0;
 
-  // ✅ IMPORTANT: use for...of
   for(const combo of combinations){
 
     let filteredRows = tableData.filter(row => {
       return Object.keys(combo).every(col => {
-        return String(row._raw[col] ?? '') === combo[col];
+        const filterValues = combo[col];
+        if(Array.isArray(filterValues)) {
+          return filterValues.includes(String(row._raw[col] ?? ''));
+        }
+        return String(row._raw[col] ?? '') === filterValues;
       });
     });
 
@@ -1198,11 +1325,9 @@ async function downloadExcelBySelection(){
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Report");
 
-    let fileName = Object.values(combo)
-      .join("_")
-      .replace(/[\\/:*?"<>|]/g, "_");
+    const fileNameText = getFileName(combo);
+    let fileName = fileNameText.replace(/[\\/:*?"<>|]/g, "_");
 
-    // ✅ ZIP or direct download
     if(useZip){
       const excelBlob = XLSX.write(wb, { bookType: "xlsx", type: "array" });
       zip.file(fileName + ".xlsx", excelBlob);
@@ -1213,7 +1338,6 @@ async function downloadExcelBySelection(){
     successCount++;
   }
 
-  // ✅ AFTER LOOP → ZIP download
   if(useZip && successCount > 0){
     const content = await zip.generateAsync({ type: "blob" });
 
@@ -1233,31 +1357,6 @@ async function downloadExcelBySelection(){
 }
 
 // Open Distribution Modal
-// Update openDistribution function to show SL with 5% default
-// function openDistribution(){
-//   if(!tableData.length) {
-//     alert("Please sync Excel data first!");
-//     return;
-//   }
-  
-//   const keys = Object.keys(tableData[0]);
-//   let html = "";
-//   keys.forEach(k => {
-//     let percentValue = columnPercent[k] || (k === "SL" ? 5 : (100 / keys.length).toFixed(2));
-//     // If SL column exists and no percentage set, use 5%
-//     if(k === "SL" && (!columnPercent[k] || columnPercent[k] === 0)) {
-//       percentValue = 5;
-//     }
-//     html += `
-//       <div class="mb-3">
-//         <label class="fw-semibold">${k}</label>
-//         <input type="number" class="form-control dist-input" 
-//           data-col="${k.replace(/"/g, '&quot;')}" value="${typeof percentValue === 'number' ? percentValue.toFixed(2) : percentValue}" placeholder="%" step="any" min="0" max="100">
-//       </div>
-//     `;
-//   });
-//   html += `<div class="alert alert-info mt-2">Total: <span id="distTotal">0</span>%</div>`;
-//   document.getElementById('distBody').innerHTML = html;
 function openDistribution(){
   if(!tableData.length) {
     alert("Please sync Excel data first!");
@@ -1308,9 +1407,7 @@ function openDistribution(){
   new bootstrap.Modal(document.getElementById('distModal')).show();
 }
 
-
 // Save Distribution Percentages
-// Update saveDistribution function to ensure SL doesn't get 0%
 function saveDistribution(){
   const inputs = document.querySelectorAll('.dist-input');
   let total = 0;
@@ -1367,28 +1464,6 @@ function saveDistribution(){
 }
 
 // Also update the initialization when window loads
-window.onload = () => {
-  addColumn();
-  
-  // Set default columnPercent for SL if needed
-  if(!columnPercent["SL"]) {
-    columnPercent["SL"] = 5;
-  }
-  
-  // Alignment button event listeners
-  document.querySelectorAll('.align-btn').forEach(btn => {
-    btn.addEventListener('click', function(){
-      document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-    });
-  });
-  
-  // Set default active alignment
-  const defaultAlignBtn = document.querySelector('.align-btn[data-align="center"]');
-  if(defaultAlignBtn) defaultAlignBtn.classList.add('active');
-};
-
-// Initialize on window load
 window.onload = () => {
   addColumn();
   
