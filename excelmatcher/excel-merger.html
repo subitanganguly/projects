@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+  <title>Excel Merger Pro</title>
+  <link rel="icon" type="image/png" href="../sumadhu.png">
+    <link href="style.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    * {
+      transition: all 0.2s ease;
+    }
+    body {
+      background: linear-gradient(245deg, #1300c025, #00b8be42, #c702f842);
+      font-family: 'Segoe UI', system-ui, -apple-system, 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 1.5rem 0;
+    }
+    .upload-zone {
+      border: 2px dashed #3b82f6;
+      background: #fafcff;
+      border-radius: 28px;
+      padding: 1rem 1rem;
+      transition: all 0.25s;
+      cursor: pointer;
+    }
+    .upload-zone:hover {
+      background: #eff6ff;
+      border-color: #2563eb;
+      transform: scale(0.98);
+    }
+    .upload-zone.drag-over {
+      background: #e0edfe;
+      border-color: #1d4ed8;
+      border-style: solid;
+    }
+
+    .file-item {
+      background: white;
+      border-left: 5px solid #3b82f6;
+      border-radius: 18px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: all 0.2s;
+    }
+    .file-item:hover {
+      transform: translateX(5px);
+      box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1);
+    }
+    .preview-container {
+      max-height: 360px;
+      overflow: auto;
+      border-radius: 20px;
+      background: #ffffff;
+      border: 1px solid #e9eef3;
+    }
+    .preview-container table {
+      font-size: 0.8rem;
+      min-width: 500px;
+    }
+    .preview-container thead th {
+      background: #f1f5f9;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      font-weight: 600;
+      color: #0f172a;
+      padding: 12px 8px;
+      backdrop-filter: blur(4px);
+      border-bottom: 2px solid #cbd5e1;
+    }
+    .badge-file {
+      background: #eef2ff;
+      color: #1e40af;
+      border-radius: 40px;
+      font-weight: 500;
+      padding: 5px 12px;
+    }
+    .stat-card {
+      background: #f8fafc;
+      border-radius: 24px;
+      padding: 0.7rem 1.2rem;
+      height: 100%;
+    }
+    footer {
+      font-size: 0.75rem;
+      text-align: center;
+      color: #5b6e8c;
+    }
+    .file-row-count {
+      font-size: 0.7rem;
+      background: #eef2ff;
+      padding: 2px 8px;
+      border-radius: 30px;
+      font-weight: 500;
+    }
+    .remove-file-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      transition: 0.1s;
+    }
+    .remove-file-btn:hover {
+      color: #dc2626;
+      transform: scale(1.1);
+    }
+    @media (max-width: 640px) {
+      .container { padding-left: 1rem; padding-right: 1rem; }
+      .btn { font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="glass-card p-3 p-md-4 shadow-sm">
+    
+    <!-- Header with icon -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
+      <div>
+        <h2 class="fw-bold" style="color: #0f172a;">
+          <i class="fas fa-file-excel text-primary me-2" style="color:#2b7e3a;"></i> 
+          Excel Merger
+        </h2>
+        <p class="text-secondary mb-0">Combine multiple Excel files (same structure) into one workbook</p>
+      </div>
+      <div class="mt-2 mt-sm-0">
+        <span class="badge-file"><i class="fas fa-merge me-1"></i> Smart merge · XLSX/XLS/CSV</span>
+      </div>
+    </div>
+
+    <!-- Upload Section: enhanced drag & drop -->
+    <div id="uploadZone" class="upload-zone text-center mb-4">
+      <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-2" style="opacity:0.7;"></i>
+      <h5 class="fw-semibold">Drag & drop Excel files here</h5>
+      <p class="text-muted small">Supports .xlsx, .xls, .csv, .xlsm — or click to browse</p>
+      <input type="file" id="fileInput" multiple accept=".xlsx, .xls, .csv, .xlsm, .xlsb" hidden>
+      <button class="btn btn-sm btn-outline-primary rounded-pill mt-1 px-4" onclick="document.getElementById('fileInput').click()">
+        <i class="fas fa-folder-open"></i> Browse files
+      </button>
+    </div>
+
+    <!-- File Queue + Stats row -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-7">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold mb-0"><i class="fas fa-list-ul me-1"></i> Files to merge</h6>
+          <span id="fileCounterBadge" class="badge bg-secondary rounded-pill">0 files</span>
+        </div>
+        <div id="fileListContainer" style="max-height: 260px; overflow-y: auto; padding-right: 4px;">
+          <ul class="list-unstyled" id="fileList"></ul>
+          <div id="emptyFileMessage" class="text-muted small text-center py-3">No files added yet</div>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between mb-2">
+            <span><i class="fas fa-layer-group text-info"></i> Files loaded:</span>
+            <strong id="statFiles">0</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span><i class="fas fa-table text-success"></i> Total rows (sum):</span>
+            <strong id="statRows">0</strong>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span><i class="fas fa-code-branch text-primary"></i> Merged rows:</span>
+            <strong id="statMergedRows">0</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span><i class="fas fa-columns text-warning"></i> Columns structure:</span>
+            <strong id="statCols">—</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action buttons row -->
+    <div class="d-flex flex-wrap gap-2 mb-4 justify-content-center justify-content-md-start">
+      <button class="btn button12 px-4" id="mergeBtn" onclick="mergeFiles()">
+        <i class="fas fa-code-branch me-2"></i> Merge Files
+      </button>
+      <button class="btn button10 px-4" onclick="clearAll()">
+        <i class="fas fa-trash-alt me-2"></i> Clear All
+      </button>
+      <button class="btn button12 px-4 d-none" id="downloadBtn" onclick="downloadMergedExcel()">
+        <i class="fas fa-download me-2"></i> Download Merged File
+      </button>
+    </div>
+
+    <!-- Status area with dynamic alert -->
+    <div id="statusArea" class="mb-3" style="min-height: 58px;"></div>
+
+    <!-- Preview title & table -->
+    <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+      <h6 class="fw-bold mb-0"><i class="fas fa-eye"></i> Live Preview (first 50 rows)</h6>
+      <span class="badge bg-light text-dark rounded-pill" id="previewRowsInfo">—</span>
+    </div>
+    <div class="preview-container">
+      <table class="table table-hover align-middle mb-0" id="previewTable">
+        <tbody><tr><td class="text-center text-muted py-4">Preview will appear after merging</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <footer class="mt-4">
+    <i class="far fa-copyright"></i> Smart merge — headers case & order are validated. All processing happens in your browser.
+  </footer>
+</div>
+
+<script>
+  // ---------- GLOBALS ----------
+  let loadedFilesData = [];       // stores array of objects (each file's sheet data)
+  let finalMergedData = [];       // combined rows after merge
+  let expectedHeaders = null;     // reference headers (order + names)
+  let fileNamesMap = new Map();    // stores file names for each index
+  let fileRowCountMap = new Map(); // individual row counts for UI
+
+  // DOM elements
+  const fileInput = document.getElementById('fileInput');
+  const fileListEl = document.getElementById('fileList');
+  const emptyFileMsg = document.getElementById('emptyFileMessage');
+  const previewTable = document.getElementById('previewTable');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const statFilesSpan = document.getElementById('statFiles');
+  const statRowsSpan = document.getElementById('statRows');
+  const statMergedRowsSpan = document.getElementById('statMergedRows');
+  const statColsSpan = document.getElementById('statCols');
+  const fileCounterBadge = document.getElementById('fileCounterBadge');
+  const previewRowsInfo = document.getElementById('previewRowsInfo');
+
+  // ---------- SAFE escapeHtml (fix for numbers, null, objects) ----------
+  function escapeHtml(value) {
+    if (value === undefined || value === null) return '';
+    // Convert to string safely
+    let str = String(value);
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+      return c;
+    });
+  }
+
+  // Helper: show status message
+  let statusTimeout = null;
+  function showStatus(message, type = 'info', autoClear = true) {
+    const statusDiv = document.getElementById('statusArea');
+    const iconMap = {
+      success: '<i class="fas fa-check-circle me-2"></i>',
+      danger: '<i class="fas fa-exclamation-triangle me-2"></i>',
+      warning: '<i class="fas fa-exclamation-circle me-2"></i>',
+      info: '<i class="fas fa-info-circle me-2"></i>',
+      secondary: '<i class="fas fa-broom me-2"></i>'
+    };
+    const icon = iconMap[type] || iconMap.info;
+    statusDiv.innerHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show mb-0 rounded-4 shadow-sm" role="alert">
+        ${icon} <strong>${escapeHtml(message)}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    if(statusTimeout) clearTimeout(statusTimeout);
+    if(autoClear && type !== 'danger') {
+      statusTimeout = setTimeout(() => {
+        const alertDiv = statusDiv.querySelector('.alert');
+        if(alertDiv) alertDiv.classList.remove('show');
+        setTimeout(() => { if(statusDiv.innerHTML.includes('alert')) statusDiv.innerHTML = ''; }, 200);
+      }, 4000);
+    }
+    statusDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // Update file list UI + display per-file row count
+  function updateFileListUI() {
+    if(loadedFilesData.length === 0) {
+      fileListEl.innerHTML = '';
+      emptyFileMsg.style.display = 'block';
+      statFilesSpan.innerText = '0';
+      fileCounterBadge.innerText = '0 files';
+      let totalRawRows = 0;
+      for(let cnt of fileRowCountMap.values()) totalRawRows += cnt;
+      statRowsSpan.innerText = totalRawRows;
+      if(!finalMergedData.length) statMergedRowsSpan.innerText = '0';
+      statColsSpan.innerText = '—';
+      return;
+    }
+    emptyFileMsg.style.display = 'none';
+    let totalRawRowsAcc = 0;
+    let listHtml = '';
+    
+    for(let idx = 0; idx < loadedFilesData.length; idx++) {
+      const fileData = loadedFilesData[idx];
+      const rowCount = fileData.length;
+      totalRawRowsAcc += rowCount;
+      const fileName = fileNamesMap.get(idx) || `File ${idx+1}`;
+      listHtml += `
+        <li class="file-item p-2 mb-2 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <i class="fas fa-file-excel fa-lg" style="color:#2e7d32;"></i>
+            <span class="fw-semibold" style="max-width: 220px; word-break: break-word;">${escapeHtml(fileName)}</span>
+            <span class="file-row-count"><i class="fas fa-list me-1"></i>${rowCount} rows</span>
+          </div>
+          <button class="remove-file-btn" onclick="removeFile(${idx})" title="Remove file">
+            <i class="fas fa-times-circle fa-lg"></i>
+          </button>
+        </li>
+      `;
+    }
+    fileListEl.innerHTML = listHtml;
+    statFilesSpan.innerText = loadedFilesData.length;
+    fileCounterBadge.innerText = `${loadedFilesData.length} file${loadedFilesData.length !== 1 ? 's' : ''}`;
+    statRowsSpan.innerText = totalRawRowsAcc;
+    
+    if(expectedHeaders && expectedHeaders.length) {
+      statColsSpan.innerText = expectedHeaders.length;
+    } else if(loadedFilesData.length > 0 && loadedFilesData[0].length > 0) {
+      const firstRowKeys = Object.keys(loadedFilesData[0][0]);
+      statColsSpan.innerText = firstRowKeys.length;
+    } else {
+      statColsSpan.innerText = '—';
+    }
+    
+    // Update merged rows display if final data exists
+    if(finalMergedData.length) {
+      statMergedRowsSpan.innerText = finalMergedData.length;
+    } else {
+      statMergedRowsSpan.innerText = '0';
+    }
+  }
+
+  // Remove specific file by index
+  window.removeFile = function(idx) {
+    if(idx >= 0 && idx < loadedFilesData.length) {
+      loadedFilesData.splice(idx, 1);
+      // Rebuild fileNamesMap and rowCountMap
+      const oldNames = [];
+      const oldRowCounts = [];
+      for(let i=0; i<=loadedFilesData.length; i++) {
+        if(fileNamesMap.has(i)) oldNames.push(fileNamesMap.get(i));
+        if(fileRowCountMap.has(i)) oldRowCounts.push(fileRowCountMap.get(i));
+      }
+      fileNamesMap.clear();
+      fileRowCountMap.clear();
+      for(let i=0; i<loadedFilesData.length; i++) {
+        fileNamesMap.set(i, oldNames[i] || `File ${i+1}`);
+        fileRowCountMap.set(i, loadedFilesData[i].length);
+      }
+      
+      if(loadedFilesData.length === 0) {
+        expectedHeaders = null;
+        finalMergedData = [];
+        previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">Preview will appear after merging</td></tr></tbody>';
+        downloadBtn.classList.add('d-none');
+        statMergedRowsSpan.innerText = '0';
+        showStatus("All files cleared.", "info");
+      } else {
+        revalidateHeadersConsistency();
+        // If merged data existed, clear it because file composition changed
+        if(finalMergedData.length) {
+          finalMergedData = [];
+          downloadBtn.classList.add('d-none');
+          previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">Files changed. Click Merge again.</td></tr></tbody>';
+          previewRowsInfo.innerText = '—';
+          statMergedRowsSpan.innerText = '0';
+        }
+        showStatus(`Removed file. ${loadedFilesData.length} file(s) remaining.`, "info");
+      }
+      updateFileListUI();
+    }
+  };
+
+  // Re-validate headers among all loaded files
+  function revalidateHeadersConsistency() {
+    if(loadedFilesData.length === 0) {
+      expectedHeaders = null;
+      return true;
+    }
+    let masterHeaders = null;
+    for(let i=0; i<loadedFilesData.length; i++) {
+      const sheetData = loadedFilesData[i];
+      if(!sheetData || sheetData.length === 0) continue;
+      const currentHeaders = Object.keys(sheetData[0]);
+      if(!masterHeaders) {
+        masterHeaders = [...currentHeaders];
+      } else {
+        if(JSON.stringify(masterHeaders) !== JSON.stringify(currentHeaders)) {
+          const fileName = fileNamesMap.get(i) || `file ${i+1}`;
+          showStatus(`Header mismatch! "${fileName}" has different column structure. Please use same columns order & naming.`, "danger", false);
+          return false;
+        }
+      }
+    }
+    if(masterHeaders) expectedHeaders = masterHeaders;
+    else expectedHeaders = null;
+    updateFileListUI();
+    return true;
+  }
+
+  // Process file as arrayBuffer
+  async function processFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const wb = XLSX.read(data, { type: 'array', cellDates: false, defval: "" });
+          const firstSheet = wb.Sheets[wb.SheetNames[0]];
+          let jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "", blankrows: false });
+          // Remove rows that are completely empty (all undefined or empty string)
+          jsonData = jsonData.filter(row => Object.values(row).some(v => v !== undefined && v !== null && v !== ""));
+          if(jsonData.length === 0) {
+            reject(`File "${file.name}" has no data rows.`);
+            return;
+          }
+          resolve({ data: jsonData, fileName: file.name });
+        } catch(err) {
+          reject(`Error parsing ${file.name}: ${err.message}`);
+        }
+      };
+      reader.onerror = () => reject(`Failed to read ${file.name}`);
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  // Add files with validation
+  async function addFiles(files) {
+    if(!files.length) return;
+    let successCount = 0;
+    let errorMessages = [];
+    
+    for(let i=0; i<files.length; i++) {
+      const file = files[i];
+      const ext = file.name.split('.').pop().toLowerCase();
+      if(!['xlsx','xls','csv','xlsm','xlsb'].includes(ext)) {
+        errorMessages.push(`Skipped ${file.name}: unsupported format`);
+        continue;
+      }
+      try {
+        const { data, fileName } = await processFile(file);
+        const newHeaders = Object.keys(data[0]);
+        
+        // Header validation against existing reference
+        if(expectedHeaders === null) {
+          // first valid file sets the standard
+          expectedHeaders = [...newHeaders];
+        } else {
+          // strict compare order & names
+          if(JSON.stringify(expectedHeaders) !== JSON.stringify(newHeaders)) {
+            errorMessages.push(`"${fileName}" has mismatched columns. Expected columns: ${expectedHeaders.slice(0,3).join(', ')}${expectedHeaders.length>3 ? '...' : ''}`);
+            continue;
+          }
+        }
+        
+        // Store file data
+        const idx = loadedFilesData.length;
+        loadedFilesData.push(data);
+        fileNamesMap.set(idx, fileName);
+        fileRowCountMap.set(idx, data.length);
+        successCount++;
+      } catch(errMsg) {
+        errorMessages.push(errMsg);
+      }
+    }
+    
+    if(successCount > 0) {
+      showStatus(`✅ ${successCount} file(s) added successfully! Total rows: ${Array.from(fileRowCountMap.values()).reduce((a,b)=>a+b,0)}`, 'success');
+      updateFileListUI();
+      // When new files added, reset merged state to force re-merge
+      if(finalMergedData.length > 0) {
+        finalMergedData = [];
+        downloadBtn.classList.add('d-none');
+        previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">New files added. Click "Merge Files" to combine.</td></tr></tbody>';
+        previewRowsInfo.innerText = '—';
+        statMergedRowsSpan.innerText = '0';
+      }
+    }
+    if(errorMessages.length) {
+      showStatus(errorMessages.slice(0,2).join('; '), 'danger', false);
+    }
+  }
+
+  // Clear all files completely
+  window.clearAll = function() {
+    loadedFilesData = [];
+    finalMergedData = [];
+    expectedHeaders = null;
+    fileNamesMap.clear();
+    fileRowCountMap.clear();
+    updateFileListUI();
+    previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">Preview will appear after merging</td></tr></tbody>';
+    downloadBtn.classList.add('d-none');
+    previewRowsInfo.innerText = '—';
+    statMergedRowsSpan.innerText = '0';
+    showStatus("Cleared all files. You can upload new Excel files.", "secondary");
+  };
+
+  // MERGE FILES
+  window.mergeFiles = function() {
+    if(loadedFilesData.length === 0) {
+      showStatus("📂 No files uploaded. Please add Excel files first.", "warning");
+      return;
+    }
+    
+    // Validate headers consistency one more time
+    let referenceHeaders = null;
+    let headersValid = true;
+    for(let i=0; i<loadedFilesData.length; i++) {
+      const rows = loadedFilesData[i];
+      if(!rows.length) continue;
+      const currentHeaders = Object.keys(rows[0]);
+      if(referenceHeaders === null) {
+        referenceHeaders = currentHeaders;
+      } else {
+        if(JSON.stringify(referenceHeaders) !== JSON.stringify(currentHeaders)) {
+          const fname = fileNamesMap.get(i) || `File ${i+1}`;
+          showStatus(`Header mismatch: "${fname}" has different column order/names. Merge aborted.`, "danger", false);
+          headersValid = false;
+          break;
+        }
+      }
+    }
+    if(!headersValid) return;
+    
+    if(referenceHeaders) expectedHeaders = referenceHeaders;
+    
+    // Perform merging
+    let combined = [];
+    for(let i=0; i<loadedFilesData.length; i++) {
+      const fileRows = loadedFilesData[i];
+      combined.push(...fileRows);
+    }
+    
+    if(combined.length === 0) {
+      showStatus("Merged result is empty. Check file contents.", "warning");
+      return;
+    }
+    
+    finalMergedData = combined;
+    renderPreviewTable();
+    downloadBtn.classList.remove('d-none');
+    statMergedRowsSpan.innerText = finalMergedData.length;
+    updateFileListUI(); // refresh stats panel to show merged rows
+    showStatus(`✨ Merge successful! Combined ${finalMergedData.length} rows from ${loadedFilesData.length} file(s).`, "success");
+  };
+
+  // Render preview table with safe escaping (fixed)
+  function renderPreviewTable() {
+    if(!finalMergedData.length) {
+      previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">No merged data yet. Click Merge.</td></tr></tbody>';
+      previewRowsInfo.innerText = '0 rows';
+      return;
+    }
+    
+    const dataSlice = finalMergedData.slice(0, 50);
+    const headersList = Object.keys(finalMergedData[0]);
+    let html = '<thead><tr>';
+    headersList.forEach(h => html += `<th class="text-nowrap">${escapeHtml(h)}</th>`);
+    html += '</tr></thead><tbody>';
+    
+    for(let row of dataSlice) {
+      html += '<tr>';
+      for(let h of headersList) {
+        let val = (row[h] !== undefined && row[h] !== null) ? row[h] : "";
+        // safe string conversion
+        let displayVal = String(val);
+        if(displayVal.length > 60) displayVal = displayVal.substring(0,57)+'...';
+        html += `<td title="${escapeHtml(String(val))}" class="text-truncate" style="max-width:220px;">${escapeHtml(displayVal)}</td>`;
+      }
+      html += '</tr>';
+    }
+    if(finalMergedData.length > 50) {
+      html += `<tr class="table-secondary"><td colspan="${headersList.length}" class="text-center small">+ ${finalMergedData.length - 50} more rows not shown</td></tr>`;
+    }
+    html += '</tbody>';
+    previewTable.innerHTML = html;
+    previewRowsInfo.innerText = `${finalMergedData.length} rows total (showing ${Math.min(50, finalMergedData.length)})`;
+  }
+
+  // Download final merged Excel
+  window.downloadMergedExcel = function() {
+    if(!finalMergedData.length) {
+      showStatus("No merged data to export. Please merge files first.", "warning");
+      return;
+    }
+    const ws = XLSX.utils.json_to_sheet(finalMergedData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "MergedData");
+    const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
+    XLSX.writeFile(wb, `merged_excel_${timestamp}.xlsx`);
+    showStatus("✅ Download started!", "success");
+  };
+
+  // Drag & Drop zone logic
+  const uploadZone = document.getElementById('uploadZone');
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadZone.addEventListener(eventName, preventDefaults, false);
+  });
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  ['dragenter', 'dragover'].forEach(eventName => {
+    uploadZone.addEventListener(eventName, () => uploadZone.classList.add('drag-over'), false);
+  });
+  ['dragleave', 'drop'].forEach(eventName => {
+    uploadZone.addEventListener(eventName, () => uploadZone.classList.remove('drag-over'), false);
+  });
+  uploadZone.addEventListener('drop', async (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    if(files.length) await addFiles(Array.from(files));
+  });
+  fileInput.addEventListener('change', async (e) => {
+    if(e.target.files.length) await addFiles(Array.from(e.target.files));
+    fileInput.value = '';
+  });
+  
+  // Bootstrap alert close handling
+  document.addEventListener('click', function(e) {
+    if(e.target.classList.contains('btn-close')) {
+      const alertDiv = e.target.closest('.alert');
+      if(alertDiv) alertDiv.remove();
+    }
+  });
+  
+  // Initial UI state
+  updateFileListUI();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
