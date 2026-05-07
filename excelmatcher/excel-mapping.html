@@ -1285,6 +1285,10 @@ async function downloadExcelBySelection(){
 
   let zip = new JSZip();
 
+// ✅ Create All In One workbook
+    let allInOneWB = XLSX.utils.book_new();
+    let addedSheets = 0;
+
   const selectedGroups = getSelectedFilterValues();
   const separateFlagsObj = getSeparateFlags();
 
@@ -1318,12 +1322,30 @@ async function downloadExcelBySelection(){
       return newRow;
     });
 
-    const ws = XLSX.utils.json_to_sheet(localData);
+const ws = XLSX.utils.json_to_sheet(localData);
 
-    ws['!cols'] = Object.keys(localData[0] || {}).map(() => ({ wch: 20 }));
+ws['!cols'] = Object.keys(localData[0] || {}).map(() => ({ wch: 20 }));
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
+// Individual workbook
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, "Report");
+
+// ✅ Add same sheet into All In One workbook
+let sheetName = getFileName(combo)
+  .replace(/[\\/:*?\[\]]/g, "_")
+  .substring(0, 31); // Excel sheet limit
+
+// Avoid duplicate sheet names
+if(allInOneWB.SheetNames.includes(sheetName)){
+  let count = 1;
+  while(allInOneWB.SheetNames.includes(sheetName + "_" + count)){
+    count++;
+  }
+  sheetName = (sheetName + "_" + count).substring(0, 31);
+}
+
+XLSX.utils.book_append_sheet(allInOneWB, ws, sheetName);
+addedSheets++;
 
     const fileNameText = getFileName(combo);
     let fileName = fileNameText.replace(/[\\/:*?"<>|]/g, "_");
@@ -1338,14 +1360,25 @@ async function downloadExcelBySelection(){
     successCount++;
   }
 
-  if(useZip && successCount > 0){
-    const content = await zip.generateAsync({ type: "blob" });
+if(useZip && successCount > 0){
 
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(content);
-    a.download = "Excel_Files.zip";
-    a.click();
+  // ✅ Add All In One Excel file into ZIP
+  if(addedSheets > 0){
+    const allInOneExcel = XLSX.write(allInOneWB, {
+      bookType: "xlsx",
+      type: "array"
+    });
+
+    zip.file("All_in_One_report.xlsx", allInOneExcel);
   }
+
+  const content = await zip.generateAsync({ type: "blob" });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(content);
+  a.download = "Excel_Files.zip";
+  a.click();
+}
 
   if(successCount === 0){
     alert("No data found!");
