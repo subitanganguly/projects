@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
-  <title>Excel Merger Pro</title>
+  <title>Excel Merger Pro </title>
   <link rel="icon" type="image/png" href="../sumadhu.png">
-    <link href="style.css" rel="stylesheet">
+   <link href="style.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -37,7 +37,6 @@
       border-color: #1d4ed8;
       border-style: solid;
     }
-
     .file-item {
       background: white;
       border-left: 5px solid #3b82f6;
@@ -107,6 +106,22 @@
       color: #dc2626;
       transform: scale(1.1);
     }
+    /* Custom column modal styles */
+    .custom-col-card {
+      background: #fefce8;
+      border-left: 4px solid #eab308;
+      border-radius: 16px;
+    }
+    .custom-col-badge {
+      background: #fffbeb;
+      border-radius: 40px;
+      color: #b45309;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .modal-custom-body {
+      background: #faf9ff;
+    }
     @media (max-width: 640px) {
       .container { padding-left: 1rem; padding-right: 1rem; }
       .btn { font-size: 0.85rem; }
@@ -122,17 +137,17 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
       <div>
         <h2 class="fw-bold" style="color: #0f172a;">
-          <i class="fas fa-file-excel text-primary me-2" style="color:#2b7e3a;"></i> 
-          Excel Merger
+          <i class="fas fa-file-excel me-2" style="color:#2b7e3a;"></i> 
+          <span class="sg-text" style="font-size: 25px;"> Excel Merger Pro</span>
         </h2>
-        <p class="text-secondary mb-0">Combine multiple Excel files (same structure) into one workbook</p>
+        <p class="text-secondary mb-0">Combine + Inject custom constant columns per file</p>
       </div>
       <div class="mt-2 mt-sm-0">
-        <span class="badge-file"><i class="fas fa-merge me-1"></i> Smart merge · XLSX/XLS/CSV</span>
+        <span class="badge-file"><i class="fas fa-merge me-1"></i> Smart merge · Custom per-file header/value</span>
       </div>
     </div>
 
-    <!-- Upload Section: enhanced drag & drop -->
+    <!-- Upload Section -->
     <div id="uploadZone" class="upload-zone text-center mb-4">
       <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-2" style="opacity:0.7;"></i>
       <h5 class="fw-semibold">Drag & drop Excel files here</h5>
@@ -141,6 +156,19 @@
       <button class="btn btn-sm btn-outline-primary rounded-pill mt-1 px-4" onclick="document.getElementById('fileInput').click()">
         <i class="fas fa-folder-open"></i> Browse files
       </button>
+    </div>
+
+    <!-- Custom Column Configuration Panel -->
+    <div class="mb-4 p-3 rounded-4" style="background: #fef9e6; border: 1px solid #ffedd5;">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <i class="fas fa-magic text-warning"></i>
+        <strong class="text-dark">Per-File Custom Column (same value for whole column)</strong>
+        <!-- <span class="badge bg-warning text-dark ms-2">NEW FEATURE</span> -->
+      </div>
+      <p class="small text-secondary mb-2">For each uploaded file, you can define a custom header + a constant value that will be applied to every row of that specific file before merging. Perfect for adding source labels, categories, or batch identifiers.</p>
+      <div id="customColumnsPanel" class="mt-2">
+        <div class="text-muted small fst-italic">No files added yet. Upload files to configure custom columns per file.</div>
+      </div>
     </div>
 
     <!-- File Queue + Stats row -->
@@ -162,22 +190,22 @@
             <strong id="statFiles">0</strong>
           </div>
           <div class="d-flex justify-content-between mb-2">
-            <span><i class="fas fa-table text-success"></i> Total rows (sum):</span>
+            <span><i class="fas fa-table text-success"></i> Total rows (raw):</span>
             <strong id="statRows">0</strong>
           </div>
           <div class="d-flex justify-content-between mb-2">
-            <span><i class="fas fa-code-branch text-primary"></i> Merged rows:</span>
+            <span><i class="fas fa-code-branch text-primary"></i> Merged rows (after custom col):</span>
             <strong id="statMergedRows">0</strong>
           </div>
           <div class="d-flex justify-content-between">
-            <span><i class="fas fa-columns text-warning"></i> Columns structure:</span>
+            <span><i class="fas fa-columns text-warning"></i> Final columns:</span>
             <strong id="statCols">—</strong>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Action buttons row -->
+    <!-- Action buttons -->
     <div class="d-flex flex-wrap gap-2 mb-4 justify-content-center justify-content-md-start">
       <button class="btn button12 px-4" id="mergeBtn" onclick="mergeFiles()">
         <i class="fas fa-code-branch me-2"></i> Merge Files
@@ -190,12 +218,12 @@
       </button>
     </div>
 
-    <!-- Status area with dynamic alert -->
+    <!-- Status area -->
     <div id="statusArea" class="mb-3" style="min-height: 58px;"></div>
 
     <!-- Preview title & table -->
     <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
-      <h6 class="fw-bold mb-0"><i class="fas fa-eye"></i> Live Preview (first 50 rows)</h6>
+      <h6 class="fw-bold mb-0"><i class="fas fa-eye"></i> Live Preview (first 50 rows after custom columns)</h6>
       <span class="badge bg-light text-dark rounded-pill" id="previewRowsInfo">—</span>
     </div>
     <div class="preview-container">
@@ -205,17 +233,18 @@
     </div>
   </div>
   <footer class="mt-4">
-    <i class="far fa-copyright"></i> Smart merge — headers case & order are validated. All processing happens in your browser.
+    <i class="far fa-copyright"></i> Per-file custom header feature: define any column header and a constant value that fills entire column. All processing in browser.
   </footer>
 </div>
 
 <script>
-  // ---------- GLOBALS ----------
-  let loadedFilesData = [];       // stores array of objects (each file's sheet data)
-  let finalMergedData = [];       // combined rows after merge
-  let expectedHeaders = null;     // reference headers (order + names)
-  let fileNamesMap = new Map();    // stores file names for each index
-  let fileRowCountMap = new Map(); // individual row counts for UI
+  // ---------- Core Data ----------
+  let loadedRawFilesData = [];       // Original sheet data (array of row objects per file)
+  let fileCustomConfigs = [];        // each: { headerName: string, constantValue: string } (null if not set)
+  let finalMergedData = [];           // After applying custom columns and merging
+  let expectedHeaders = null;         // reference headers (order+names) after custom columns injection
+  let fileNamesMap = new Map();       // file name per index
+  let fileRowCountMap = new Map();    // original row count before custom additions
 
   // DOM elements
   const fileInput = document.getElementById('fileInput');
@@ -229,40 +258,26 @@
   const statColsSpan = document.getElementById('statCols');
   const fileCounterBadge = document.getElementById('fileCounterBadge');
   const previewRowsInfo = document.getElementById('previewRowsInfo');
+  const customColumnsPanel = document.getElementById('customColumnsPanel');
 
-  // ---------- SAFE escapeHtml (fix for numbers, null, objects) ----------
+  // Helper: escape HTML
   function escapeHtml(value) {
     if (value === undefined || value === null) return '';
-    // Convert to string safely
     let str = String(value);
     return str.replace(/[&<>]/g, function(m) {
       if (m === '&') return '&amp;';
       if (m === '<') return '&lt;';
       if (m === '>') return '&gt;';
       return m;
-    }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-      return c;
     });
   }
 
-  // Helper: show status message
   let statusTimeout = null;
   function showStatus(message, type = 'info', autoClear = true) {
     const statusDiv = document.getElementById('statusArea');
-    const iconMap = {
-      success: '<i class="fas fa-check-circle me-2"></i>',
-      danger: '<i class="fas fa-exclamation-triangle me-2"></i>',
-      warning: '<i class="fas fa-exclamation-circle me-2"></i>',
-      info: '<i class="fas fa-info-circle me-2"></i>',
-      secondary: '<i class="fas fa-broom me-2"></i>'
-    };
+    const iconMap = { success: '<i class="fas fa-check-circle me-2"></i>', danger: '<i class="fas fa-exclamation-triangle me-2"></i>', warning: '<i class="fas fa-exclamation-circle me-2"></i>', info: '<i class="fas fa-info-circle me-2"></i>', secondary: '<i class="fas fa-broom me-2"></i>' };
     const icon = iconMap[type] || iconMap.info;
-    statusDiv.innerHTML = `
-      <div class="alert alert-${type} alert-dismissible fade show mb-0 rounded-4 shadow-sm" role="alert">
-        ${icon} <strong>${escapeHtml(message)}</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    `;
+    statusDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show mb-0 rounded-4 shadow-sm" role="alert">${icon} <strong>${escapeHtml(message)}</strong><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
     if(statusTimeout) clearTimeout(statusTimeout);
     if(autoClear && type !== 'danger') {
       statusTimeout = setTimeout(() => {
@@ -271,12 +286,81 @@
         setTimeout(() => { if(statusDiv.innerHTML.includes('alert')) statusDiv.innerHTML = ''; }, 200);
       }, 4000);
     }
-    statusDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  // Update file list UI + display per-file row count
+  // Render per-file custom column UI (with inputs for header & constant)
+  function renderCustomConfigPanel() {
+    if (loadedRawFilesData.length === 0) {
+      customColumnsPanel.innerHTML = '<div class="text-muted small fst-italic">No files added yet. Upload files to configure custom columns per file.</div>';
+      return;
+    }
+    let html = `<div class="row g-2">`;
+    for (let idx = 0; idx < loadedRawFilesData.length; idx++) {
+      const fileName = fileNamesMap.get(idx) || `File ${idx+1}`;
+      const config = fileCustomConfigs[idx] || { headerName: '', constantValue: '' };
+      html += `
+        <div class="col-md-6 col-lg-4">
+          <div class="card custom-col-card p-2 h-100 shadow-sm">
+            <div class="d-flex justify-content-between align-items-start">
+              <span class="fw-semibold small"><i class="fas fa-file-excel text-success me-1"></i> ${escapeHtml(fileName)}</span>
+              <span class="custom-col-badge px-2 py-1">file #${idx+1}</span>
+            </div>
+            <div class="mt-2">
+              <div class="input-group input-group-sm mb-2">
+                <span class="input-group-text bg-white"><i class="fas fa-tag"></i></span>
+                <input type="text" class="form-control form-control-sm" placeholder="Custom header (e.g., Source)" id="customHeader_${idx}" value="${escapeHtml(config.headerName)}">
+              </div>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white"><i class="fas fa-fill-drip"></i></span>
+                <input type="text" class="form-control form-control-sm" placeholder="Constant value for all rows (e.g., 'Sales Q1')" id="customValue_${idx}" value="${escapeHtml(config.constantValue)}">
+              </div>
+              <button class="btn btn-sm btn-outline-warning w-100 mt-2" onclick="saveCustomConfig(${idx})"><i class="fas fa-save"></i> Apply to this file</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    html += `</div>`;
+    customColumnsPanel.innerHTML = html;
+  }
+
+  // Save custom column configuration for a specific file index
+  window.saveCustomConfig = function(idx) {
+    const headerInput = document.getElementById(`customHeader_${idx}`);
+    const valueInput = document.getElementById(`customValue_${idx}`);
+    const newHeader = (headerInput ? headerInput.value.trim() : '');
+    const newValue = (valueInput ? valueInput.value : '');
+    
+    if (newHeader !== '' && newValue === '') {
+      showStatus(`⚠️ Header "${newHeader}" provided but constant value empty. Please fill both or clear header.`, "warning");
+      return;
+    }
+    if (newHeader === '' && newValue !== '') {
+      showStatus(`⚠️ Constant value provided but header name missing. Please provide header name.`, "warning");
+      return;
+    }
+    // Store config (allow empty both = no custom column)
+    if (newHeader === '' && newValue === '') {
+      fileCustomConfigs[idx] = null;
+      showStatus(`Custom column removed for ${fileNamesMap.get(idx) || `File ${idx+1}`}.`, "info");
+    } else {
+      fileCustomConfigs[idx] = { headerName: newHeader, constantValue: newValue };
+      showStatus(`✅ Custom column "${newHeader}" = "${newValue}" saved for ${fileNamesMap.get(idx)}.`, "success");
+    }
+    // Clear merged data because config changed
+    finalMergedData = [];
+    downloadBtn.classList.add('d-none');
+    previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">Settings changed. Click Merge again.</td></tr></tbody>';
+    previewRowsInfo.innerText = '—';
+    statMergedRowsSpan.innerText = '0';
+    updateFileListUI(); // refresh stats, but keep rows etc
+    // re-render panel to reflect saved values
+    renderCustomConfigPanel();
+  };
+
+  // Update file list and stats
   function updateFileListUI() {
-    if(loadedFilesData.length === 0) {
+    if(loadedRawFilesData.length === 0) {
       fileListEl.innerHTML = '';
       emptyFileMsg.style.display = 'block';
       statFilesSpan.innerText = '0';
@@ -286,23 +370,25 @@
       statRowsSpan.innerText = totalRawRows;
       if(!finalMergedData.length) statMergedRowsSpan.innerText = '0';
       statColsSpan.innerText = '—';
+      renderCustomConfigPanel();
       return;
     }
     emptyFileMsg.style.display = 'none';
     let totalRawRowsAcc = 0;
     let listHtml = '';
-    
-    for(let idx = 0; idx < loadedFilesData.length; idx++) {
-      const fileData = loadedFilesData[idx];
-      const rowCount = fileData.length;
+    for(let idx = 0; idx < loadedRawFilesData.length; idx++) {
+      const rowCount = loadedRawFilesData[idx].length;
       totalRawRowsAcc += rowCount;
       const fileName = fileNamesMap.get(idx) || `File ${idx+1}`;
+      const config = fileCustomConfigs[idx];
+      const customBadge = (config && config.headerName) ? `<span class="badge bg-warning bg-opacity-25 text-dark ms-2"><i class="fas fa-plus-circle"></i> +col:${escapeHtml(config.headerName)}</span>` : '';
       listHtml += `
         <li class="file-item p-2 mb-2 d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <i class="fas fa-file-excel fa-lg" style="color:#2e7d32;"></i>
             <span class="fw-semibold" style="max-width: 220px; word-break: break-word;">${escapeHtml(fileName)}</span>
             <span class="file-row-count"><i class="fas fa-list me-1"></i>${rowCount} rows</span>
+            ${customBadge}
           </div>
           <button class="remove-file-btn" onclick="removeFile(${idx})" title="Remove file">
             <i class="fas fa-times-circle fa-lg"></i>
@@ -311,46 +397,39 @@
       `;
     }
     fileListEl.innerHTML = listHtml;
-    statFilesSpan.innerText = loadedFilesData.length;
-    fileCounterBadge.innerText = `${loadedFilesData.length} file${loadedFilesData.length !== 1 ? 's' : ''}`;
+    statFilesSpan.innerText = loadedRawFilesData.length;
+    fileCounterBadge.innerText = `${loadedRawFilesData.length} file${loadedRawFilesData.length !== 1 ? 's' : ''}`;
     statRowsSpan.innerText = totalRawRowsAcc;
     
-    if(expectedHeaders && expectedHeaders.length) {
-      statColsSpan.innerText = expectedHeaders.length;
-    } else if(loadedFilesData.length > 0 && loadedFilesData[0].length > 0) {
-      const firstRowKeys = Object.keys(loadedFilesData[0][0]);
-      statColsSpan.innerText = firstRowKeys.length;
-    } else {
-      statColsSpan.innerText = '—';
-    }
+    if(expectedHeaders && expectedHeaders.length) statColsSpan.innerText = expectedHeaders.length;
+    else if(loadedRawFilesData.length > 0 && loadedRawFilesData[0].length > 0) {
+      let baseHeaders = Object.keys(loadedRawFilesData[0][0]);
+      statColsSpan.innerText = baseHeaders.length;
+    } else statColsSpan.innerText = '—';
     
-    // Update merged rows display if final data exists
-    if(finalMergedData.length) {
-      statMergedRowsSpan.innerText = finalMergedData.length;
-    } else {
-      statMergedRowsSpan.innerText = '0';
-    }
+    if(finalMergedData.length) statMergedRowsSpan.innerText = finalMergedData.length;
+    else statMergedRowsSpan.innerText = '0';
+    renderCustomConfigPanel();
   }
 
-  // Remove specific file by index
+  // Remove file by index
   window.removeFile = function(idx) {
-    if(idx >= 0 && idx < loadedFilesData.length) {
-      loadedFilesData.splice(idx, 1);
-      // Rebuild fileNamesMap and rowCountMap
-      const oldNames = [];
-      const oldRowCounts = [];
-      for(let i=0; i<=loadedFilesData.length; i++) {
+    if(idx >= 0 && idx < loadedRawFilesData.length) {
+      loadedRawFilesData.splice(idx, 1);
+      fileCustomConfigs.splice(idx, 1);
+      // rebuild maps
+      const oldNames = [], oldRowCounts = [];
+      for(let i=0; i<=loadedRawFilesData.length+1; i++) {
         if(fileNamesMap.has(i)) oldNames.push(fileNamesMap.get(i));
         if(fileRowCountMap.has(i)) oldRowCounts.push(fileRowCountMap.get(i));
       }
       fileNamesMap.clear();
       fileRowCountMap.clear();
-      for(let i=0; i<loadedFilesData.length; i++) {
+      for(let i=0; i<loadedRawFilesData.length; i++) {
         fileNamesMap.set(i, oldNames[i] || `File ${i+1}`);
-        fileRowCountMap.set(i, loadedFilesData[i].length);
+        fileRowCountMap.set(i, loadedRawFilesData[i].length);
       }
-      
-      if(loadedFilesData.length === 0) {
+      if(loadedRawFilesData.length === 0) {
         expectedHeaders = null;
         finalMergedData = [];
         previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">Preview will appear after merging</td></tr></tbody>';
@@ -358,49 +437,35 @@
         statMergedRowsSpan.innerText = '0';
         showStatus("All files cleared.", "info");
       } else {
-        revalidateHeadersConsistency();
-        // If merged data existed, clear it because file composition changed
-        if(finalMergedData.length) {
-          finalMergedData = [];
-          downloadBtn.classList.add('d-none');
-          previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">Files changed. Click Merge again.</td></tr></tbody>';
-          previewRowsInfo.innerText = '—';
-          statMergedRowsSpan.innerText = '0';
-        }
-        showStatus(`Removed file. ${loadedFilesData.length} file(s) remaining.`, "info");
+        finalMergedData = [];
+        downloadBtn.classList.add('d-none');
+        previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">Files changed. Click Merge again.</td></tr></tbody>';
+        previewRowsInfo.innerText = '—';
+        statMergedRowsSpan.innerText = '0';
+        showStatus(`Removed file. ${loadedRawFilesData.length} file(s) remaining.`, "info");
+        revalidateBaseHeaders();
       }
       updateFileListUI();
     }
   };
 
-  // Re-validate headers among all loaded files
-  function revalidateHeadersConsistency() {
-    if(loadedFilesData.length === 0) {
-      expectedHeaders = null;
-      return true;
-    }
+  function revalidateBaseHeaders() {
+    if(loadedRawFilesData.length === 0) { expectedHeaders = null; return; }
     let masterHeaders = null;
-    for(let i=0; i<loadedFilesData.length; i++) {
-      const sheetData = loadedFilesData[i];
-      if(!sheetData || sheetData.length === 0) continue;
+    for(let i=0; i<loadedRawFilesData.length; i++) {
+      const sheetData = loadedRawFilesData[i];
+      if(!sheetData.length) continue;
       const currentHeaders = Object.keys(sheetData[0]);
-      if(!masterHeaders) {
-        masterHeaders = [...currentHeaders];
-      } else {
-        if(JSON.stringify(masterHeaders) !== JSON.stringify(currentHeaders)) {
-          const fileName = fileNamesMap.get(i) || `file ${i+1}`;
-          showStatus(`Header mismatch! "${fileName}" has different column structure. Please use same columns order & naming.`, "danger", false);
-          return false;
-        }
+      if(!masterHeaders) masterHeaders = [...currentHeaders];
+      else if(JSON.stringify(masterHeaders) !== JSON.stringify(currentHeaders)) {
+        showStatus(`Header mismatch among original files! Use same column structure.`, "danger", false);
+        return false;
       }
     }
-    if(masterHeaders) expectedHeaders = masterHeaders;
-    else expectedHeaders = null;
-    updateFileListUI();
     return true;
   }
 
-  // Process file as arrayBuffer
+  // Process uploaded file
   async function processFile(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -410,82 +475,152 @@
           const wb = XLSX.read(data, { type: 'array', cellDates: false, defval: "" });
           const firstSheet = wb.Sheets[wb.SheetNames[0]];
           let jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "", blankrows: false });
-          // Remove rows that are completely empty (all undefined or empty string)
           jsonData = jsonData.filter(row => Object.values(row).some(v => v !== undefined && v !== null && v !== ""));
-          if(jsonData.length === 0) {
-            reject(`File "${file.name}" has no data rows.`);
-            return;
-          }
-          resolve({ data: jsonData, fileName: file.name });
-        } catch(err) {
-          reject(`Error parsing ${file.name}: ${err.message}`);
-        }
+          if(jsonData.length === 0) reject(`File "${file.name}" has no data rows.`);
+          else resolve({ data: jsonData, fileName: file.name });
+        } catch(err) { reject(`Error parsing ${file.name}: ${err.message}`); }
       };
       reader.onerror = () => reject(`Failed to read ${file.name}`);
       reader.readAsArrayBuffer(file);
     });
   }
 
-  // Add files with validation
   async function addFiles(files) {
     if(!files.length) return;
-    let successCount = 0;
-    let errorMessages = [];
-    
+    let successCount = 0, errors = [];
     for(let i=0; i<files.length; i++) {
       const file = files[i];
       const ext = file.name.split('.').pop().toLowerCase();
-      if(!['xlsx','xls','csv','xlsm','xlsb'].includes(ext)) {
-        errorMessages.push(`Skipped ${file.name}: unsupported format`);
-        continue;
-      }
+      if(!['xlsx','xls','csv','xlsm','xlsb'].includes(ext)) { errors.push(`Skipped ${file.name}: unsupported`); continue; }
       try {
         const { data, fileName } = await processFile(file);
         const newHeaders = Object.keys(data[0]);
-        
-        // Header validation against existing reference
-        if(expectedHeaders === null) {
-          // first valid file sets the standard
-          expectedHeaders = [...newHeaders];
-        } else {
-          // strict compare order & names
-          if(JSON.stringify(expectedHeaders) !== JSON.stringify(newHeaders)) {
-            errorMessages.push(`"${fileName}" has mismatched columns. Expected columns: ${expectedHeaders.slice(0,3).join(', ')}${expectedHeaders.length>3 ? '...' : ''}`);
-            continue;
-          }
+        if(expectedHeaders === null) expectedHeaders = [...newHeaders];
+        else if(JSON.stringify(expectedHeaders) !== JSON.stringify(newHeaders)) {
+          errors.push(`"${fileName}" column mismatch. Expected: ${expectedHeaders.slice(0,3).join(',')}...`);
+          continue;
         }
-        
-        // Store file data
-        const idx = loadedFilesData.length;
-        loadedFilesData.push(data);
+        const idx = loadedRawFilesData.length;
+        loadedRawFilesData.push(data);
         fileNamesMap.set(idx, fileName);
         fileRowCountMap.set(idx, data.length);
+        fileCustomConfigs.push(null); // init no custom column
         successCount++;
-      } catch(errMsg) {
-        errorMessages.push(errMsg);
-      }
+      } catch(errMsg) { errors.push(errMsg); }
     }
-    
     if(successCount > 0) {
-      showStatus(`✅ ${successCount} file(s) added successfully! Total rows: ${Array.from(fileRowCountMap.values()).reduce((a,b)=>a+b,0)}`, 'success');
+      showStatus(`✅ ${successCount} file(s) added. Total rows: ${Array.from(fileRowCountMap.values()).reduce((a,b)=>a+b,0)}`, 'success');
       updateFileListUI();
-      // When new files added, reset merged state to force re-merge
-      if(finalMergedData.length > 0) {
-        finalMergedData = [];
-        downloadBtn.classList.add('d-none');
-        previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">New files added. Click "Merge Files" to combine.</td></tr></tbody>';
-        previewRowsInfo.innerText = '—';
-        statMergedRowsSpan.innerText = '0';
-      }
+      finalMergedData = [];
+      downloadBtn.classList.add('d-none');
+      previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">New files added. Set custom columns (optional) then click Merge.</td></tr></tbody>';
+      previewRowsInfo.innerText = '—';
+      statMergedRowsSpan.innerText = '0';
     }
-    if(errorMessages.length) {
-      showStatus(errorMessages.slice(0,2).join('; '), 'danger', false);
-    }
+    if(errors.length) showStatus(errors.slice(0,2).join('; '), 'danger', false);
   }
 
-  // Clear all files completely
+  // Merge: Apply custom column injection per file then combine
+  window.mergeFiles = function() {
+    if(loadedRawFilesData.length === 0) { showStatus("No files uploaded.", "warning"); return; }
+    
+    // validate base headers consistency among original files
+    let baseHeaderCheck = true;
+    let refBase = null;
+    for(let i=0; i<loadedRawFilesData.length; i++) {
+      const rows = loadedRawFilesData[i];
+      if(!rows.length) continue;
+      const headers = Object.keys(rows[0]);
+      if(!refBase) refBase = headers;
+      else if(JSON.stringify(refBase) !== JSON.stringify(headers)) {
+        showStatus(`Original files have different columns. Please ensure same structure.`, "danger", false);
+        baseHeaderCheck = false; break;
+      }
+    }
+    if(!baseHeaderCheck) return;
+
+    let finalCombined = [];
+    // Build merged rows with custom column injection per file
+    for(let idx=0; idx<loadedRawFilesData.length; idx++) {
+      const fileRows = loadedRawFilesData[idx];
+      const config = fileCustomConfigs[idx];
+      let processedRows = [...fileRows];
+      // inject custom column if config present and header defined
+      if(config && config.headerName && config.headerName !== '') {
+        const customHeader = config.headerName.trim();
+        const constantVal = config.constantValue !== undefined ? config.constantValue : '';
+        processedRows = fileRows.map(row => {
+          const newRow = { ...row, [customHeader]: constantVal };
+          return newRow;
+        });
+      }
+      finalCombined.push(...processedRows);
+    }
+    if(finalCombined.length === 0) { showStatus("No rows after processing.", "warning"); return; }
+    
+    // Determine final expected headers: union of original base headers + any custom header from any file (all files get same final structure)
+    let allFinalHeadersSet = new Set();
+    for(let idx=0; idx<loadedRawFilesData.length; idx++) {
+      const config = fileCustomConfigs[idx];
+      const fileRows = loadedRawFilesData[idx];
+      if(fileRows.length) {
+        Object.keys(fileRows[0]).forEach(h => allFinalHeadersSet.add(h));
+        if(config && config.headerName && config.headerName.trim() !== '') allFinalHeadersSet.add(config.headerName.trim());
+      }
+    }
+    let masterOrder = Array.from(allFinalHeadersSet);
+    // Rebuild finalCombined ensuring every row has consistent columns (fill missing)
+    const normalizedMerged = finalCombined.map(row => {
+      const newRow = {};
+      for(let h of masterOrder) {
+        newRow[h] = (row[h] !== undefined && row[h] !== null) ? row[h] : "";
+      }
+      return newRow;
+    });
+    finalMergedData = normalizedMerged;
+    expectedHeaders = masterOrder;
+    renderPreviewTable();
+    downloadBtn.classList.remove('d-none');
+    statMergedRowsSpan.innerText = finalMergedData.length;
+    statColsSpan.innerText = masterOrder.length;
+    updateFileListUI();
+    showStatus(`✨ Merge successful! ${finalMergedData.length} rows | ${masterOrder.length} columns (including custom per-file columns).`, "success");
+  };
+
+  function renderPreviewTable() {
+    if(!finalMergedData.length) { previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">No merged data. Click Merge.</td></tr></tbody>'; previewRowsInfo.innerText = '0 rows'; return; }
+    const slice = finalMergedData.slice(0,50);
+    const headers = Object.keys(finalMergedData[0]);
+    let html = '<thead><tr>';
+    headers.forEach(h => html += `<th class="text-nowrap">${escapeHtml(h)}</th>`);
+    html += '</tr></thead><tbody>';
+    for(let row of slice) {
+      html += '<tr>';
+      for(let h of headers) {
+        let val = row[h] !== undefined && row[h] !== null ? row[h] : "";
+        let display = String(val).length > 60 ? String(val).substring(0,57)+'...' : String(val);
+        html += `<td title="${escapeHtml(String(val))}" class="text-truncate" style="max-width:220px;">${escapeHtml(display)}</td>`;
+      }
+      html += '</tr>';
+    }
+    if(finalMergedData.length > 50) html += `<tr class="table-secondary"><td colspan="${headers.length}" class="text-center small">+ ${finalMergedData.length-50} more rows</td></tr>`;
+    html += '</tbody>';
+    previewTable.innerHTML = html;
+    previewRowsInfo.innerText = `${finalMergedData.length} rows total (showing ${Math.min(50,finalMergedData.length)})`;
+  }
+
+  window.downloadMergedExcel = function() {
+    if(!finalMergedData.length) { showStatus("No merged data.", "warning"); return; }
+    const ws = XLSX.utils.json_to_sheet(finalMergedData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "MergedData");
+    XLSX.writeFile(wb, `merged_excel_custom_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`);
+    showStatus("✅ Download started!", "success");
+  };
+
   window.clearAll = function() {
-    loadedFilesData = [];
+    loadedRawFilesData = [];
+    fileCustomConfigs = [];
     finalMergedData = [];
     expectedHeaders = null;
     fileNamesMap.clear();
@@ -495,142 +630,20 @@
     downloadBtn.classList.add('d-none');
     previewRowsInfo.innerText = '—';
     statMergedRowsSpan.innerText = '0';
-    showStatus("Cleared all files. You can upload new Excel files.", "secondary");
+    showStatus("Cleared all files.", "secondary");
   };
 
-  // MERGE FILES
-  window.mergeFiles = function() {
-    if(loadedFilesData.length === 0) {
-      showStatus("📂 No files uploaded. Please add Excel files first.", "warning");
-      return;
-    }
-    
-    // Validate headers consistency one more time
-    let referenceHeaders = null;
-    let headersValid = true;
-    for(let i=0; i<loadedFilesData.length; i++) {
-      const rows = loadedFilesData[i];
-      if(!rows.length) continue;
-      const currentHeaders = Object.keys(rows[0]);
-      if(referenceHeaders === null) {
-        referenceHeaders = currentHeaders;
-      } else {
-        if(JSON.stringify(referenceHeaders) !== JSON.stringify(currentHeaders)) {
-          const fname = fileNamesMap.get(i) || `File ${i+1}`;
-          showStatus(`Header mismatch: "${fname}" has different column order/names. Merge aborted.`, "danger", false);
-          headersValid = false;
-          break;
-        }
-      }
-    }
-    if(!headersValid) return;
-    
-    if(referenceHeaders) expectedHeaders = referenceHeaders;
-    
-    // Perform merging
-    let combined = [];
-    for(let i=0; i<loadedFilesData.length; i++) {
-      const fileRows = loadedFilesData[i];
-      combined.push(...fileRows);
-    }
-    
-    if(combined.length === 0) {
-      showStatus("Merged result is empty. Check file contents.", "warning");
-      return;
-    }
-    
-    finalMergedData = combined;
-    renderPreviewTable();
-    downloadBtn.classList.remove('d-none');
-    statMergedRowsSpan.innerText = finalMergedData.length;
-    updateFileListUI(); // refresh stats panel to show merged rows
-    showStatus(`✨ Merge successful! Combined ${finalMergedData.length} rows from ${loadedFilesData.length} file(s).`, "success");
-  };
-
-  // Render preview table with safe escaping (fixed)
-  function renderPreviewTable() {
-    if(!finalMergedData.length) {
-      previewTable.innerHTML = '<tbody><tr><td class="text-center text-muted py-4">No merged data yet. Click Merge.</td></tr></tbody>';
-      previewRowsInfo.innerText = '0 rows';
-      return;
-    }
-    
-    const dataSlice = finalMergedData.slice(0, 50);
-    const headersList = Object.keys(finalMergedData[0]);
-    let html = '<thead><tr>';
-    headersList.forEach(h => html += `<th class="text-nowrap">${escapeHtml(h)}</th>`);
-    html += '</tr></thead><tbody>';
-    
-    for(let row of dataSlice) {
-      html += '<tr>';
-      for(let h of headersList) {
-        let val = (row[h] !== undefined && row[h] !== null) ? row[h] : "";
-        // safe string conversion
-        let displayVal = String(val);
-        if(displayVal.length > 60) displayVal = displayVal.substring(0,57)+'...';
-        html += `<td title="${escapeHtml(String(val))}" class="text-truncate" style="max-width:220px;">${escapeHtml(displayVal)}</td>`;
-      }
-      html += '</tr>';
-    }
-    if(finalMergedData.length > 50) {
-      html += `<tr class="table-secondary"><td colspan="${headersList.length}" class="text-center small">+ ${finalMergedData.length - 50} more rows not shown</td></tr>`;
-    }
-    html += '</tbody>';
-    previewTable.innerHTML = html;
-    previewRowsInfo.innerText = `${finalMergedData.length} rows total (showing ${Math.min(50, finalMergedData.length)})`;
-  }
-
-  // Download final merged Excel
-  window.downloadMergedExcel = function() {
-    if(!finalMergedData.length) {
-      showStatus("No merged data to export. Please merge files first.", "warning");
-      return;
-    }
-    const ws = XLSX.utils.json_to_sheet(finalMergedData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "MergedData");
-    const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-    XLSX.writeFile(wb, `merged_excel_${timestamp}.xlsx`);
-    showStatus("✅ Download started!", "success");
-  };
-
-  // Drag & Drop zone logic
+  // drag & drop
   const uploadZone = document.getElementById('uploadZone');
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    uploadZone.addEventListener(eventName, preventDefaults, false);
-  });
-  function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-  ['dragenter', 'dragover'].forEach(eventName => {
-    uploadZone.addEventListener(eventName, () => uploadZone.classList.add('drag-over'), false);
-  });
-  ['dragleave', 'drop'].forEach(eventName => {
-    uploadZone.addEventListener(eventName, () => uploadZone.classList.remove('drag-over'), false);
-  });
-  uploadZone.addEventListener('drop', async (e) => {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    if(files.length) await addFiles(Array.from(files));
-  });
-  fileInput.addEventListener('change', async (e) => {
-    if(e.target.files.length) await addFiles(Array.from(e.target.files));
-    fileInput.value = '';
-  });
+  ['dragenter','dragover','dragleave','drop'].forEach(ev => uploadZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); }));
+  ['dragenter','dragover'].forEach(ev => uploadZone.addEventListener(ev, () => uploadZone.classList.add('drag-over')));
+  ['dragleave','drop'].forEach(ev => uploadZone.addEventListener(ev, () => uploadZone.classList.remove('drag-over')));
+  uploadZone.addEventListener('drop', async (e) => { const files = e.dataTransfer.files; if(files.length) await addFiles(Array.from(files)); });
+  fileInput.addEventListener('change', async (e) => { if(e.target.files.length) await addFiles(Array.from(e.target.files)); fileInput.value = ''; });
   
-  // Bootstrap alert close handling
-  document.addEventListener('click', function(e) {
-    if(e.target.classList.contains('btn-close')) {
-      const alertDiv = e.target.closest('.alert');
-      if(alertDiv) alertDiv.remove();
-    }
-  });
-  
-  // Initial UI state
+  document.addEventListener('click', function(e) { if(e.target.classList.contains('btn-close')) { const alertDiv = e.target.closest('.alert'); if(alertDiv) alertDiv.remove(); } });
   updateFileListUI();
 </script>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
