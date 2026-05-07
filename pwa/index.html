@@ -217,12 +217,42 @@ if ('serviceWorker' in navigator) {
   };
 
   // Service Worker
-  const serviceWorker = `
+
+// Extract CSS + JS files from uploaded HTML
+const parser = new DOMParser();
+const doc = parser.parseFromString(htmlContent, "text/html");
+
+const assetFiles = [];
+
+// CSS Files
+doc.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+  const href = link.getAttribute('href');
+
+  if (href && !href.startsWith('http')) {
+    assetFiles.push(`./${href}`);
+  }
+});
+
+// JS Files
+doc.querySelectorAll('script[src]').forEach(script => {
+  const src = script.getAttribute('src');
+
+  if (src && !src.startsWith('http')) {
+    assetFiles.push(`./${src}`);
+  }
+});
+
+// Remove duplicates
+const uniqueAssets = [...new Set(assetFiles)];
+
+// Service Worker
+const serviceWorker = `
 const CACHE_NAME = "pwa-cache-v1";
 
 const urlsToCache = [
   "./",
-  "./index.html"
+  "./index.html",
+  ${uniqueAssets.map(file => `"${file}"`).join(",\n  ")}
 ];
 
 self.addEventListener("install", event => {
@@ -239,7 +269,6 @@ self.addEventListener("fetch", event => {
   );
 });
 `;
-
   // Create ZIP
   const zip = new JSZip();
 

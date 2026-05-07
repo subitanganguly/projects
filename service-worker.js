@@ -3,7 +3,11 @@ const CACHE_NAME = "pwa-cache-v1";
 
 const urlsToCache = [
   "./",
-  "./index.html"
+  "./index.html",
+  "./background-all.css",
+  "./excelmatcher/style.css",
+  "./excelmatcher/sg-plugin.js",
+  "./particles.js"
 ];
 
 self.addEventListener("install", event => {
