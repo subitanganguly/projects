@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Image Converter - Advanced Editing</title>
+    <link rel="icon" type="image/png" href="../sumadhu.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../background-all.css" rel="stylesheet">
+    <link href="../excelmatcher/style.css" rel="stylesheet">
+    <script src="../particles.js"></script>
+    <!-- Cropper.js for cropping -->
+    <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+    <style>
+        /* preserve all original styles + add progress & modal enhancements */
+        .glass-card{
+            background: linear-gradient(245deg, #00c0c03d, #ff00c84f, #007bff49);
+        }
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px;
+        }
+        .image-box {
+            width: 150px;
+            text-align: center;
+            border: 2px dashed #aaa;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(241, 255, 253, 0.17);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.368), inset 0 0 20px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            cursor: grab;
+            position: relative;
+        }
+        .preview-img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .dragging {
+            opacity: 0.5;
+        }
+        .options-container {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .spinner-border {
+            display: none;
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.15em;
+        }
+        /* Progress bar styles - elegant */
+        .progress-wrapper {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            display: none;
+        }
+        .progress {
+            height: 28px;
+            border-radius: 20px;
+            background-color: #e9ecef;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #2b6e4e, #4c9f70);
+            font-weight: 600;
+            font-size: 0.85rem;
+            line-height: 28px;
+            border-radius: 20px;
+            transition: width 0.2s ease;
+        }
+        .edit-icon {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 20px;
+            padding: 4px 8px;
+            font-size: 12px;
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            font-weight: bold;
+            z-index: 2;
+        }
+        .edit-icon:hover {
+            background: #0d6efd;
+        }
+        /* Modal custom style */
+        .modal-img-container {
+            max-height: 60vh;
+            overflow: hidden;
+            text-align: center;
+            background: #1e1e2f;
+            border-radius: 12px;
+            padding: 5px;
+        }
+        .modal-img-preview {
+            max-width: 100%;
+            max-height: 55vh;
+            display: block;
+            margin: 0 auto;
+        }
+        .range-slider {
+            width: 100%;
+        }
+        .cropper-container {
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="particles" id="particles"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+    <nav class="navbar">
+        <div class="container-md">
+            <a class="navbar-brand d-flex align-items-center text-light" href="../index.html">
+                <img src="../sumadhu.png" alt="Logo" class="logo me-2">
+                Upload & Reorder Images for Conversion
+            </a>
+        </div>
+    </nav>
+    <div class="container">
+
+        <!-- Conversion Options (unchanged design) -->
+        <div class="container glass-card  mb-3 mt-3 p-5">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="formatSelect" class="form-label">Output Format</label>
+                    <select class="form-select" id="formatSelect">
+                        <option value="jpg">JPEG (.jpg)</option>
+                        <option value="png">PNG (.png)</option>
+                        <option value="webp">WebP (.webp)</option>
+                    </select>
+                </div>
+                <div class="col-md-6" id="sizeSelectContainer">
+                    <label for="sizeSelect" class="form-label">Max File Size</label>
+                    <select class="form-select" id="sizeSelect">
+                        <option value="30">Under 30KB</option>
+                        <option value="50">Under 50KB</option>
+                        <option value="100" selected>Under 100KB</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <label for="qualitySlider" class="form-label">Quality: <span id="qualityValue">90</span>%</label>
+                    <input type="range" class="form-range" min="10" max="100" value="90" id="qualitySlider" oninput="document.getElementById('qualityValue').textContent = this.value;">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="useQuality" onchange="toggleQualityMode()">
+                        <label class="form-check-label" for="useQuality">Use Quality Slider</label>
+                    </div>
+                </div>
+            </div>
+            <!-- Image Selection -->
+            <input type="file" id="imageInput" class="form-control mt-2 mb-2" accept="image/*" multiple onchange="generateInputs()">
+            <button class="btn button12 py-3 fw-bold mt-3" onclick="convertImages()" id="convertBtn">
+                <span class="spinner-border spinner-border-sm" id="convertSpinner"></span>
+                Convert & Download
+            </button>
+            
+            <!-- PROGRESS BAR WITH PERCENTAGE (new but integrated elegantly) -->
+            <div class="progress-wrapper" id="progressWrapper">
+                <div class="d-flex justify-content-between mb-1 small">
+                    <span>Converting images...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar" id="conversionProgressBar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drag & Drop Area (preview with edit icons) -->
+        <div class="preview-container" id="filenameInputs"></div>
+        <canvas id="canvas" style="display: none;"></canvas>
+    </div>
+
+    <!-- EDIT MODAL (Crop, Brightness, Contrast) -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">✏️ Edit Image</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="modal-img-container">
+                                <img id="editImagePreview" class="modal-img-preview" src="#" alt="Edit preview">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">🔆 Brightness</label>
+                                <input type="range" class="form-range range-slider" id="brightnessSlider" min="0" max="200" value="100">
+                                <span id="brightnessVal" class="small">100%</span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">🎨 Contrast</label>
+                                <input type="range" class="form-range range-slider" id="contrastSlider" min="0" max="200" value="100">
+                                <span id="contrastVal" class="small">100%</span>
+                            </div>
+                            <hr>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-info btn-sm" id="applyCropBtn" disabled>✂️ Apply Crop & Save</button>
+                                <button class="btn btn-outline-secondary btn-sm" id="resetEditsBtn">⟳ Reset Adjustments</button>
+                            </div>
+                            <p class="small text-muted mt-2">Hint: Drag on image to crop, then click "Apply Crop".</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="saveEditBtn">✅ Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // -------- MAIN STATE (Preserved logic + new editing) --------
+        let imageList = [];      // each: { file, id, name, editedFile? optional }
+        let draggedItem = null;
+        let isConverting = false;
+        
+        // Editing modal variables
+        let currentEditIndex = null;
+        let currentEditImage = null;     // HTMLImageElement for editing
+        let cropper = null;
+        let originalEditImageSrc = null;
+        let appliedFilters = { brightness: 100, contrast: 100 };
+
+        // Helper: toggle quality mode (unchanged)
+        function toggleQualityMode() {
+            const useQuality = document.getElementById('useQuality').checked;
+            document.getElementById('sizeSelectContainer').style.display = useQuality ? 'none' : 'block';
+        }
+
+        // Generate inputs from uploaded files (same logic, but now we add edit button)
+        function generateInputs() {
+            const inputDiv = document.getElementById('filenameInputs');
+            inputDiv.innerHTML = "";
+            const files = document.getElementById('imageInput').files;
+            if (!files.length) {
+                inputDiv.innerHTML = "<p class='text-muted'>Select images to enter filenames.</p>";
+                return;
+            }
+            imageList = Array.from(files).map((file, index) => ({
+                file: file,
+                id: index,
+                name: file.name.split('.')[0],
+                editedFile: null      // store edited file (if user edits)
+            }));
+            renderImageList();
+        }
+
+        // Render each image box with edit icon (adding edit capability)
+        function renderImageList() {
+            const inputDiv = document.getElementById('filenameInputs');
+            inputDiv.innerHTML = "";
+            imageList.forEach((imgData, index) => {
+                const div = document.createElement('div');
+                div.className = "image-box";
+                div.draggable = true;
+                div.dataset.index = index;
+                // decide which image to show: if editedFile exists, use that, else original
+                const imageUrl = imgData.editedFile ? URL.createObjectURL(imgData.editedFile) : URL.createObjectURL(imgData.file);
+                div.innerHTML = `
+                    <img src="${imageUrl}" class="preview-img" data-original-src="${URL.createObjectURL(imgData.file)}">
+                    <input type="text" class="form-control mt-2" value="${escapeHtml(imgData.name)}" oninput="updateFilename(${index}, this.value)">
+                    <div class="edit-icon" data-index="${index}">✎ Edit</div>
+                `;
+                // Drag events (same as original)
+                div.addEventListener("dragstart", dragStart);
+                div.addEventListener("dragover", dragOver);
+                div.addEventListener("drop", drop);
+                div.addEventListener("dragend", dragEnd);
+                // edit icon event listener
+                const editBtn = div.querySelector('.edit-icon');
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openEditModal(index);
+                });
+                inputDiv.appendChild(div);
+            });
+        }
+        
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if(m === '&') return '&amp;';
+                if(m === '<') return '&lt;';
+                if(m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        function updateFilename(index, value) {
+            imageList[index].name = value;
+        }
+
+        function dragStart(e) {
+            draggedItem = e.target.closest('.image-box');
+            if(draggedItem) draggedItem.classList.add("dragging");
+        }
+        function dragOver(e) {
+            e.preventDefault();
+            const draggingElement = document.querySelector(".dragging");
+            const dropTarget = e.target.closest(".image-box");
+            if (dropTarget && draggingElement && draggingElement !== dropTarget) {
+                const inputDiv = document.getElementById('filenameInputs');
+                const draggingIndex = parseInt(draggingElement.dataset.index);
+                const dropIndex = parseInt(dropTarget.dataset.index);
+                const movedItem = imageList.splice(draggingIndex, 1)[0];
+                imageList.splice(dropIndex, 0, movedItem);
+                renderImageList();
+            }
+        }
+        function drop(e) { e.preventDefault(); }
+        function dragEnd(e) {
+            const dragElem = document.querySelector(".dragging");
+            if(dragElem) dragElem.classList.remove("dragging");
+            draggedItem = null;
+        }
+
+        // ---------- EDIT MODAL LOGIC (Crop + Brightness/Contrast) ----------
+        async function openEditModal(index) {
+            currentEditIndex = index;
+            const imgData = imageList[index];
+            // Use edited version if exists, else original file
+            const sourceFile = imgData.editedFile || imgData.file;
+            const imageUrl = URL.createObjectURL(sourceFile);
+            const modalImg = document.getElementById('editImagePreview');
+            modalImg.src = imageUrl;
+            originalEditImageSrc = imageUrl;
+            
+            // reset cropper if any
+            if(cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            // reset brightness/contrast sliders
+            document.getElementById('brightnessSlider').value = 100;
+            document.getElementById('contrastSlider').value = 100;
+            document.getElementById('brightnessVal').innerText = '100%';
+            document.getElementById('contrastVal').innerText = '100%';
+            appliedFilters = { brightness: 100, contrast: 100 };
+            
+            // Wait for image to load to initialize cropper & filters
+            modalImg.onload = () => {
+                // initialize cropper
+                if(cropper) cropper.destroy();
+                cropper = new Cropper(modalImg, {
+                    viewMode: 1,
+                    dragMode: 'crop',
+                    autoCropArea: 0.8,
+                    restore: false,
+                    modal: true,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+                // enable apply crop button
+                document.getElementById('applyCropBtn').disabled = false;
+                // apply brightness/contrast via CSS filter
+                applyFilterPreview();
+            };
+            if(modalImg.complete) modalImg.onload();
+            
+            // set up event listeners for sliders
+            const brightnessSlider = document.getElementById('brightnessSlider');
+            const contrastSlider = document.getElementById('contrastSlider');
+            const brightnessVal = document.getElementById('brightnessVal');
+            const contrastVal = document.getElementById('contrastVal');
+            
+            const updateBrightness = () => {
+                const val = brightnessSlider.value;
+                brightnessVal.innerText = val + '%';
+                appliedFilters.brightness = parseInt(val);
+                applyFilterPreview();
+            };
+            const updateContrast = () => {
+                const val = contrastSlider.value;
+                contrastVal.innerText = val + '%';
+                appliedFilters.contrast = parseInt(val);
+                applyFilterPreview();
+            };
+            brightnessSlider.oninput = updateBrightness;
+            contrastSlider.oninput = updateContrast;
+            
+            // reset edits button
+            document.getElementById('resetEditsBtn').onclick = () => {
+                brightnessSlider.value = 100;
+                contrastSlider.value = 100;
+                brightnessVal.innerText = '100%';
+                contrastVal.innerText = '100%';
+                appliedFilters = { brightness: 100, contrast: 100 };
+                applyFilterPreview();
+                if(cropper) cropper.reset();
+            };
+            // apply crop button - actually crop the image via cropper, then re-set cropper new image
+            document.getElementById('applyCropBtn').onclick = () => {
+                if(cropper) {
+                    const croppedCanvas = cropper.getCroppedCanvas();
+                    if(croppedCanvas) {
+                        // replace the image source with cropped version and reinitialize cropper
+                        const newUrl = croppedCanvas.toDataURL('image/png');
+                        const newImg = new Image();
+                        newImg.onload = () => {
+                            modalImg.src = newUrl;
+                            if(cropper) cropper.destroy();
+                            cropper = new Cropper(modalImg, {
+                                viewMode: 1, dragMode: 'crop', autoCropArea: 0.8, restore: false
+                            });
+                            // reapply brightness/contrast after crop
+                            applyFilterPreview();
+                        };
+                        newImg.src = newUrl;
+                    }
+                }
+            };
+            
+            // Save final image (after all edits: crop + brightness/contrast) to imageList
+            document.getElementById('saveEditBtn').onclick = async () => {
+                // capture final edited image
+                const finalImage = await getFinalEditedImage(modalImg);
+                if(finalImage) {
+                    // convert to File object
+                    const fileName = imageList[currentEditIndex].name + '_edited.png';
+                    const editedFile = new File([finalImage], fileName, { type: 'image/png' });
+                    imageList[currentEditIndex].editedFile = editedFile;
+                    // also update the preview in grid without full page reload
+                    renderImageList(); // refresh thumbnails to show edited version
+                }
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+                modal.hide();
+                if(cropper) { cropper.destroy(); cropper = null; }
+            };
+            
+            const modalEl = new bootstrap.Modal(document.getElementById('editModal'));
+            modalEl.show();
+        }
+        
+    function applyFilterPreview() {
+
+    const img = document.getElementById('editImagePreview');
+
+    if (!img) return;
+
+    const brightness = appliedFilters.brightness;
+    const contrast = appliedFilters.contrast;
+
+    // Apply filter to original image
+    img.style.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+
+    // Apply filter to cropper image also
+    const cropperImages = document.querySelectorAll('.cropper-canvas img, .cropper-view-box img');
+
+    cropperImages.forEach(cropperImg => {
+        cropperImg.style.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+    });
+}
+        
+        async function getFinalEditedImage(imgElement) {
+            return new Promise((resolve) => {
+                // we need to capture current displayed image with filters and cropper state.
+                // Cropper might have cropped canvas, but filter is CSS based. To get final: 
+                // draw image element with its current cropped region? Actually cropper overlays but source image is cropped if crop applied.
+                // simpler approach: if cropper exists, getCroppedCanvas else use original image.
+                let canvasSource;
+                if(cropper) {
+                    const croppedCanvas = cropper.getCroppedCanvas();
+                    if(croppedCanvas) canvasSource = croppedCanvas;
+                    else canvasSource = null;
+                }
+                if(!canvasSource) {
+                    // fallback: create canvas from imgElement
+                    const img = imgElement;
+                    canvasSource = document.createElement('canvas');
+                    canvasSource.width = img.naturalWidth || img.width;
+                    canvasSource.height = img.naturalHeight || img.height;
+                    const ctx = canvasSource.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvasSource.width, canvasSource.height);
+                }
+                // now apply brightness/contrast manually onto canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = canvasSource.width;
+                canvas.height = canvasSource.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(canvasSource, 0, 0);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const brightnessFactor = appliedFilters.brightness / 100;
+                const contrastFactor = appliedFilters.contrast / 100;
+                const data = imageData.data;
+                // contrast formula: (c - 128) * contrastFactor + 128
+                for(let i = 0; i < data.length; i += 4) {
+                    let r = data[i];
+                    let g = data[i+1];
+                    let b = data[i+2];
+                    // brightness scale
+                    r = r * brightnessFactor;
+                    g = g * brightnessFactor;
+                    b = b * brightnessFactor;
+                    // contrast
+                    r = (r - 128) * contrastFactor + 128;
+                    g = (g - 128) * contrastFactor + 128;
+                    b = (b - 128) * contrastFactor + 128;
+                    data[i] = Math.min(255, Math.max(0, r));
+                    data[i+1] = Math.min(255, Math.max(0, g));
+                    data[i+2] = Math.min(255, Math.max(0, b));
+                }
+                ctx.putImageData(imageData, 0, 0);
+                canvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
+            });
+        }
+        
+        // -------- FASTER CONVERSION WITH PROGRESS BAR ----------
+        function updateProgress(current, total) {
+            const wrapper = document.getElementById('progressWrapper');
+            if(total <= 0) return;
+            const percent = Math.round((current / total) * 100);
+            const progressBar = document.getElementById('conversionProgressBar');
+            const percentSpan = document.getElementById('progressPercent');
+            if(progressBar && percentSpan) {
+                progressBar.style.width = percent + '%';
+                progressBar.innerText = percent + '%';
+                percentSpan.innerText = percent + '%';
+            }
+            if(current === total) {
+                // after done, hide after 1 sec but not breaking UX
+                setTimeout(() => {
+                    wrapper.style.display = 'none';
+                }, 800);
+            } else {
+                wrapper.style.display = 'block';
+            }
+        }
+        
+        function getMimeType(format) {
+            switch(format) {
+                case 'jpg': return 'image/jpeg';
+                case 'png': return 'image/png';
+                case 'webp': return 'image/webp';
+                default: return 'image/jpeg';
+            }
+        }
+        function getFileExtension(format) {
+            switch(format) {
+                case 'jpg': return 'jpg';
+                case 'png': return 'png';
+                case 'webp': return 'webp';
+                default: return 'jpg';
+            }
+        }
+        
+        async function convertImages() {
+            if (isConverting) return;
+            if (!imageList.length) {
+                alert('Please select at least one image.');
+                return;
+            }
+            isConverting = true;
+            const convertBtn = document.getElementById('convertBtn');
+            const spinner = document.getElementById('convertSpinner');
+            convertBtn.disabled = true;
+            spinner.style.display = 'inline-block';
+            
+            const format = document.getElementById('formatSelect').value;
+            const useQuality = document.getElementById('useQuality').checked;
+            const quality = useQuality ? parseInt(document.getElementById('qualitySlider').value) / 100 : 0.9;
+            const maxSizeKB = useQuality ? null : parseInt(document.getElementById('sizeSelect').value);
+            const mimeType = getMimeType(format);
+            const fileExtension = getFileExtension(format);
+            const zip = new JSZip();
+            const convertedResults = []; // store { name, dataURL }
+            
+            const total = imageList.length;
+            let processed = 0;
+            updateProgress(0, total);
+            
+            try {
+                for (let idx = 0; idx < imageList.length; idx++) {
+                    const imgData = imageList[idx];
+                    // Use edited file if present, else original
+                    const sourceFile = imgData.editedFile || imgData.file;
+                    await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            const img = new Image();
+                            img.onload = async function() {
+                                const canvas = document.getElementById('canvas');
+                                const ctx = canvas.getContext('2d');
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                ctx.drawImage(img, 0, 0);
+                                let imageData;
+                                if (useQuality) {
+                                    imageData = canvas.toDataURL(mimeType, quality);
+                                } else {
+                                    let currentQuality = 0.9;
+                                    let attempts = 0;
+                                    const maxAttempts = 10;
+                                    do {
+                                        imageData = canvas.toDataURL(mimeType, currentQuality);
+                                        const sizeKB = (imageData.length * 0.75) / 1024;
+                                        if (sizeKB <= maxSizeKB || currentQuality <= 0.1 || attempts >= maxAttempts) break;
+                                        currentQuality -= 0.1;
+                                        attempts++;
+                                    } while (true);
+                                }
+                                convertedResults.push({
+                                    name: `${imgData.name}.${fileExtension}`,
+                                    data: imageData
+                                });
+                                processed++;
+                                updateProgress(processed, total);
+                                resolve();
+                            };
+                            img.src = ev.target.result;
+                        };
+                        reader.readAsDataURL(sourceFile);
+                    });
+                }
+                
+                // Download results
+                if (convertedResults.length > 5) {
+                    for (const file of convertedResults) {
+                        const base64Data = file.data.split(',')[1];
+                        zip.file(file.name, base64Data, { base64: true });
+                    }
+                    const zipBlob = await zip.generateAsync({ type: "blob" });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(zipBlob);
+                    link.download = "converted_images.zip";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(link.href);
+                } else {
+                    for (const file of convertedResults) {
+                        downloadImage(file.data, file.name.replace(`.${fileExtension}`, ''), fileExtension);
+                    }
+                }
+            } catch(err) {
+                console.error(err);
+                alert("Conversion error: " + err.message);
+            } finally {
+                isConverting = false;
+                convertBtn.disabled = false;
+                spinner.style.display = 'none';
+                updateProgress(total, total);
+                setTimeout(() => {
+                    document.getElementById('progressWrapper').style.display = 'none';
+                }, 1500);
+            }
+        }
+        
+        function downloadImage(dataUrl, name, extension) {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `${name}.${extension}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // free object URLs on page unload to prevent memory leak
+        window.addEventListener('beforeunload', () => {
+            if(imageList) {
+                imageList.forEach(item => {
+                    if(item.file) URL.revokeObjectURL(URL.createObjectURL(item.file));
+                    if(item.editedFile) URL.revokeObjectURL(URL.createObjectURL(item.editedFile));
+                });
+            }
+        });
+
+
+
+        
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html>
