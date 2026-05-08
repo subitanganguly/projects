@@ -3,25 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>PDF Redactor Pro </title>
+  <title>PDF Redactor Pro</title>
   <link rel="icon" type="image/png" href="../sumadhu.png">
   <link href="style.css" rel="stylesheet">
-  <!-- Bootstrap 5 + Icons + PDF.js + pdf-lib -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  <script type="module" src="sg-plugin.js"></script>
   <style>
     body {
       background: linear-gradient(245deg, #1300c025, #00b8be42, #c702f842);
       font-family: 'Inter', system-ui, sans-serif;
     }
-    .main-card {
-      border-radius: 2rem;
-      background: rgba(245, 245, 245, 0.096);
-      box-shadow: 0 10px 25px 10px rgba(0,0,0,0.12);
-      border: 1px solid white;
-    }
+    
     .upload-area {
       border: 2px dashed #afafaf;
       background: #ffffff56;
@@ -34,7 +27,7 @@
       border-color: #3b82f6;
     }
     .preview-scroll {
-      max-height: 560px;
+      max-height: 760px;
       overflow-y: auto;
       background: #f1f5f9;
       border-radius: 1.5rem;
@@ -51,6 +44,7 @@
       width: 100%;
       height: auto;
       display: block;
+      background: white;
     }
     .badge-clean {
       background: #e9ecef;
@@ -77,24 +71,91 @@
       font-size: 0.8rem;
       font-weight: 500;
     }
-    .color-preview {
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      cursor: pointer;
-    }
     footer {
       font-size: 0.75rem;
       opacity: 0.7;
     }
-    .blur-sample {
-      filter: blur(10px);
-      background: #e2e8f0;
+    .area-selector-modal .modal-dialog {
+      max-width: 90vw;
+      margin: 1rem auto;
+    }
+    .area-selector-modal .modal-content {
+      background: #1e293b;
+      border-radius: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .selection-canvas-container {
+      position: relative;
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
+      background: #0f172a;
+      border-radius: 1rem;
+      overflow: auto;
+      text-align: center;
+      max-height: 70vh;
+    }
+    #selectableCanvas {
+      display: block;
+      margin: 0 auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      cursor: crosshair;
+      max-width: 100%;
+      height: auto;
+    }
+    .selection-overlay-rect {
+      position: fixed;
+      border: 3px solid #facc15;
+      background: rgba(250, 204, 21, 0.25);
+      pointer-events: none;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+      z-index: 1060;
+      transition: all 0.02s linear;
+    }
+    .area-badge {
+      background: #facc15;
+      color: #1e293b;
       font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: 8px;
+    }
+    .page-badge {
+      background: #17a2b8;
+      color: white;
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: 8px;
+    }
+    .a4-badge {
+      background: #4caf50;
+      color: white;
+      font-size: 0.7rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-left: 10px;
+    }
+    .progress-bar-custom {
+      height: 4px;
+      background: linear-gradient(90deg, #4caf50, #2196f3);
+      transition: width 0.3s ease;
+    }
+    .page-input-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .page-input-group input {
+      flex: 1;
+      min-width: 120px;
+    }
+    .text-preview {
+      background: #e9ecef;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      margin-top: 5px;
     }
     @media (max-width: 768px) {
       .preview-scroll {
@@ -106,116 +167,89 @@
 <body class="py-1">
 
 <div class="container my-1 my-md-4">
-  <div class="text-center mb-4">
-    <h6 class="fw-bold display-6 sg-text"><i class="bi bi-file-pdf-fill me-2"></i>Hide with Style</h6>
-    <small class="text-secondary mt-2">Upload PDF → Add patterns → Choose <strong>White-Out / Blur / Highlight</strong> → Auto-apply to ALL pages → Download</small>
+  <div class="text-start mb-2">
+    <h6 class="fw-bold sg-text" style="font-size: 20px;"><i class="bi bi-file-pdf-fill me-2"></i>PDF Redactor Pro</h6>
+    <small class="text-secondary mt-2">Select areas → Add custom text with adjustable font size → Apply to specific pages</small>
   </div>
 
   <div class="row g-4">
     <div class="col-lg-5">
-      <div class="main-card p-4 h-100">
+      <div class="glass-card p-4 h-100">
         <label class="fw-semibold fs-5 mb-2"><i class="bi bi-cloud-upload me-1"></i> 1. Select PDF</label>
         <div class="upload-area p-4 text-center" id="uploadTrigger">
           <i class="bi bi-file-earmark-pdf fs-1 text-danger"></i>
           <p class="mt-2 mb-1 fw-medium">Click or drag & drop</p>
-          <small class="text-secondary">Supports 100+ pages • All pages processed</small>
+          <small class="text-secondary">Fast HD processing • A4 output</small>
           <input type="file" id="pdfInput" accept="application/pdf" class="d-none">
         </div>
         <div id="fileNameDisplay" class="small text-center mt-2 text-muted"></div>
 
-        <!-- Patterns Section -->
-        <div class="mt-4">
+        <div class="alert alert-success mt-2 py-2 text-center">
+          <i class="bi bi-check-circle-fill"></i> <strong>Output: A4 HD</strong>
+          <span class="a4-badge"><i class="bi bi-aspect-ratio"></i> 210x297mm</span>
+        </div>
+
+        <div class="mt-2">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <label class="fw-semibold"><i class="bi bi-textarea-t"></i> 2. Patterns to Hide</label>
-            <button type="button" id="addPatternBtn" class="btn button13 text-light rounded-pill">
-              <i class="bi bi-plus-lg"></i> Add Pattern
+            <label class="fw-semibold"><i class="bi bi-bounding-box"></i> Areas to Hide</label>
+            <button type="button" id="areaSelectBtn" class="btn btn-primary rounded-pill" style="background: #2c3e66; border: none;">
+              <i class="bi bi-cursor-fill"></i> Select Area
             </button>
           </div>
           
           <div class="alert alert-info py-1 px-2 mb-2 small">
-            <i class="bi bi-lightbulb"></i> Enter exact text (e.g., "Mobile - 0000000000") - matches across all pages
+            <i class="bi bi-lightbulb"></i> 
+            <strong>Features:</strong> Hide areas (White/Black/Highlight) OR add custom text with adjustable font size.
           </div>
           
           <div id="patternsList" style="max-height: 320px; overflow-y: auto;">
-            <div class="pattern-item" data-pattern-id="0">
-              <div class="d-flex gap-2 mb-2">
-                <input type="text" class="form-control form-control-sm pattern-text" value="" placeholder="Mobile - 0000000000" style="flex:1;">
-                <button type="button" class="btn btn-sm btn-outline-danger remove-pattern-btn">
-                  <i class="bi bi-trash3"></i>
-                </button>
-              </div>
-              <div class="row g-2 align-items-center">
-                <div class="col-4">
-                  <label class="small text-muted">Hide Type</label>
-                  <select class="form-select form-select-sm hide-type-select">
-                    <option value="whiteout">⬜ White-Out</option>
-                    <option value="blur">🌀 Blur</option>
-                    <option value="highlight">🟡 Highlight</option>
-                  </select>
-                </div>
-                <div class="col-4">
-                  <label class="small text-muted">Extra Width (px)</label>
-                  <input type="range" class="form-range pad-x-slider" min="0" max="80" value="0" step="1">
-                  <div class="d-flex justify-content-between">
-                    <span class="small">0</span>
-                    <span class="small pad-x-val">30</span>
-                    <span class="small">80</span>
-                  </div>
-                </div>
-                <div class="col-4">
-                  <label class="small text-muted">Extra Height (px)</label>
-                  <input type="range" class="form-range pad-y-slider" min="0" max="50" value="0" step="1">
-                  <div class="d-flex justify-content-between">
-                    <span class="small">0</span>
-                    <span class="small pad-y-val">8</span>
-                    <span class="small">50</span>
-                  </div>
-                </div>
-              </div>
-              <div class="row mt-2 highlight-color-row" style="display: none;">
-                <div class="col-12">
-                  <label class="small text-muted">Highlight Color</label>
-                  <div class="d-flex gap-2 align-items-center">
-                    <input type="color" class="form-control form-control-sm highlight-color" style="width: 60px;" value="#ffeb3b">
-                    <span class="small">Yellow (#ffeb3b)</span>
-                    <button type="button" class="btn btn-sm btn-outline-secondary reset-highlight" style="margin-left: auto;">Reset</button>
-                  </div>
-                </div>
-              </div>
+            <div class="text-center text-muted py-3" id="emptyAreasMsg">
+              <i class="bi bi-info-circle"></i> No areas selected. Click "Select Area" to add.
             </div>
           </div>
         </div>
 
+        <div id="progressContainer" style="display: none;" class="mt-3">
+          <div class="d-flex justify-content-between small mb-1">
+            <span>Processing...</span>
+            <span id="progressPercent">0%</span>
+          </div>
+          <div class="progress" style="height: 4px;">
+            <div id="progressBar" class="progress-bar-custom" style="width: 0%;"></div>
+          </div>
+        </div>
+
         <div class="d-grid gap-3 mt-3">
-          <button id="processBtn" class="btn button12 text-white" disabled>
-            <i class="bi bi-brush"></i> Apply to ALL Pages
+          <button id="processBtn" class="btn btn-primary text-white" disabled>
+            <i class="bi bi-brush"></i> Apply to Selected Pages
           </button>
-          <button id="downloadBtn" class="btn button14" disabled>
-            <i class="bi bi-download"></i> Download PDF
+          <button id="downloadBtn" class="btn btn-success" disabled>
+            <i class="bi bi-download"></i> Download A4 PDF
           </button>
         </div>
         
         <hr class="my-3">
         <div class="text-muted small text-center">
-          <i class="bi bi-shield-lock"></i> 100% local • <i class="bi bi-palette"></i> White • Blur • Highlight
+          <i class="bi bi-shield-lock"></i> 100% local • <i class="bi bi-palette"></i> White/Black/Highlight • <i class="bi bi-fonts"></i> Custom Text
         </div>
       </div>
     </div>
 
     <div class="col-lg-7">
-      <div class="main-card p-3 d-flex flex-column h-100">
+      <div class="glass-card p-3 d-flex flex-column h-100">
         <div class="d-flex justify-content-between align-items-center px-2 pt-1 pb-2 flex-wrap">
-          <h5 class="fw-semibold mb-0"><i class="bi bi-card-image"></i> Preview (after processing)</h5>
+          <h5 class="fw-semibold mb-0"><i class="bi bi-card-image"></i> Preview (HD)</h5>
           <span id="pageCounterBadge" class="badge bg-secondary rounded-pill">Not processed</span>
         </div>
         <div id="previewArea" class="preview-scroll mt-2 flex-grow-1 text-center">
           <div class="py-5 text-secondary">
             <i class="bi bi-file-earmark-x fs-1"></i>
-            <p class="mt-2">Upload PDF, add patterns, choose hide type, then click "Apply to ALL Pages"</p>
+            <p class="mt-2">Upload PDF, select areas, add custom text, then click "Apply to Selected Pages"</p>
             <div class="mt-3">
               <span class="badge bg-dark me-2">⬜ White-Out</span>
-              <span class="badge bg-secondary me-2">🌀 Blur Effect</span>
+              <span class="badge bg-black me-2">⬛ Black-Out</span>
               <span class="badge bg-warning text-dark">🟡 Highlight</span>
+              <span class="badge bg-info text-dark">📝 Text Overlay</span>
             </div>
           </div>
         </div>
@@ -223,17 +257,53 @@
     </div>
   </div>
   <footer class="text-center mt-4">
-    <i class="bi bi-check-lg text-success"></i> Automatically finds and applies selected effect to matching text on every page
+    <i class="bi bi-check-lg text-success"></i> Each area can have custom text with adjustable font size
   </footer>
 </div>
 
+<div class="modal fade" id="areaSelectorModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header border-secondary bg-dark text-white">
+        <h5 class="modal-title"><i class="bi bi-cursor-fill me-2"></i>Select Area to Hide — Draw rectangle on page</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body bg-dark text-center">
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+          <div class="d-flex gap-2">
+            <button id="cancelSelectionBtn" class="btn btn-secondary">Cancel</button>
+            <button id="saveSelectedAreaBtn" class="btn btn-success" disabled><i class="bi bi-save"></i> Save Area</button>
+          </div>
+          <span class="badge bg-info">Click & drag to draw rectangle</span>
+        </div>
+        <div class="selection-canvas-container" style="position: relative; display: inline-block; width: 100%;">
+          <canvas id="selectableCanvas" style="max-width: 100%; height: auto; border-radius: 8px;"></canvas>
+        </div>
+        <div id="selectionInfo" class="mt-3 small text-secondary"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
   let originalPdfBytes = null;
   let redactedPdfBlob = null;
-  let totalPages = 0;
+  let totalPagesCount = 0;
+  let areaModalPageNum = 1;
+  let areaModalPageObj = null;
+  let areaModalScale = 1.2;
+  let isDragging = false;
+  let startX = 0, startY = 0;
+  let currentRect = { x: 0, y: 0, w: 0, h: 0 };
+  let canvasElem = null;
+  let tempSelectedArea = null;
+  let overlayDiv = null;
+  let areaCounter = 0;
 
+  const A4_SIZE = { width: 595.28, height: 841.89 };
   const fileInput = document.getElementById('pdfInput');
   const uploadTrigger = document.getElementById('uploadTrigger');
   const processBtn = document.getElementById('processBtn');
@@ -242,55 +312,24 @@
   const pageCounterBadge = document.getElementById('pageCounterBadge');
   const fileNameDisplay = document.getElementById('fileNameDisplay');
   const patternsList = document.getElementById('patternsList');
-  const addPatternBtn = document.getElementById('addPatternBtn');
+  const areaSelectBtn = document.getElementById('areaSelectBtn');
+  const emptyAreasMsg = document.getElementById('emptyAreasMsg');
+  let areaModal;
 
-  // Helper: normalize text for matching
-  function normalizeText(text) {
-    return text.toLowerCase().replace(/\s+/g, ' ').trim();
+  if (typeof bootstrap !== 'undefined') {
+    areaModal = new bootstrap.Modal(document.getElementById('areaSelectorModal'));
   }
 
-  // Check if text matches any pattern
-  function getMatchingPattern(text, patterns) {
-    if (!text) return null;
-    const normalizedText = normalizeText(text);
-    
-    for (let pattern of patterns) {
-      const normalizedPattern = normalizeText(pattern.text);
-      if (normalizedText.includes(normalizedPattern)) {
-        return pattern;
-      }
-      const noSpaceText = normalizedText.replace(/\s/g, '');
-      const noSpacePattern = normalizedPattern.replace(/\s/g, '');
-      if (noSpaceText.includes(noSpacePattern)) {
-        return pattern;
-      }
-      if (normalizedPattern.match(/\d{10}/)) {
-        const regex = new RegExp(normalizedPattern.replace(/\d{10}/, '\\d{10}'), 'i');
-        if (regex.test(normalizedText)) return pattern;
-      }
-    }
-    return null;
-  }
-
-  // Apply effect to canvas context
-  function applyEffectToZone(ctx, zone, effectType, highlightColor = '#ffeb3b') {
+  function applyEffectToZone(ctx, zone, effectType, highlightColor = '#ffeb3b', text = '', fontSize = 14, textColor = '#000000') {
     const { x, y, width, height } = zone;
     
+    // Apply the background effect (hide/reveal)
     if (effectType === 'whiteout') {
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(x, y, width, height);
     } 
-    else if (effectType === 'blur') {
-      // Save the area, apply blur filter, then restore
-      ctx.save();
-      ctx.shadowBlur = 0;
-      ctx.filter = 'blur(6px)';
-      ctx.fillStyle = 'rgba(200,200,200,0.8)';
-      ctx.fillRect(x, y, width, height);
-      ctx.filter = 'none';
-      ctx.restore();
-      // Additional blur effect: draw semi-transparent to enhance blur look
-      ctx.fillStyle = 'rgba(240,240,245,0.6)';
+    else if (effectType === 'blackout') {
+      ctx.fillStyle = '#000000';
       ctx.fillRect(x, y, width, height);
     }
     else if (effectType === 'highlight') {
@@ -299,191 +338,240 @@
       ctx.fillRect(x, y, width, height);
       ctx.globalAlpha = 1.0;
     }
-  }
-
-  function updatePatternUI(patternDiv) {
-    const select = patternDiv.querySelector('.hide-type-select');
-    const highlightRow = patternDiv.querySelector('.highlight-color-row');
-    if (select.value === 'highlight') {
-      highlightRow.style.display = 'flex';
-    } else {
-      highlightRow.style.display = 'none';
+    
+    // Add custom text if provided
+    if (text && text.trim() !== '') {
+      ctx.save();
+      ctx.font = `${fontSize}px Arial, sans-serif`;
+      ctx.fillStyle = textColor;
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1.0;
+      
+      // Center text in the area
+      const textMetrics = ctx.measureText(text);
+      const textWidth = textMetrics.width;
+      const textHeight = fontSize;
+      const centerX = x + (width / 2) - (textWidth / 2);
+      const centerY = y + (height / 2) + (textHeight / 3);
+      
+      // Optional: Add a semi-transparent background for text readability
+      ctx.fillStyle = textColor;
+      ctx.fillText(text, centerX, centerY);
+      ctx.restore();
     }
   }
 
-  function addNewPattern(patternText = "New pattern here") {
-    const patternId = Date.now();
+  function parsePageNumbers(pageString) {
+    if (!pageString || pageString.trim() === '' || pageString.toLowerCase() === 'all') {
+      return 'all';
+    }
+    const pages = new Set();
+    const parts = pageString.split(',');
+    for (let part of parts) {
+      part = part.trim();
+      if (part.includes('-')) {
+        const range = part.split('-');
+        const start = parseInt(range[0]);
+        const end = parseInt(range[1]);
+        if (!isNaN(start) && !isNaN(end)) {
+          for (let i = start; i <= end; i++) {
+            if (i >= 1) pages.add(i);
+          }
+        }
+      } else {
+        const pageNum = parseInt(part);
+        if (!isNaN(pageNum) && pageNum >= 1) {
+          pages.add(pageNum);
+        }
+      }
+    }
+    return Array.from(pages).sort((a,b) => a-b);
+  }
+
+  function addAreaPattern(areaData) {
+    areaCounter++;
     const patternDiv = document.createElement('div');
     patternDiv.className = 'pattern-item';
-    patternDiv.setAttribute('data-pattern-id', patternId);
+    patternDiv.setAttribute('data-area-id', areaCounter);
     patternDiv.innerHTML = `
-      <div class="d-flex gap-2 mb-2">
-        <input type="text" class="form-control form-control-sm pattern-text" value="${escapeHtml(patternText)}" placeholder="Text to hide" style="flex:1;">
-        <button type="button" class="btn btn-sm btn-outline-danger remove-pattern-btn">
-          <i class="bi bi-trash3"></i>
+      <div class="d-flex gap-2 mb-2 align-items-center flex-wrap">
+        <span class="fw-bold small">Area ${areaCounter}</span>
+        <span class="area-badge"><i class="bi bi-bounding-box"></i> ${Math.round(areaData.w)} x ${Math.round(areaData.h)} pt</span>
+        <button type="button" class="btn btn-sm btn-outline-danger remove-pattern-btn ms-auto">
+          <i class="bi bi-trash3"></i> Remove
         </button>
       </div>
-      <div class="row g-2 align-items-center">
-        <div class="col-4">
-          <label class="small text-muted">Hide Type</label>
+      
+      <!-- Effect Type Selection -->
+      <div class="row g-2 mb-2">
+        <div class="col-6">
+          <label class="small text-muted">Effect Type</label>
           <select class="form-select form-select-sm hide-type-select">
             <option value="whiteout">⬜ White-Out</option>
-            <option value="blur">🌀 Blur</option>
+            <option value="blackout">⬛ Black-Out</option>
             <option value="highlight">🟡 Highlight</option>
+            <option value="textonly">📝 Text Only (No Background)</option>
           </select>
         </div>
-        <div class="col-4">
-          <label class="small text-muted">Extra Width (px)</label>
-          <input type="range" class="form-range pad-x-slider" min="0" max="80" value="25" step="1">
-          <div class="d-flex justify-content-between">
-            <span class="small">0</span>
-            <span class="small pad-x-val">25</span>
-            <span class="small">80</span>
-          </div>
-        </div>
-        <div class="col-4">
-          <label class="small text-muted">Extra Height (px)</label>
-          <input type="range" class="form-range pad-y-slider" min="0" max="50" value="5" step="1">
-          <div class="d-flex justify-content-between">
-            <span class="small">0</span>
-            <span class="small pad-y-val">5</span>
-            <span class="small">50</span>
-          </div>
-        </div>
-      </div>
-      <div class="row mt-2 highlight-color-row" style="display: none;">
-        <div class="col-12">
-          <label class="small text-muted">Highlight Color</label>
+        <div class="col-6">
+          <label class="small text-muted">Highlight Color (if selected)</label>
           <div class="d-flex gap-2 align-items-center">
-            <input type="color" class="form-control form-control-sm highlight-color" style="width: 60px;" value="#ffeb3b">
+            <input type="color" class="form-control form-control-sm highlight-color" style="width: 50px;" value="#ffeb3b">
             <span class="small">Pick color</span>
-            <button type="button" class="btn btn-sm btn-outline-secondary reset-highlight" style="margin-left: auto;">Reset</button>
           </div>
         </div>
       </div>
+      
+      <!-- Custom Text Section -->
+      <div class="row g-2 mb-2">
+        <div class="col-12">
+          <label class="small text-muted">Custom Text (Optional)</label>
+          <input type="text" class="form-control form-control-sm custom-text-input" placeholder="Enter text to display on this area" value="">
+        </div>
+      </div>
+      
+      <div class="row g-2 mb-2">
+        <div class="col-6">
+          <label class="small text-muted">Font Size (px)</label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range font-size-slider" min="8" max="72" value="14" step="1" style="flex:1;">
+            <span class="font-size-value badge bg-secondary" style="min-width: 40px;">14px</span>
+          </div>
+        </div>
+        <div class="col-6">
+          <label class="small text-muted">Text Color</label>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="color" class="form-control form-control-sm text-color-input" style="width: 50px;" value="#000000">
+            <span class="small">Pick color</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Page Selection -->
+      <div class="row">
+        <div class="col-12">
+          <label class="small text-muted">Apply to Pages</label>
+          <div class="page-input-group">
+            <input type="text" class="form-control form-control-sm page-input" placeholder='e.g., "1,3,5" or "1-5" or "all"' value="all">
+            <span class="small text-muted">Leave "all" for all pages</span>
+          </div>
+          <div class="small text-muted mt-1">
+            <i class="bi bi-info-circle"></i> Examples: "1,3,5" (pages 1,3,5) | "1-5" (pages 1 to 5) | "all" (every page)
+          </div>
+        </div>
+      </div>
+      
+      <div class="text-preview mt-2" style="display: none;">
+        <i class="bi bi-eye"></i> Preview: <span class="preview-text"></span>
+      </div>
+      
+      <input type="hidden" class="area-x" value="${areaData.x}">
+      <input type="hidden" class="area-y" value="${areaData.y}">
+      <input type="hidden" class="area-w" value="${areaData.w}">
+      <input type="hidden" class="area-h" value="${areaData.h}">
     `;
     
+    // Attach event listeners
     const select = patternDiv.querySelector('.hide-type-select');
-    const highlightRow = patternDiv.querySelector('.highlight-color-row');
-    const resetBtn = patternDiv.querySelector('.reset-highlight');
     const colorInput = patternDiv.querySelector('.highlight-color');
+    const customTextInput = patternDiv.querySelector('.custom-text-input');
+    const fontSizeSlider = patternDiv.querySelector('.font-size-slider');
+    const fontSizeValue = patternDiv.querySelector('.font-size-value');
+    const textColorInput = patternDiv.querySelector('.text-color-input');
+    const previewDiv = patternDiv.querySelector('.text-preview');
+    const previewTextSpan = patternDiv.querySelector('.preview-text');
     
-    select.addEventListener('change', () => {
-      if (select.value === 'highlight') {
-        highlightRow.style.display = 'flex';
-      } else {
-        highlightRow.style.display = 'none';
-      }
-    });
-    
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
-        colorInput.value = '#ffeb3b';
+    if (fontSizeSlider && fontSizeValue) {
+      fontSizeSlider.addEventListener('input', () => {
+        fontSizeValue.textContent = fontSizeSlider.value + 'px';
+        updateTextPreview();
       });
     }
     
-    const xSlider = patternDiv.querySelector('.pad-x-slider');
-    const ySlider = patternDiv.querySelector('.pad-y-slider');
-    const xVal = patternDiv.querySelector('.pad-x-val');
-    const yVal = patternDiv.querySelector('.pad-y-val');
+    if (customTextInput) {
+      customTextInput.addEventListener('input', () => {
+        updateTextPreview();
+      });
+    }
     
-    xSlider.addEventListener('input', () => { xVal.textContent = xSlider.value; });
-    ySlider.addEventListener('input', () => { yVal.textContent = ySlider.value; });
+    function updateTextPreview() {
+      const text = customTextInput.value.trim();
+      if (text) {
+        previewDiv.style.display = 'block';
+        previewTextSpan.textContent = text;
+        previewTextSpan.style.fontSize = fontSizeSlider.value + 'px';
+      } else {
+        previewDiv.style.display = 'none';
+      }
+    }
     
     const removeBtn = patternDiv.querySelector('.remove-pattern-btn');
-    removeBtn.addEventListener('click', () => {
-      if (document.querySelectorAll('.pattern-item').length > 1) {
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
         patternDiv.remove();
-      } else {
-        alert("Keep at least one pattern.");
-      }
-    });
+        updateEmptyMessage();
+        renumberAreas();
+      });
+    }
     
     patternsList.appendChild(patternDiv);
+    updateEmptyMessage();
   }
 
-  function escapeHtml(str) {
-    return str.replace(/[&<>]/g, function(m) {
-      if (m === '&') return '&amp;';
-      if (m === '<') return '&lt;';
-      if (m === '>') return '&gt;';
-      return m;
-    });
+  function updateEmptyMessage() {
+    const items = document.querySelectorAll('.pattern-item');
+    if (items.length === 0) {
+      emptyAreasMsg.style.display = 'block';
+    } else {
+      emptyAreasMsg.style.display = 'none';
+    }
   }
 
-  addPatternBtn.addEventListener('click', () => addNewPattern("Another pattern"));
-
-  // Initialize existing patterns
-  function initPatterns() {
-    document.querySelectorAll('.pattern-item').forEach(item => {
-      const select = item.querySelector('.hide-type-select');
-      const highlightRow = item.querySelector('.highlight-color-row');
-      const resetBtn = item.querySelector('.reset-highlight');
-      const colorInput = item.querySelector('.highlight-color');
-      
-      if (select) {
-        select.addEventListener('change', () => {
-          if (select.value === 'highlight') {
-            highlightRow.style.display = 'flex';
-          } else {
-            highlightRow.style.display = 'none';
-          }
-        });
-        if (select.value === 'highlight') highlightRow.style.display = 'flex';
+  function renumberAreas() {
+    const items = document.querySelectorAll('.pattern-item');
+    let count = 1;
+    for (let item of items) {
+      const titleSpan = item.querySelector('.fw-bold');
+      if (titleSpan) {
+        titleSpan.textContent = `Area ${count}`;
       }
-      
-      if (resetBtn && colorInput) {
-        resetBtn.addEventListener('click', () => { colorInput.value = '#ffeb3b'; });
-      }
-      
-      const xSlider = item.querySelector('.pad-x-slider');
-      const ySlider = item.querySelector('.pad-y-slider');
-      const xVal = item.querySelector('.pad-x-val');
-      const yVal = item.querySelector('.pad-y-val');
-      if (xSlider) xSlider.addEventListener('input', () => { xVal.textContent = xSlider.value; });
-      if (ySlider) ySlider.addEventListener('input', () => { yVal.textContent = ySlider.value; });
-      
-      const removeBtn = item.querySelector('.remove-pattern-btn');
-      if (removeBtn) {
-        removeBtn.addEventListener('click', () => {
-          if (document.querySelectorAll('.pattern-item').length > 1) {
-            item.remove();
-          } else {
-            alert("Keep at least one pattern.");
-          }
-        });
-      }
-    });
+      count++;
+    }
+    areaCounter = count - 1;
   }
-  
-  initPatterns();
 
-  function getPatternsConfig() {
-    const patterns = [];
-    const patternItems = document.querySelectorAll('.pattern-item');
-    for (let item of patternItems) {
-      const textInput = item.querySelector('.pattern-text');
-      let rawPattern = textInput.value.trim();
-      if (rawPattern === "") continue;
-      
-      const padX = parseInt(item.querySelector('.pad-x-slider').value, 10);
-      const padY = parseInt(item.querySelector('.pad-y-slider').value, 10);
-      const hideType = item.querySelector('.hide-type-select').value;
+  function getAreasConfig() {
+    const areas = [];
+    for (let item of document.querySelectorAll('.pattern-item')) {
+      const hideType = item.querySelector('.hide-type-select')?.value || 'whiteout';
       let highlightColor = '#ffeb3b';
       if (hideType === 'highlight') {
         const colorInput = item.querySelector('.highlight-color');
         if (colorInput) highlightColor = colorInput.value;
       }
       
-      patterns.push({
-        text: rawPattern,
-        padX: padX,
-        padY: padY,
-        type: hideType,
-        highlightColor: highlightColor
+      const customText = item.querySelector('.custom-text-input')?.value || '';
+      const fontSize = parseInt(item.querySelector('.font-size-slider')?.value || 14);
+      const textColor = item.querySelector('.text-color-input')?.value || '#000000';
+      
+      const pageInput = item.querySelector('.page-input')?.value || 'all';
+      const targetPages = parsePageNumbers(pageInput);
+      
+      areas.push({
+        type: 'area',
+        x: parseFloat(item.querySelector('.area-x').value),
+        y: parseFloat(item.querySelector('.area-y').value),
+        w: parseFloat(item.querySelector('.area-w').value),
+        h: parseFloat(item.querySelector('.area-h').value),
+        hideType: hideType,
+        highlightColor: highlightColor,
+        customText: customText,
+        fontSize: fontSize,
+        textColor: textColor,
+        pages: targetPages
       });
     }
-    return patterns;
+    return areas;
   }
 
   async function renderPreviewFromBlob(blob, maxShow = 5) {
@@ -494,261 +582,319 @@
     previewArea.innerHTML = '';
     
     for (let i = 1; i <= pagesToRender; i++) {
-      try {
-        const page = await pdfDoc.getPage(i);
-        const viewport = page.getViewport({ scale: 0.65 });
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        canvas.classList.add('page-canvas');
-        canvas.style.width = '100%';
-        canvas.style.height = 'auto';
-        const ctx = canvas.getContext('2d');
-        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-        
-        const wrapper = document.createElement('div');
-        wrapper.className = 'page-wrapper p-2';
-        const headerDiv = document.createElement('div');
-        headerDiv.className = 'd-flex justify-content-between px-2 pt-1 pb-2';
-        headerDiv.innerHTML = `
-          <span class="fw-semibold small"><i class="bi bi-file-text"></i> Page ${i}</span>
-          <span class="badge-clean"><i class="bi bi-eraser"></i> effect applied</span>
-        `;
-        wrapper.appendChild(headerDiv);
-        wrapper.appendChild(canvas);
-        previewArea.appendChild(wrapper);
-      } catch (err) {
-        console.error(err);
-      }
+      const page = await pdfDoc.getPage(i);
+      const viewport = page.getViewport({ scale: 1.2 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      canvas.classList.add('page-canvas');
+      canvas.style.width = '100%';
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = 'page-wrapper p-2';
+      wrapper.innerHTML = `<div class="d-flex justify-content-between px-2 pt-1 pb-2"><span class="fw-semibold small">Page ${i}</span><span class="badge-clean">areas hidden</span></div>`;
+      wrapper.appendChild(canvas);
+      previewArea.appendChild(wrapper);
     }
-    if (total > pagesToRender) {
-      const extraMsg = document.createElement('div');
-      extraMsg.className = 'text-center text-secondary small mt-1';
-      extraMsg.innerHTML = `<i class="bi bi-three-dots"></i> + ${total - pagesToRender} more pages`;
-      previewArea.appendChild(extraMsg);
-    }
-    pageCounterBadge.innerText = `${total} page${total !== 1 ? 's' : ''}`;
+    pageCounterBadge.innerText = `${total} page${total !== 1 ? 's' : ''} (A4 HD)`;
   }
 
-  // Main redaction function with multiple effect types
-  async function applyEffectsToPDF(originalByteArray, patterns) {
-    const pdfDocument = await pdfjsLib.getDocument({ data: originalByteArray.slice(0) }).promise;
-    const totalPagesCount = pdfDocument.numPages;
-    const pageImages = [];
+  function shouldApplyAreaToPage(area, pageNum) {
+    if (area.pages === 'all') return true;
+    if (Array.isArray(area.pages)) {
+      return area.pages.includes(pageNum);
+    }
+    return false;
+  }
 
-    for (let pageNum = 1; pageNum <= totalPagesCount; pageNum++) {
+  async function applyAreasToPDF(originalByteArray, areas, onProgress) {
+    const pdfDocument = await pdfjsLib.getDocument({ data: originalByteArray.slice(0) }).promise;
+    const totalPages = pdfDocument.numPages;
+    const pageImages = [];
+    const scale = 1.8;
+    
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      if (onProgress) onProgress(pageNum, totalPages);
+      
       const page = await pdfDocument.getPage(pageNum);
-      const scale = 2.2;
-      const viewport = page.getViewport({ scale: scale });
+      const viewport = page.getViewport({ scale });
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       const ctx = canvas.getContext('2d');
-
-      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-      const textContent = await page.getTextContent();
-      const items = textContent.items;
+      
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      
       const zonesToProcess = [];
-
-      // Process individual text items
-      for (let item of items) {
-        if (!item.str) continue;
-        const matchedPattern = getMatchingPattern(item.str, patterns);
-        if (matchedPattern) {
-          const transform = item.transform;
-          const x = transform[4] * scale;
-          const pdfY = transform[5];
-          const yCanvas = viewport.height - (pdfY * scale);
-          const fontSize = (item.height || item.transform[3] || 12) * scale;
-          const width = (item.width || item.str.length * fontSize * 0.55) * scale;
-          const height = fontSize + 4;
-          
+      
+      for (let area of areas) {
+        if (shouldApplyAreaToPage(area, pageNum)) {
           zonesToProcess.push({
-            x: x - matchedPattern.padX,
-            y: yCanvas - height - matchedPattern.padY,
-            width: width + (matchedPattern.padX * 2),
-            height: height + (matchedPattern.padY * 2),
-            type: matchedPattern.type,
-            highlightColor: matchedPattern.highlightColor
+            x: area.x * scale,
+            y: area.y * scale,
+            width: area.w * scale,
+            height: area.h * scale,
+            type: area.hideType,
+            highlightColor: area.highlightColor,
+            customText: area.customText,
+            fontSize: area.fontSize * (scale / 1.5), // Scale font size proportionally
+            textColor: area.textColor
           });
         }
       }
-
-      // Process combined line text
-      const itemsWithPos = [];
-      for (let item of items) {
-        if (!item.str) continue;
-        const transform = item.transform;
-        const x = transform[4] * scale;
-        const pdfY = transform[5];
-        const yCanvas = viewport.height - (pdfY * scale);
-        itemsWithPos.push({
-          str: item.str,
-          x: x,
-          y: yCanvas,
-          width: (item.width || 50) * scale,
-          height: (item.height || 12) * scale
-        });
-      }
       
-      const lines = [];
-      for (let ip of itemsWithPos) {
-        let added = false;
-        for (let line of lines) {
-          if (Math.abs(line.y - ip.y) < 20) {
-            line.items.push(ip);
-            added = true;
-            break;
-          }
-        }
-        if (!added) lines.push({ y: ip.y, items: [ip] });
-      }
-      
-      for (let line of lines) {
-        line.items.sort((a,b) => a.x - b.x);
-        const combinedText = line.items.map(i => i.str).join(' ');
-        const matchedPattern = getMatchingPattern(combinedText, patterns);
-        if (matchedPattern) {
-          for (let item of line.items) {
-            zonesToProcess.push({
-              x: item.x - matchedPattern.padX,
-              y: item.y - item.height - matchedPattern.padY,
-              width: item.width + (matchedPattern.padX * 2),
-              height: item.height + (matchedPattern.padY * 2),
-              type: matchedPattern.type,
-              highlightColor: matchedPattern.highlightColor
-            });
-          }
-        }
-      }
-
-      // Apply effects to all zones
       ctx.save();
       for (let zone of zonesToProcess) {
-        applyEffectToZone(ctx, zone, zone.type, zone.highlightColor);
+        if (zone.type === 'textonly') {
+          // Only add text, no background
+          if (zone.customText && zone.customText.trim() !== '') {
+            ctx.font = `${zone.fontSize}px Arial, sans-serif`;
+            ctx.fillStyle = zone.textColor;
+            const textMetrics = ctx.measureText(zone.customText);
+            const textWidth = textMetrics.width;
+            const textHeight = zone.fontSize;
+            const centerX = zone.x + (zone.width / 2) - (textWidth / 2);
+            const centerY = zone.y + (zone.height / 2) + (textHeight / 3);
+            ctx.fillText(zone.customText, centerX, centerY);
+          }
+        } else {
+          applyEffectToZone(ctx, zone, zone.type, zone.highlightColor, zone.customText, zone.fontSize, zone.textColor);
+        }
       }
       ctx.restore();
-
-      const imgBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
-      pageImages.push({
-        blob: imgBlob,
-        width: viewport.width,
-        height: viewport.height
-      });
+      
+      const imgBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+      pageImages.push({ blob: imgBlob, width: viewport.width, height: viewport.height });
     }
     
     const { PDFDocument } = await import('https://cdn.skypack.dev/pdf-lib@1.17.1');
     const newPdf = await PDFDocument.create();
+    
     for (const img of pageImages) {
       const imgBytes = await img.blob.arrayBuffer();
       const embedded = await newPdf.embedJpg(imgBytes);
-      const page = newPdf.addPage([img.width, img.height]);
-      page.drawImage(embedded, { x: 0, y: 0, width: img.width, height: img.height });
+      
+      const scaleX = A4_SIZE.width / img.width;
+      const scaleY = A4_SIZE.height / img.height;
+      const scaleFit = Math.min(scaleX, scaleY);
+      const finalWidth = img.width * scaleFit;
+      const finalHeight = img.height * scaleFit;
+      const xOffset = (A4_SIZE.width - finalWidth) / 2;
+      const yOffset = (A4_SIZE.height - finalHeight) / 2;
+      
+      const page = newPdf.addPage([A4_SIZE.width, A4_SIZE.height]);
+      page.drawImage(embedded, { x: xOffset, y: yOffset, width: finalWidth, height: finalHeight });
     }
-    const pdfBytes = await newPdf.save();
-    return new Blob([pdfBytes], { type: 'application/pdf' });
+    
+    return new Blob([await newPdf.save()], { type: 'application/pdf' });
   }
 
-  async function processRedaction(file) {
-    if (!file) return;
+  // Area selector functions
+  async function openAreaSelector(file) {
+    if (!file) { alert("Upload PDF first"); return; }
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    totalPagesCount = pdfDoc.numPages;
+    const page = await pdfDoc.getPage(1);
+    const containerWidth = window.innerWidth * 0.8;
+    const scaleToFit = containerWidth / page.getViewport({ scale: 1 }).width;
+    areaModalScale = Math.min(scaleToFit, 1.5);
+    const viewport = page.getViewport({ scale: areaModalScale });
+    canvasElem = document.getElementById('selectableCanvas');
+    canvasElem.width = viewport.width;
+    canvasElem.height = viewport.height;
+    const ctx = canvasElem.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    areaModalPageObj = page;
+    attachCanvasEvents();
+    areaModal.show();
+  }
+
+  function attachCanvasEvents() {
+    if (!canvasElem) return;
+    const getCoords = (clientX, clientY) => {
+      const rect = canvasElem.getBoundingClientRect();
+      const scaleX = canvasElem.width / rect.width;
+      const scaleY = canvasElem.height / rect.height;
+      let x = (clientX - rect.left) * scaleX;
+      let y = (clientY - rect.top) * scaleY;
+      return { x: Math.min(Math.max(0, x), canvasElem.width), y: Math.min(Math.max(0, y), canvasElem.height) };
+    };
     
-    const patterns = getPatternsConfig();
-    if (patterns.length === 0) {
-      alert("Please add at least one pattern to hide.");
-      return;
+    canvasElem.onmousedown = (e) => {
+      isDragging = true;
+      const { x, y } = getCoords(e.clientX, e.clientY);
+      startX = x; startY = y;
+      currentRect = { x, y, w: 0, h: 0 };
+    };
+    canvasElem.onmousemove = (e) => {
+      if (!isDragging) return;
+      const { x, y } = getCoords(e.clientX, e.clientY);
+      currentRect = { x: startX, y: startY, w: x - startX, h: y - startY };
+      updateOverlay(e.clientX, e.clientY);
+    };
+    canvasElem.onmouseup = () => {
+      if (isDragging && Math.abs(currentRect.w) > 10 && Math.abs(currentRect.h) > 10) {
+        saveSelectedArea();
+      } else {
+        resetSelection();
+      }
+      isDragging = false;
+      hideOverlay();
+    };
+  }
+
+  function updateOverlay(clientX, clientY) {
+    if (!overlayDiv) { overlayDiv = document.createElement('div'); overlayDiv.className = 'selection-overlay-rect'; document.body.appendChild(overlayDiv); }
+    if (!currentRect.w || !currentRect.h) { overlayDiv.style.display = 'none'; return; }
+    let rx = currentRect.x, ry = currentRect.y, rw = Math.abs(currentRect.w), rh = Math.abs(currentRect.h);
+    if (currentRect.w < 0) rx = currentRect.x + currentRect.w;
+    if (currentRect.h < 0) ry = currentRect.y + currentRect.h;
+    const canvasRect = canvasElem.getBoundingClientRect();
+    const scaleX = canvasRect.width / canvasElem.width;
+    const scaleY = canvasRect.height / canvasElem.height;
+    overlayDiv.style.display = 'block';
+    overlayDiv.style.left = (canvasRect.left + rx * scaleX) + 'px';
+    overlayDiv.style.top = (canvasRect.top + ry * scaleY) + 'px';
+    overlayDiv.style.width = (rw * scaleX) + 'px';
+    overlayDiv.style.height = (rh * scaleY) + 'px';
+  }
+
+  function hideOverlay() { if (overlayDiv) overlayDiv.style.display = 'none'; }
+  
+  function resetSelection() { 
+    currentRect = { x: 0, y: 0, w: 0, h: 0 }; 
+    hideOverlay(); 
+    document.getElementById('saveSelectedAreaBtn').disabled = true; 
+    document.getElementById('selectionInfo').innerHTML = ''; 
+  }
+  
+  function saveSelectedArea() {
+    let rx = currentRect.x, ry = currentRect.y, rw = Math.abs(currentRect.w), rh = Math.abs(currentRect.h);
+    if (currentRect.w < 0) rx = currentRect.x + currentRect.w;
+    if (currentRect.h < 0) ry = currentRect.y + currentRect.h;
+    const scale = areaModalScale;
+    tempSelectedArea = { x: rx / scale, y: ry / scale, w: rw / scale, h: rh / scale };
+    document.getElementById('selectionInfo').innerHTML = `<div class="alert alert-success p-2">✓ Area selected! (${Math.round(tempSelectedArea.w)} x ${Math.round(tempSelectedArea.h)} points)<br>You can now add custom text and adjust font size.</div>`;
+    document.getElementById('saveSelectedAreaBtn').disabled = false;
+  }
+
+  document.getElementById('saveSelectedAreaBtn').onclick = () => {
+    if (tempSelectedArea) { 
+      addAreaPattern(tempSelectedArea); 
+      areaModal.hide(); 
+      resetSelection(); 
+      tempSelectedArea = null; 
+    } else { 
+      alert("Select an area first"); 
+    }
+  };
+  
+  document.getElementById('cancelSelectionBtn').onclick = () => { areaModal.hide(); resetSelection(); };
+  areaSelectBtn.onclick = async () => { 
+    if (!fileInput.files?.length) { 
+      alert("Please upload a PDF first"); 
+      return; 
+    } 
+    await openAreaSelector(fileInput.files[0]); 
+  };
+
+  async function processRedaction(file) {
+    const areas = getAreasConfig();
+    if (areas.length === 0) { 
+      alert("Please add at least one area to hide (click 'Select Area')"); 
+      return; 
     }
     
     processBtn.disabled = true;
-    processBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing all pages...';
+    processBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
     downloadBtn.disabled = true;
-    previewArea.innerHTML = `<div class="py-5 text-center"><div class="spinner-border text-primary mb-2"></div><p>Applying ${patterns.length} pattern(s) with selected effects...</p></div>`;
+    document.getElementById('progressContainer').style.display = 'block';
+    previewArea.innerHTML = '<div class="py-5 text-center"><div class="spinner-border text-primary mb-2"></div><p>Hiding selected areas on specified pages...</p></div>';
     
     try {
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      originalPdfBytes = uint8Array;
       
-      redactedPdfBlob = await applyEffectsToPDF(uint8Array, patterns);
+      redactedPdfBlob = await applyAreasToPDF(uint8Array, areas, (current, total) => {
+        const percent = Math.round((current / total) * 100);
+        document.getElementById('progressBar').style.width = percent + '%';
+        document.getElementById('progressPercent').innerText = percent + '%';
+      });
       
       await renderPreviewFromBlob(redactedPdfBlob, 5);
-      
       downloadBtn.disabled = false;
       processBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Complete!';
-      processBtn.disabled = false;
-      
-      const successDiv = document.createElement('div');
-      successDiv.className = 'alert alert-success mt-3 py-2';
-      successDiv.innerHTML = `<i class="bi bi-check-lg me-2"></i> Successfully applied effects to ${patterns.length} pattern(s) across all pages.`;
-      const targetParent = document.querySelector('.main-card .info-banner') || document.querySelector('.main-card');
-      if (targetParent) targetParent.parentNode.insertBefore(successDiv, targetParent.nextSibling);
-      setTimeout(() => successDiv.remove(), 4000);
-      
     } catch (err) {
       console.error("Error:", err);
       previewArea.innerHTML = `<div class="alert alert-danger m-3">Error: ${err.message}</div>`;
       processBtn.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Retry';
-      processBtn.disabled = false;
-      downloadBtn.disabled = true;
       redactedPdfBlob = null;
+    } finally {
+      processBtn.disabled = false;
+      setTimeout(() => { document.getElementById('progressContainer').style.display = 'none'; }, 1000);
     }
+  }
+  
+  async function getTotalPages(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+    return pdfDoc.numPages;
   }
 
   function downloadPDF() {
     if (redactedPdfBlob) {
       const link = document.createElement('a');
-      const url = URL.createObjectURL(redactedPdfBlob);
-      link.href = url;
-      link.download = 'redacted_document.pdf';
+      link.href = URL.createObjectURL(redactedPdfBlob);
+      link.download = 'redacted_A4.pdf';
       link.click();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(link.href);
     } else {
-      alert("Process the PDF first.");
+      alert("Process the PDF first");
     }
   }
 
-  fileInput.addEventListener('change', (e) => {
+  fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file && file.type === 'application/pdf') {
       processBtn.disabled = false;
       downloadBtn.disabled = true;
-      redactedPdfBlob = null;
       fileNameDisplay.innerHTML = `<i class="bi bi-check-circle text-success"></i> ${file.name}`;
-      previewArea.innerHTML = `<div class="py-5 text-secondary"><i class="bi bi-check-circle"></i> File ready. Configure patterns and click "Apply to ALL Pages".</div>`;
+      previewArea.innerHTML = '<div class="py-5 text-secondary"><i class="bi bi-check-circle"></i> File ready. Click "Select Area" to choose areas, add custom text, then click Apply.</div>';
       pageCounterBadge.innerText = "Ready";
-    } else {
-      processBtn.disabled = true;
-      fileNameDisplay.innerHTML = '<span class="text-danger">Invalid PDF</span>';
+      
+      const total = await getTotalPages(file);
+      pageCounterBadge.title = `PDF has ${total} pages`;
+    } else if (file) {
+      alert("Please select a PDF file");
     }
   });
 
-  processBtn.addEventListener('click', async () => {
-    if (!fileInput.files || fileInput.files.length === 0) {
-      alert("Select a PDF file first.");
+  processBtn.onclick = async () => {
+    if (!fileInput.files?.length) {
+      alert("Select PDF first");
       return;
     }
     await processRedaction(fileInput.files[0]);
-  });
-
-  downloadBtn.addEventListener('click', downloadPDF);
-
-  uploadTrigger.addEventListener('click', () => fileInput.click());
-  uploadTrigger.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadTrigger.classList.add('bg-light');
-  });
-  uploadTrigger.addEventListener('dragleave', () => uploadTrigger.classList.remove('bg-light'));
-  uploadTrigger.addEventListener('drop', (e) => {
+  };
+  
+  downloadBtn.onclick = downloadPDF;
+  uploadTrigger.onclick = () => fileInput.click();
+  uploadTrigger.ondragover = (e) => { e.preventDefault(); uploadTrigger.classList.add('bg-light'); };
+  uploadTrigger.ondragleave = () => uploadTrigger.classList.remove('bg-light');
+  uploadTrigger.ondrop = (e) => {
     e.preventDefault();
     uploadTrigger.classList.remove('bg-light');
     const files = e.dataTransfer.files;
-    if (files.length && files[0].type === 'application/pdf') {
-      fileInput.files = files;
-      fileInput.dispatchEvent(new Event('change'));
-    } else {
-      alert("PDF files only");
+    if (files[0]?.type === 'application/pdf') { 
+      fileInput.files = files; 
+      fileInput.dispatchEvent(new Event('change')); 
+    } else { 
+      alert("PDF only"); 
     }
-  });
+  };
 </script>
 </body>
 </html>
