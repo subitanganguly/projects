@@ -790,67 +790,146 @@
       });
     }
 
+
     // ---------- LOAD DATA ----------
-    function loadData() {
-      const entries = getEntries();
-      const editIndex = getEditIndex();
-      
-      // Reset form
-      grYearInput.value = '';
-      grYearDisplay.querySelector('.placeholder').style.display = 'block';
-      grYearDisplay.querySelector('.value').textContent = '';
-      psNameInput.value = '';
-      psNameDisplay.querySelector('.placeholder').style.display = 'block';
-      psNameDisplay.querySelector('.value').textContent = '';
-      
-      // Reset chip highlights
-      document.querySelectorAll('#yearButtons .chip').forEach(b => {
-        b.className = 'chip chip-outline';
-      });
-      document.querySelectorAll('#psButtons .chip').forEach(b => {
-        b.className = 'chip chip-outline';
-      });
+function loadData() {
+  const entries = getEntries();
+  const editIndex = getEditIndex();
+  
+  // Reset form
+  grYearInput.value = '';
+  grYearDisplay.querySelector('.placeholder').style.display = 'block';
+  grYearDisplay.querySelector('.value').textContent = '';
+  psNameInput.value = '';
+  psNameDisplay.querySelector('.placeholder').style.display = 'block';
+  psNameDisplay.querySelector('.value').textContent = '';
+  
+  // Reset chip highlights
+  document.querySelectorAll('#yearButtons .chip').forEach(b => {
+    b.className = 'chip chip-outline';
+  });
+  document.querySelectorAll('#psButtons .chip').forEach(b => {
+    b.className = 'chip chip-outline';
+  });
 
-      if (editIndex >= 0 && editIndex < entries.length) {
-        // Edit mode
-        const entry = entries[editIndex];
-        grYearInput.value = entry.grYear || '';
-        grYearDisplay.querySelector('.placeholder').style.display = 'none';
-        grYearDisplay.querySelector('.value').textContent = entry.grYear;
-        psNameInput.value = entry.psName || '';
-        psNameDisplay.querySelector('.placeholder').style.display = 'none';
-        psNameDisplay.querySelector('.value').textContent = entry.psName;
-        grNoInput.value = entry.grNo || '';
-        
-        // Highlight chips
-        document.querySelectorAll('#yearButtons .chip').forEach(b => {
-          if (Number(b.dataset.year) === Number(entry.grYear)) {
-            b.className = 'chip chip-primary';
-          }
-        });
-        document.querySelectorAll('#psButtons .chip').forEach(b => {
-          const psObj = psList.find(p => p.btn === b.textContent);
-          if (psObj && psObj.value === entry.psName) {
-            b.className = 'chip chip-primary';
-          }
-        });
-        
-        saveBtn.innerHTML = '<span class="material-symbols-outlined">edit</span> Update Entry';
-        clearEditIndex();
-      } else {
-        // New entry mode
-        if (entries.length > 0) {
-          const lastEntry = entries[entries.length - 1];
-          const nextNo = Number(lastEntry.grNo) + 1;
-          grNoInput.value = nextNo;
-        } else {
-          grNoInput.value = 1;
-        }
-        saveBtn.innerHTML = '<span class="material-symbols-outlined">save</span> Save Entry';
+  if (editIndex >= 0 && editIndex < entries.length) {
+    // Edit mode
+    const entry = entries[editIndex];
+    grYearInput.value = entry.grYear || '';
+    grYearDisplay.querySelector('.placeholder').style.display = 'none';
+    grYearDisplay.querySelector('.value').textContent = entry.grYear;
+    psNameInput.value = entry.psName || '';
+    psNameDisplay.querySelector('.placeholder').style.display = 'none';
+    psNameDisplay.querySelector('.value').textContent = entry.psName;
+    grNoInput.value = entry.grNo || '';
+    
+    // Highlight chips
+    document.querySelectorAll('#yearButtons .chip').forEach(b => {
+      if (Number(b.dataset.year) === Number(entry.grYear)) {
+        b.className = 'chip chip-primary';
       }
-
-      renderTable();
+    });
+    document.querySelectorAll('#psButtons .chip').forEach(b => {
+      const psObj = psList.find(p => p.btn === b.textContent);
+      if (psObj && psObj.value === entry.psName) {
+        b.className = 'chip chip-primary';
+      }
+    });
+    
+    saveBtn.innerHTML = '<span class="material-symbols-outlined">edit</span> Update Entry';
+    clearEditIndex();
+  } else {
+    // New entry mode - AUTO SELECT LAST YEAR
+    if (entries.length > 0) {
+      const lastEntry = entries[entries.length - 1];
+      const nextNo = Number(lastEntry.grNo) + 1;
+      grNoInput.value = nextNo;
+      
+      // Auto-select the last entry's year
+      if (lastEntry.grYear) {
+        grYearInput.value = lastEntry.grYear;
+        grYearDisplay.querySelector('.placeholder').style.display = 'none';
+        grYearDisplay.querySelector('.value').textContent = lastEntry.grYear;
+        
+        // Highlight the year chip
+        document.querySelectorAll('#yearButtons .chip').forEach(b => {
+          if (Number(b.dataset.year) === Number(lastEntry.grYear)) {
+            b.className = 'chip chip-primary';
+          } else {
+            b.className = 'chip chip-outline';
+          }
+        });
+      }
+    } else {
+      grNoInput.value = 1;
     }
+    saveBtn.innerHTML = '<span class="material-symbols-outlined">save</span> Save Entry';
+  }
+
+  renderTable();
+}
+
+    // ---------- LOAD DATA ----------
+    // function loadData() {
+    //   const entries = getEntries();
+    //   const editIndex = getEditIndex();
+      
+    //   // Reset form
+    //   grYearInput.value = '';
+    //   grYearDisplay.querySelector('.placeholder').style.display = 'block';
+    //   grYearDisplay.querySelector('.value').textContent = '';
+    //   psNameInput.value = '';
+    //   psNameDisplay.querySelector('.placeholder').style.display = 'block';
+    //   psNameDisplay.querySelector('.value').textContent = '';
+      
+    //   // Reset chip highlights
+    //   document.querySelectorAll('#yearButtons .chip').forEach(b => {
+    //     b.className = 'chip chip-outline';
+    //   });
+    //   document.querySelectorAll('#psButtons .chip').forEach(b => {
+    //     b.className = 'chip chip-outline';
+    //   });
+
+    //   if (editIndex >= 0 && editIndex < entries.length) {
+    //     // Edit mode
+    //     const entry = entries[editIndex];
+    //     grYearInput.value = entry.grYear || '';
+    //     grYearDisplay.querySelector('.placeholder').style.display = 'none';
+    //     grYearDisplay.querySelector('.value').textContent = entry.grYear;
+    //     psNameInput.value = entry.psName || '';
+    //     psNameDisplay.querySelector('.placeholder').style.display = 'none';
+    //     psNameDisplay.querySelector('.value').textContent = entry.psName;
+    //     grNoInput.value = entry.grNo || '';
+        
+    //     // Highlight chips
+    //     document.querySelectorAll('#yearButtons .chip').forEach(b => {
+    //       if (Number(b.dataset.year) === Number(entry.grYear)) {
+    //         b.className = 'chip chip-primary';
+    //       }
+    //     });
+    //     document.querySelectorAll('#psButtons .chip').forEach(b => {
+    //       const psObj = psList.find(p => p.btn === b.textContent);
+    //       if (psObj && psObj.value === entry.psName) {
+    //         b.className = 'chip chip-primary';
+    //       }
+    //     });
+        
+    //     saveBtn.innerHTML = '<span class="material-symbols-outlined">edit</span> Update Entry';
+    //     clearEditIndex();
+    //   } else {
+    //     // New entry mode
+    //     if (entries.length > 0) {
+    //       const lastEntry = entries[entries.length - 1];
+    //       const nextNo = Number(lastEntry.grNo) + 1;
+    //       grNoInput.value = nextNo;
+    //     } else {
+    //       grNoInput.value = 1;
+    //     }
+    //     saveBtn.innerHTML = '<span class="material-symbols-outlined">save</span> Save Entry';
+    //   }
+
+    //   renderTable();
+    // }
 
     // ---------- RENDER TABLE ----------
     function renderTable() {
