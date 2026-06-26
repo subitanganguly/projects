@@ -7,439 +7,328 @@
   <title>GR Entry · Material</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#002357">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+ <!-- Bootstrap 5 + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
     body {
       background: #f0f2f5;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 16px;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      padding: 16px 0;
     }
     .app-container {
-      width: 100%;
-      max-width: 480px;
+      max-width: 500px;
       margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
     }
-    .material-card {
-      background: #ffffff;
-      border-radius: 28px;
+    .card {
+      border: none;
+      border-radius: 24px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
-      padding: 24px 20px;
-      transition: box-shadow 0.2s;
     }
     .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
+      background: transparent;
+      border-bottom: none;
+      padding: 1rem 1.25rem 0.25rem 1.25rem;
     }
-    .card-header h3 {
+    .card-body {
+      padding: 1rem 1.25rem 1.25rem;
+    }
+    .form-control {
+      border-radius: 16px;
+      border: 1.5px solid #e2e8f0;
+      padding: 0.6rem 0.9rem;
+      font-weight: 450;
+      background: #fafbfc;
+      font-size: 0.95rem;
+    }
+    .form-control:focus {
+      border-color: #818cf8;
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.10);
+    }
+    .form-control-sm {
+      padding: 0.4rem 0.7rem;
+      font-size: 0.85rem;
+    }
+    .btn {
+      border-radius: 40px;
       font-weight: 600;
-      font-size: 1.4rem;
-      letter-spacing: -0.3px;
-      color: #1e293b;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      padding: 0.6rem 1.5rem;
     }
-    .badge-material {
+    .btn-primary {
+      background: #4f46e5;
+      border: none;
+      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+    }
+    .btn-primary:hover {
+      background: #4338ca;
+    }
+    .btn-primary:active {
+      transform: scale(0.97);
+    }
+    .btn-outline-secondary {
+      border-color: #e2e8f0;
+      color: #1e293b;
+    }
+    .btn-outline-secondary:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .btn-danger-outline {
+      background: transparent;
+      border: 1.5px solid #e2e8f0;
+      color: #b91c1c;
+    }
+    .btn-danger-outline:hover {
+      background: #fee2e2;
+    }
+    .badge-soft {
       background: #eef2ff;
       color: #4f46e5;
       font-weight: 500;
-      font-size: 0.8rem;
-      padding: 4px 14px;
+      padding: 0.25rem 0.9rem;
       border-radius: 40px;
-      white-space: nowrap;
+      font-size: 0.75rem;
     }
-    .label-material {
-      font-weight: 500;
-      font-size: 0.85rem;
-      color: #475569;
-      margin-bottom: 6px;
-      display: block;
-      letter-spacing: 0.2px;
-    }
-    .label-selected {
-      background: #f1f5f9;
-      padding: 12px 16px;
-      border-radius: 18px;
-      font-weight: 500;
-      color: #1e293b;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .label-selected .value {
-      color: #4f46e5;
-      font-weight: 600;
-    }
-    .label-selected .placeholder {
-      color: #94a3b8;
-      font-weight: 400;
-    }
-    .input-group-material {
-      margin-bottom: 20px;
-    }
-    .input-material {
-      width: 100%;
-      padding: 14px 16px;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 18px;
-      font-size: 1rem;
-      background: #fafbfc;
-      transition: 0.15s;
-      font-weight: 450;
-      color: #0f172a;
-      -webkit-appearance: none;
-      appearance: none;
-    }
-    .input-material:focus {
-      outline: none;
-      border-color: #818cf8;
-      background: #ffffff;
-      box-shadow: 0 0 0 4px rgba(99,102,241,0.10);
-    }
-    .input-material[type="number"] {
-      -moz-appearance: textfield;
-    }
-    .input-material[type="number"]::-webkit-outer-spin-button,
-    .input-material[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .chip-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+    .chip-grid-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
       margin-top: 6px;
     }
-    .chip {
-      background: #f1f5f9;
-      border: none;
-      padding: 10px 18px;
+    .chip-grid-5 .btn {
       border-radius: 40px;
       font-weight: 500;
-      font-size: 0.9rem;
-      color: #1e293b;
-      transition: 0.1s ease;
-      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.2rem;
       background: #f1f5f9;
+      border: none;
+      color: #1e293b;
       box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-      flex: 0 1 auto;
+      width: 100%;
+      text-align: center;
+      white-space: nowrap;
     }
-    .chip:active { transform: scale(0.96); }
-    .chip-primary {
+    .chip-grid-5 .btn-primary {
       background: #4f46e5;
       color: white;
       box-shadow: 0 4px 8px rgba(79, 70, 229, 0.2);
     }
-    .chip-outline {
+    .chip-grid-5 .btn-outline-secondary {
       background: transparent;
       border: 1.5px solid #e2e8f0;
     }
-    .chip-outline:hover { background: #f8fafc; }
-    
-    .btn-material {
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: 40px;
-      font-weight: 600;
-      font-size: 1.05rem;
-      background: #4f46e5;
-      color: white;
-      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
-      transition: 0.15s;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 4px;
+    /* PS buttons smaller */
+    #psButtons .btn {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.15rem;
     }
-    .btn-material:active { transform: scale(0.97); }
-    .btn-material:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    .status-message {
-      margin-top: 16px;
-      text-align: center;
-      font-weight: 500;
-      min-height: 28px;
-    }
-    .status-error { color: #dc2626; }
-    .status-success { color: #16a34a; }
     .table-wrap {
       overflow-x: auto;
-      border-radius: 24px;
-      margin-top: 8px;
+      border-radius: 20px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-    th {
+    .table th {
       background: #f8fafc;
       color: #334155;
       font-weight: 600;
-      padding: 14px 8px;
-      text-align: left;
       border-bottom: 1.5px solid #e9edf2;
+      padding: 0.6rem 0.4rem;
+      font-size: 0.8rem;
     }
-    td {
-      padding: 14px 8px;
+    .table td {
+      padding: 0.6rem 0.4rem;
       border-bottom: 1px solid #f0f2f5;
-      color: #1e293b;
       vertical-align: middle;
+      color: #1e293b;
+      font-size: 0.85rem;
     }
     .table-action-btn {
       background: transparent;
       border: none;
-      padding: 6px 10px;
+      padding: 0.15rem 0.5rem;
       border-radius: 30px;
       font-weight: 500;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      cursor: pointer;
+      gap: 3px;
       transition: 0.1s;
     }
     .table-action-btn.edit { color: #4f46e5; background: #eef2ff; }
     .table-action-btn.delete { color: #b91c1c; background: #fee2e2; }
     .table-action-btn.sync { color: #16a34a; background: #dcfce7; }
     .table-action-btn:active { opacity: 0.6; }
-    .empty-state {
-      padding: 32px 0;
-      text-align: center;
-      color: #94a3b8;
-    }
-    .modal-overlay {
-      position: fixed;
-      top:0; left:0; width:100%; height:100%;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(4px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
-    .modal-card {
-      background: white;
-      max-width: 400px;
-      width: 90%;
+    .modal-content {
       border-radius: 40px;
-      padding: 32px 24px 24px;
-      box-shadow: 0 32px 64px rgba(0,0,0,0.2);
-      text-align: center;
-      animation: pop 0.2s ease;
-    }
-    @keyframes pop {
-      0% { transform: scale(0.9); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    .modal-icon { font-size: 3.5rem; margin-bottom: 8px; }
-    .modal-title { font-weight: 600; font-size: 1.3rem; color: #0f172a; }
-    .modal-desc { color: #475569; margin: 8px 0 20px; line-height: 1.5; }
-    .modal-btn {
-      background: #4f46e5;
       border: none;
-      color: white;
-      font-weight: 600;
-      padding: 14px 32px;
-      border-radius: 40px;
-      font-size: 1rem;
-      width: 100%;
-      cursor: pointer;
+      box-shadow: 0 32px 64px rgba(0,0,0,0.2);
     }
-    .modal-btn:active { opacity: 0.7; }
-    .modal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .progress-container { margin: 20px 0; width: 100%; }
-    .progress-bar-bg {
-      width: 100%;
-      height: 8px;
+    .modal-header, .modal-footer {
+      border: none;
+    }
+    .modal-icon {
+      font-size: 3.5rem;
+      line-height: 1;
+    }
+    .progress {
+      height: 6px;
+      border-radius: 40px;
       background: #e2e8f0;
-      border-radius: 40px;
-      overflow: hidden;
     }
-    .progress-bar-fill {
-      height: 100%;
+    .progress-bar {
       background: linear-gradient(90deg, #4f46e5, #818cf8);
       border-radius: 40px;
-      transition: width 0.3s ease;
-      width: 0%;
-    }
-    .progress-text { margin-top: 8px; font-weight: 500; color: #475569; font-size: 0.95rem; }
-    .flex-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .mt-1 { margin-top: 8px; }
-    .mt-2 { margin-top: 16px; }
-    .text-muted { color: #94a3b8; }
-    .text-center { text-align: center; }
-    .material-symbols-outlined { font-size: 22px; vertical-align: middle; }
-    .gap-1 { gap: 6px; }
-    .sync-info { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
-    .hidden-input { display: none; }
-    .password-input-group {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-    .password-input-group .input-material { flex: 1; }
-    .password-input-group .btn-material {
-      width: auto;
-      padding: 14px 24px;
-      margin-top: 0;
-      flex-shrink: 0;
     }
     .lock-icon { font-size: 2.5rem; color: #4f46e5; }
-    .remember-checkbox {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 12px;
-      color: #475569;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-    .remember-checkbox input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: #4f46e5;
-      cursor: pointer;
-    }
-    @media (max-width: 480px) {
-      .material-card { padding: 20px 16px; }
-      .password-input-group { flex-direction: column; }
-      .password-input-group .btn-material { width: 100%; }
+    .password-input-group .btn { width: auto; }
+    .mb-2 { margin-bottom: 0.6rem; }
+    @media (max-width: 576px) {
+      .password-input-group .btn { width: 100%; }
+      .chip-grid-5 {
+        gap: 4px;
+      }
+      .chip-grid-5 .btn {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.1rem;
+      }
+      #psButtons .btn {
+        font-size: 0.55rem;
+        padding: 0.15rem 0.1rem;
+      }
+      .card-body { padding: 0.75rem 1rem 1rem; }
     }
   </style>
 </head>
 <body>
-<div class="app-container">
+
+<div class="app-container px-3 px-sm-0">
 
   <!-- PASSWORD CARD -->
-  <div class="material-card" id="passwordCard">
-    <div class="card-header">
-      <h3><span class="material-symbols-outlined">lock</span> Authentication</h3>
+  <div class="card mb-3" id="passwordCard">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-lock"></i> Authentication
+        </h5>
+      </div>
+      <div class="text-center my-2">
+        <i class="bi bi-unlock lock-icon"></i>
+        <p class="text-secondary small mb-0">Enter password to access GR Entry</p>
+      </div>
+      <div class="password-input-group d-flex flex-column flex-sm-row gap-2">
+        <input type="password" id="passwordInput" class="form-control" placeholder="Enter password" style="flex:1;">
+        <button id="unlockBtn" class="btn btn-primary d-flex align-items-center gap-1" style="white-space:nowrap;">
+          <i class="bi bi-key"></i> Unlock
+        </button>
+      </div>
+      <div class="form-check mt-2">
+        <input class="form-check-input" type="checkbox" id="rememberPassword">
+        <label class="form-check-label text-secondary small" for="rememberPassword">Remember Password</label>
+      </div>
+      <div id="passwordStatus" class="mt-1 fw-semibold text-center small"></div>
     </div>
-    <div class="text-center" style="margin-bottom: 20px;">
-      <span class="lock-icon material-symbols-outlined">lock_open</span>
-      <p style="color: #64748b; margin-top: 8px;">Enter password to access GR Entry</p>
-    </div>
-    <div class="password-input-group">
-      <input type="password" id="passwordInput" class="input-material" placeholder="Enter password" style="flex:1;">
-      <button id="unlockBtn" class="btn-material" style="width:auto; padding:14px 24px; margin-top:0;">
-        <span class="material-symbols-outlined">key</span> Unlock
-      </button>
-    </div>
-    <div class="remember-checkbox">
-      <input type="checkbox" id="rememberPassword">
-      <label for="rememberPassword">Remember Password</label>
-    </div>
-    <div id="passwordStatus" class="status-message" style="margin-top:12px;"></div>
   </div>
 
   <!-- MAIN CONTENT -->
   <div id="mainContent" style="display:none;">
 
     <!-- ENTRY CARD -->
-    <div class="material-card">
-      <div class="card-header">
-        <h3><span class="material-symbols-outlined">edit_note</span> GR Entry</h3>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <span class="badge-material" id="entryCountBadge">0 entries</span>
-          <button class="chip chip-outline" onclick="lockApp()" style="padding:4px 12px; font-size:0.7rem; color:#dc2626;">
-            <span class="material-symbols-outlined" style="font-size:16px;">lock</span>
+    <div class="card mb-3">
+      <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+        <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-pencil-square"></i> GR Entry
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge-soft" id="entryCountBadge">0</span>
+          <button class="btn btn-outline-secondary btn-sm" onclick="lockApp()" style="padding:0.15rem 0.6rem; color:#dc2626; font-size:0.8rem;">
+            <i class="bi bi-lock"></i>
           </button>
         </div>
       </div>
-
-      <!-- GR Year -->
-      <div class="input-group-material">
-        <span class="label-material">GR Year</span>
-        <div class="label-selected" id="grYearDisplay">
-          <span class="placeholder">Select GR Year</span>
-          <span class="value"></span>
+      <div class="card-body">
+        <!-- GR Year -->
+        <div class="mb-2">
+          <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">GR Year</label>
+          <input type="text" id="grYearInput" class="form-control form-control-sm" placeholder="Select GR Year" readonly style="background:#fff; cursor:pointer;">
+          <div class="chip-grid-5" id="yearButtons"></div>
         </div>
-        <div class="chip-group" id="yearButtons"></div>
-        <input type="hidden" id="grYear" value="">
-      </div>
 
-      <!-- GR No - Number input with mobile number pad -->
-      <div class="input-group-material">
-        <span class="label-material">GR No.</span>
-        <input type="number" id="grNo" class="input-material" placeholder="Enter GR No" inputmode="numeric" pattern="[0-9]*">
-      </div>
-
-      <!-- PS Name -->
-      <div class="input-group-material">
-        <span class="label-material">PS Name</span>
-        <div class="label-selected" id="psNameDisplay">
-          <span class="placeholder">Select Police Station</span>
-          <span class="value"></span>
+        <!-- GR No -->
+        <div class="mb-2">
+          <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">GR No.</label>
+          <input type="number" id="grNo" class="form-control form-control-sm" placeholder="Enter GR No" inputmode="numeric" pattern="[0-9]*">
         </div>
-        <div class="chip-group" id="psButtons"></div>
-        <input type="hidden" id="psName" value="">
-      </div>
 
-      <!-- FIR No - Number input with mobile number pad -->
-      <div class="input-group-material">
-        <span class="label-material">FIR No.</span>
-        <input type="number" id="firNo" class="input-material" placeholder="Enter FIR No" inputmode="numeric" pattern="[0-9]*">
-      </div>
+        <!-- PS Name -->
+        <div class="mb-2">
+          <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">PS Name</label>
+          <input type="text" id="psNameInput" class="form-control form-control-sm" placeholder="Select Police Station" readonly style="background:#fff; cursor:pointer;">
+          <div class="chip-grid-5" id="psButtons"></div>
+        </div>
 
-      <button id="saveBtn" class="btn-material">
-        <span class="material-symbols-outlined">save</span> Save Entry
-      </button>
-      <div id="status" class="status-message"></div>
+        <!-- FIR No -->
+        <div class="mb-2">
+          <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">FIR No.</label>
+          <input type="number" id="firNo" class="form-control form-control-sm" placeholder="Enter FIR No" inputmode="numeric" pattern="[0-9]*">
+        </div>
+
+        <button id="saveBtn" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" style="font-size:0.9rem; padding:0.5rem;">
+          <i class="bi bi-save"></i> Save Entry
+        </button>
+        <div id="status" class="mt-1 fw-semibold text-center small"></div>
+      </div>
     </div>
 
     <!-- VIEW CARD -->
-    <div class="material-card">
-      <div class="card-header">
-        <h3><span class="material-symbols-outlined">view_list</span> All Entries</h3>
-        <div style="display: flex; gap: 6px;">
-          <button class="chip chip-outline" onclick="syncAllToSheet()" style="padding: 6px 14px; font-size:0.8rem;" id="syncAllBtn">
-            <span class="material-symbols-outlined" style="font-size:18px;">cloud_sync</span> Sync All
+    <div class="card">
+      <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+        <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-list-ul"></i> Entries
+        </h5>
+        <div class="d-flex gap-1">
+          <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onclick="syncAllToSheet()" id="syncAllBtn" style="font-size:0.75rem; padding:0.2rem 0.6rem;">
+            <i class="bi bi-cloud-sync"></i> Sync
           </button>
-          <button class="chip chip-outline" onclick="clearAll()" style="padding: 6px 14px; font-size:0.8rem; color:#b91c1c;">
-            <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
+          <button class="btn btn-sm btn-danger-outline d-flex align-items-center gap-1" onclick="clearAll()" style="font-size:0.75rem; padding:0.2rem 0.6rem;">
+            <i class="bi bi-trash"></i>
           </button>
         </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Year</th><th>No</th><th>PS</th><th>FIR</th><th style="text-align:right;">Actions</th></tr></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
+      <div class="card-body" style="padding:0.5rem 0.75rem 0.75rem;">
+        <div class="table-wrap">
+          <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>#</th><th>Year</th><th>No</th><th>PS</th><th>FIR</th><th class="text-end">Actions</th></tr></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal-card">
-      <div class="modal-icon" id="modalIcon">✅</div>
-      <div class="modal-title" id="modalTitle">Success</div>
-      <div class="modal-desc" id="modalDesc">Operation completed.</div>
-      <div class="progress-container" id="progressContainer" style="display:none;">
-        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">0%</div>
+  <!-- MODAL (Bootstrap) -->
+  <div class="modal fade" id="appModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body text-center p-4">
+          <div class="modal-icon" id="modalIcon">✅</div>
+          <h5 class="modal-title fw-semibold mt-2" id="modalTitle">Success</h5>
+          <p class="text-secondary small" id="modalDesc">Operation completed.</p>
+          <div id="progressContainer" style="display:none;">
+            <div class="progress mt-3">
+              <div class="progress-bar" id="progressFill" style="width:0%;"></div>
+            </div>
+            <div class="mt-1 fw-medium text-secondary small" id="progressText">0%</div>
+          </div>
+        </div>
+        <div class="modal-footer justify-content-center border-0 pb-4">
+          <button class="btn btn-primary px-5" id="modalBtn" style="font-size:0.9rem;">OK</button>
+        </div>
       </div>
-      <button class="modal-btn" id="modalBtn">OK</button>
     </div>
   </div>
 </div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
   (function() {
@@ -466,11 +355,9 @@
     const rememberCheckbox = document.getElementById('rememberPassword');
     const mainContent = document.getElementById('mainContent');
     
-    const grYearInput = document.getElementById('grYear');
-    const grYearDisplay = document.getElementById('grYearDisplay');
+    const grYearInput = document.getElementById('grYearInput');
     const grNoInput = document.getElementById('grNo');
-    const psNameInput = document.getElementById('psName');
-    const psNameDisplay = document.getElementById('psNameDisplay');
+    const psNameInput = document.getElementById('psNameInput');
     const firNoInput = document.getElementById('firNo');
     const yearButtons = document.getElementById('yearButtons');
     const psButtons = document.getElementById('psButtons');
@@ -478,7 +365,10 @@
     const statusDiv = document.getElementById('status');
     const tableBody = document.getElementById('tableBody');
     const entryCountBadge = document.getElementById('entryCountBadge');
-    const modalOverlay = document.getElementById('modalOverlay');
+    const syncAllBtn = document.getElementById('syncAllBtn');
+
+    // Modal elements
+    const modalEl = document.getElementById('appModal');
     const modalIcon = document.getElementById('modalIcon');
     const modalTitle = document.getElementById('modalTitle');
     const modalDesc = document.getElementById('modalDesc');
@@ -486,10 +376,10 @@
     const progressContainer = document.getElementById('progressContainer');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
-    const syncAllBtn = document.getElementById('syncAllBtn');
 
     let isSyncing = false;
     let isUnlocked = false;
+    let modalInstance = null;
 
     // ---------- HELPERS ----------
     function getEntries() {
@@ -509,7 +399,6 @@
         rememberCheckbox.checked = true;
       }
     }
-
     function saveRememberedPassword(password) {
       if (rememberCheckbox.checked) {
         localStorage.setItem(REMEMBER_PASSWORD_KEY, password);
@@ -533,18 +422,18 @@
       const password = passwordInput.value.trim();
       if (!password) {
         passwordStatus.textContent = '⚠️ Please enter password';
-        passwordStatus.className = 'status-message status-error';
+        passwordStatus.className = 'text-danger';
         return;
       }
       unlockBtn.disabled = true;
-      unlockBtn.innerHTML = '<span class="material-symbols-outlined">progress_activity</span> Checking...';
+      unlockBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Checking...';
       passwordStatus.textContent = '⏳ Verifying...';
-      passwordStatus.className = 'status-message';
+      passwordStatus.className = '';
       try {
         const result = await verifyPassword(password);
         if (result.success) {
           passwordStatus.textContent = '✅ Access granted!';
-          passwordStatus.className = 'status-message status-success';
+          passwordStatus.className = 'text-success';
           isUnlocked = true;
           saveRememberedPassword(password);
           passwordCard.style.display = 'none';
@@ -552,31 +441,27 @@
           initializeApp();
         } else {
           passwordStatus.textContent = '❌ ' + (result.message || 'Invalid password');
-          passwordStatus.className = 'status-message status-error';
+          passwordStatus.className = 'text-danger';
           passwordInput.value = '';
           passwordInput.focus();
         }
       } catch (error) {
         passwordStatus.textContent = '❌ Error verifying password';
-        passwordStatus.className = 'status-message status-error';
+        passwordStatus.className = 'text-danger';
       } finally {
         unlockBtn.disabled = false;
-        unlockBtn.innerHTML = '<span class="material-symbols-outlined">key</span> Unlock';
+        unlockBtn.innerHTML = '<i class="bi bi-key"></i> Unlock';
       }
     });
 
     passwordInput.addEventListener('keypress', e => { if (e.key === 'Enter') unlockBtn.click(); });
 
-    // Auto-unlock if password is remembered
     function tryAutoUnlock() {
       const saved = localStorage.getItem(REMEMBER_PASSWORD_KEY);
       if (saved) {
         passwordInput.value = saved;
         rememberCheckbox.checked = true;
-        // Auto-click unlock after a short delay
-        setTimeout(() => {
-          unlockBtn.click();
-        }, 300);
+        setTimeout(() => { unlockBtn.click(); }, 300);
       }
     }
 
@@ -585,11 +470,9 @@
         isUnlocked = false;
         mainContent.style.display = 'none';
         passwordCard.style.display = 'block';
-        if (!rememberCheckbox.checked) {
-          passwordInput.value = '';
-        }
+        if (!rememberCheckbox.checked) passwordInput.value = '';
         passwordStatus.textContent = '';
-        passwordStatus.className = 'status-message';
+        passwordStatus.className = '';
         passwordInput.focus();
       }
     };
@@ -598,37 +481,33 @@
     function buildYearButtons() {
       yearButtons.innerHTML = '';
       years.forEach(year => {
-        const chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = 'chip chip-outline';
-        chip.textContent = year;
-        chip.dataset.year = year;
-        chip.onclick = () => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-outline-secondary';
+        btn.textContent = year;
+        btn.dataset.year = year;
+        btn.onclick = () => {
           grYearInput.value = year;
-          grYearDisplay.querySelector('.placeholder').style.display = 'none';
-          grYearDisplay.querySelector('.value').textContent = year;
-          document.querySelectorAll('#yearButtons .chip').forEach(b => b.className = 'chip chip-outline');
-          chip.className = 'chip chip-primary';
+          yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
+          btn.className = 'btn btn-primary';
         };
-        yearButtons.appendChild(chip);
+        yearButtons.appendChild(btn);
       });
     }
 
     function buildPSButtons() {
       psButtons.innerHTML = '';
       psList.forEach(ps => {
-        const chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = 'chip chip-outline';
-        chip.textContent = ps.btn;
-        chip.onclick = () => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-outline-secondary';
+        btn.textContent = ps.btn;
+        btn.onclick = () => {
           psNameInput.value = ps.value;
-          psNameDisplay.querySelector('.placeholder').style.display = 'none';
-          psNameDisplay.querySelector('.value').textContent = ps.value;
-          document.querySelectorAll('#psButtons .chip').forEach(b => b.className = 'chip chip-outline');
-          chip.className = 'chip chip-primary';
+          psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
+          btn.className = 'btn btn-primary';
         };
-        psButtons.appendChild(chip);
+        psButtons.appendChild(btn);
       });
     }
 
@@ -638,54 +517,43 @@
       const editIndex = getEditIndex();
       
       grYearInput.value = '';
-      grYearDisplay.querySelector('.placeholder').style.display = 'block';
-      grYearDisplay.querySelector('.value').textContent = '';
       psNameInput.value = '';
-      psNameDisplay.querySelector('.placeholder').style.display = 'block';
-      psNameDisplay.querySelector('.value').textContent = '';
       firNoInput.value = '';
       
-      document.querySelectorAll('#yearButtons .chip').forEach(b => b.className = 'chip chip-outline');
-      document.querySelectorAll('#psButtons .chip').forEach(b => b.className = 'chip chip-outline');
+      yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
+      psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
 
       if (editIndex >= 0 && editIndex < entries.length) {
         const entry = entries[editIndex];
         grYearInput.value = entry.grYear || '';
-        grYearDisplay.querySelector('.placeholder').style.display = 'none';
-        grYearDisplay.querySelector('.value').textContent = entry.grYear;
         psNameInput.value = entry.psName || '';
-        psNameDisplay.querySelector('.placeholder').style.display = 'none';
-        psNameDisplay.querySelector('.value').textContent = entry.psName;
         grNoInput.value = entry.grNo || '';
         firNoInput.value = entry.firNo || '';
         
-        document.querySelectorAll('#yearButtons .chip').forEach(b => {
-          if (Number(b.dataset.year) === Number(entry.grYear)) b.className = 'chip chip-primary';
+        yearButtons.querySelectorAll('.btn').forEach(b => {
+          if (Number(b.dataset.year) === Number(entry.grYear)) b.className = 'btn btn-primary';
         });
-        document.querySelectorAll('#psButtons .chip').forEach(b => {
+        psButtons.querySelectorAll('.btn').forEach(b => {
           const psObj = psList.find(p => p.btn === b.textContent);
-          if (psObj && psObj.value === entry.psName) b.className = 'chip chip-primary';
+          if (psObj && psObj.value === entry.psName) b.className = 'btn btn-primary';
         });
-        saveBtn.innerHTML = '<span class="material-symbols-outlined">edit</span> Update Entry';
+        saveBtn.innerHTML = '<i class="bi bi-pencil"></i> Update Entry';
         clearEditIndex();
       } else {
         if (entries.length > 0) {
           const lastEntry = entries[entries.length - 1];
-          const nextNo = Number(lastEntry.grNo) + 1;
-          grNoInput.value = nextNo;
+          grNoInput.value = Number(lastEntry.grNo) + 1;
           if (lastEntry.grYear) {
             grYearInput.value = lastEntry.grYear;
-            grYearDisplay.querySelector('.placeholder').style.display = 'none';
-            grYearDisplay.querySelector('.value').textContent = lastEntry.grYear;
-            document.querySelectorAll('#yearButtons .chip').forEach(b => {
-              if (Number(b.dataset.year) === Number(lastEntry.grYear)) b.className = 'chip chip-primary';
-              else b.className = 'chip chip-outline';
+            yearButtons.querySelectorAll('.btn').forEach(b => {
+              if (Number(b.dataset.year) === Number(lastEntry.grYear)) b.className = 'btn btn-primary';
+              else b.className = 'btn btn-outline-secondary';
             });
           }
         } else {
           grNoInput.value = 1;
         }
-        saveBtn.innerHTML = '<span class="material-symbols-outlined">save</span> Save Entry';
+        saveBtn.innerHTML = '<i class="bi bi-save"></i> Save Entry';
       }
       renderTable();
     }
@@ -694,29 +562,29 @@
     function renderTable() {
       const entries = getEntries();
       if (entries.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" class="empty-state">No entries saved</td></tr>`;
-        entryCountBadge.textContent = '0 entries';
+        tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-secondary py-3 small">No entries</td></tr>`;
+        entryCountBadge.textContent = '0';
         return;
       }
-      entryCountBadge.textContent = `${entries.length} entries`;
+      entryCountBadge.textContent = entries.length;
       let html = '';
       entries.forEach((entry, index) => {
         html += `
           <tr>
-            <td>${index + 1}</td>
-            <td>${entry.grYear || ''}</td>
-            <td>${entry.grNo || ''}</td>
-            <td>${entry.psName || ''}</td>
-            <td>${entry.firNo || ''}</td>
-            <td style="text-align:right; white-space:nowrap;">
+            <td class="small">${index + 1}</td>
+            <td class="small">${entry.grYear || ''}</td>
+            <td class="small">${entry.grNo || ''}</td>
+            <td class="small">${entry.psName || ''}</td>
+            <td class="small">${entry.firNo || ''}</td>
+            <td class="text-end text-nowrap">
               <button class="table-action-btn edit" onclick="editEntry(${index})">
-                <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
+                <i class="bi bi-pencil"></i>
               </button>
               <button class="table-action-btn delete" onclick="deleteEntry(${index})">
-                <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
+                <i class="bi bi-trash"></i>
               </button>
               <button class="table-action-btn sync" onclick="syncSingleToSheet(${index})">
-                <span class="material-symbols-outlined" style="font-size:18px;">cloud_upload</span>
+                <i class="bi bi-cloud-upload"></i>
               </button>
             </td>
           </tr>
@@ -739,9 +607,9 @@
       setEntries(entries);
       renderTable();
       loadData();
-      statusDiv.textContent = '🗑️ Entry deleted';
-      statusDiv.className = 'status-message status-success';
-      setTimeout(() => { statusDiv.textContent = ''; statusDiv.className = 'status-message'; }, 2000);
+      statusDiv.textContent = '🗑️ Deleted';
+      statusDiv.className = 'text-success';
+      setTimeout(() => { statusDiv.textContent = ''; statusDiv.className = ''; }, 1500);
     };
 
     window.clearAll = function() {
@@ -749,9 +617,9 @@
       setEntries([]);
       renderTable();
       loadData();
-      statusDiv.textContent = '🗑️ All entries cleared';
-      statusDiv.className = 'status-message status-success';
-      setTimeout(() => { statusDiv.textContent = ''; statusDiv.className = 'status-message'; }, 2000);
+      statusDiv.textContent = '🗑️ All cleared';
+      statusDiv.className = 'text-success';
+      setTimeout(() => { statusDiv.textContent = ''; statusDiv.className = ''; }, 1500);
     };
 
     // ---------- SAVE ----------
@@ -771,18 +639,18 @@
       if (editIndex >= 0 && editIndex < entries.length) {
         entries[editIndex] = { grYear, grNo, psName, firNo, updatedAt: new Date().toLocaleString() };
         setEntries(entries);
-        statusDiv.innerHTML = '✓ Entry Updated';
-        statusDiv.className = 'status-message status-success';
+        statusDiv.innerHTML = '✓ Updated';
+        statusDiv.className = 'text-success';
         clearEditIndex();
       } else {
         entries.push({ grYear, grNo, psName, firNo, createdAt: new Date().toLocaleString() });
         setEntries(entries);
-        statusDiv.innerHTML = '✓ Entry Saved';
-        statusDiv.className = 'status-message status-success';
+        statusDiv.innerHTML = '✓ Saved';
+        statusDiv.className = 'text-success';
       }
       renderTable();
       loadData();
-      setTimeout(() => { statusDiv.textContent = ''; statusDiv.className = 'status-message'; }, 2000);
+      setTimeout(() => { statusDiv.textContent = ''; statusDiv.className = ''; }, 1500);
     });
 
     // ---------- SYNC ----------
@@ -799,12 +667,15 @@
       }
       modalBtn.disabled = true;
       modalBtn.textContent = 'Processing...';
-      modalOverlay.style.display = 'flex';
+      if (!modalInstance) modalInstance = new bootstrap.Modal(modalEl);
+      modalInstance.show();
     }
+
     function updateProgress(percent, text) {
       progressFill.style.width = `${percent}%`;
       progressText.textContent = `${Math.round(percent)}% - ${text || ''}`;
     }
+
     function completeProgressModal(icon, title, desc, isSuccess) {
       modalIcon.textContent = icon;
       modalTitle.textContent = title;
@@ -812,7 +683,7 @@
       progressContainer.style.display = 'none';
       modalBtn.disabled = false;
       modalBtn.textContent = 'OK';
-      modalBtn.style.background = isSuccess ? '#16a34a' : '#4f46e5';
+      modalBtn.className = `btn ${isSuccess ? 'btn-success' : 'btn-primary'} px-5`;
     }
 
     async function syncEntryToSheet(entry, index, total) {
@@ -914,21 +785,16 @@
       progressContainer.style.display = 'none';
       modalBtn.disabled = false;
       modalBtn.textContent = 'OK';
-      modalBtn.style.background = isSuccess ? '#16a34a' : '#4f46e5';
-      modalOverlay.style.display = 'flex';
+      modalBtn.className = `btn ${isSuccess ? 'btn-success' : 'btn-primary'} px-5`;
+      if (!modalInstance) modalInstance = new bootstrap.Modal(modalEl);
+      modalInstance.show();
     }
+
     modalBtn.addEventListener('click', function() {
       if (modalBtn.disabled) return;
-      modalOverlay.style.display = 'none';
+      if (modalInstance) modalInstance.hide();
       isSyncing = false;
       syncAllBtn.disabled = false;
-    });
-    modalOverlay.addEventListener('click', function(e) {
-      if (e.target === modalOverlay && !modalBtn.disabled) {
-        modalOverlay.style.display = 'none';
-        isSyncing = false;
-        syncAllBtn.disabled = false;
-      }
     });
 
     // ---------- INIT ----------
@@ -938,7 +804,6 @@
       loadData();
     }
 
-    // Load remembered password and try auto-unlock
     loadRememberedPassword();
     tryAutoUnlock();
 
