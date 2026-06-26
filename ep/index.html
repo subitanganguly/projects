@@ -10,7 +10,7 @@
  <!-- Bootstrap 5 + Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <style>
+ <style>
     body {
       background: #f0f2f5;
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
@@ -23,7 +23,7 @@
     .card {
       border: none;
       border-radius: 24px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06), inset 0 0px 20px rgba(189, 189, 189, 0.788);
     }
     .card-header {
       background: transparent;
@@ -92,19 +92,19 @@
     .chip-grid-5 {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 5px;
+      gap: 6px;
       margin-top: 6px;
     }
     .chip-grid-5 .btn {
-      border-radius: 40px;
-      font-weight: 500;
-      font-size: 0.8rem;
-      padding: 0.3rem 0.2rem;
-      background: #f1f5f9;
-      border: none;
-      color: #1e293b;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
       width: 100%;
+      min-height: 42px;
+      padding: 0;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-align: center;
       white-space: nowrap;
     }
@@ -117,10 +117,12 @@
       background: transparent;
       border: 1.5px solid #e2e8f0;
     }
-    /* PS buttons smaller */
     #psButtons .btn {
       font-size: 0.65rem;
-      padding: 0.2rem 0.15rem;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .table-wrap {
       overflow-x: auto;
@@ -181,6 +183,39 @@
     .lock-icon { font-size: 2.5rem; color: #4f46e5; }
     .password-input-group .btn { width: auto; }
     .mb-2 { margin-bottom: 0.6rem; }
+
+    /* label style for selected value */
+    .selection-label {
+      display: inline-block;
+      font-weight: 500;
+      background: #f1f5f9;
+      padding: 0.2rem 0.9rem;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+      min-width: 100px;
+    }
+    .selection-label .placeholder {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+    .selection-label .value {
+      color: #00410b;
+      font-weight: 600;
+    }
+    .label-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+    .label-wrapper .bi {
+      font-size: 1rem;
+      color: #4f46e5;
+    }
+
     @media (max-width: 576px) {
       .password-input-group .btn { width: 100%; }
       .chip-grid-5 {
@@ -195,6 +230,7 @@
         padding: 0.15rem 0.1rem;
       }
       .card-body { padding: 0.75rem 1rem 1rem; }
+      .selection-label { font-size: 0.8rem; min-width: 70px; }
     }
   </style>
 </head>
@@ -245,10 +281,19 @@
         </div>
       </div>
       <div class="card-body">
+
         <!-- GR Year -->
         <div class="mb-2">
           <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">GR Year</label>
-          <input type="text" id="grYearInput" class="form-control form-control-sm" placeholder="Select GR Year" readonly style="background:#fff; cursor:pointer;">
+          <!-- hidden input, only used to store value -->
+          <input type="hidden" id="grYearInput" value="">
+          <!-- label display -->
+          <div class="label-wrapper">
+            <i class="bi bi-calendar-event"></i>
+            <span class="selection-label" id="grYearLabel">
+              <span class="placeholder">Not Selected</span>
+            </span>
+          </div>
           <div class="chip-grid-5" id="yearButtons"></div>
         </div>
 
@@ -261,7 +306,13 @@
         <!-- PS Name -->
         <div class="mb-2">
           <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">PS Name</label>
-          <input type="text" id="psNameInput" class="form-control form-control-sm" placeholder="Select Police Station" readonly style="background:#fff; cursor:pointer;">
+          <input type="hidden" id="psNameInput" value="">
+          <div class="label-wrapper">
+            <i class="bi bi-building"></i>
+            <span class="selection-label" id="psNameLabel">
+              <span class="placeholder">Not Selected</span>
+            </span>
+          </div>
           <div class="chip-grid-5" id="psButtons"></div>
         </div>
 
@@ -355,9 +406,9 @@
     const rememberCheckbox = document.getElementById('rememberPassword');
     const mainContent = document.getElementById('mainContent');
     
-    const grYearInput = document.getElementById('grYearInput');
+    const grYearInput = document.getElementById('grYearInput');   // hidden
     const grNoInput = document.getElementById('grNo');
-    const psNameInput = document.getElementById('psNameInput');
+    const psNameInput = document.getElementById('psNameInput'); // hidden
     const firNoInput = document.getElementById('firNo');
     const yearButtons = document.getElementById('yearButtons');
     const psButtons = document.getElementById('psButtons');
@@ -366,6 +417,10 @@
     const tableBody = document.getElementById('tableBody');
     const entryCountBadge = document.getElementById('entryCountBadge');
     const syncAllBtn = document.getElementById('syncAllBtn');
+
+    // label elements
+    const grYearLabel = document.getElementById('grYearLabel');
+    const psNameLabel = document.getElementById('psNameLabel');
 
     // Modal elements
     const modalEl = document.getElementById('appModal');
@@ -390,6 +445,23 @@
       try { return parseInt(localStorage.getItem(EDIT_INDEX_KEY) || '-1'); } catch { return -1; }
     }
     function clearEditIndex() { localStorage.removeItem(EDIT_INDEX_KEY); }
+
+    // ---------- UPDATE LABELS ----------
+    function updateYearLabel(value) {
+      if (value) {
+        grYearLabel.innerHTML = `<span class="value">${value}</span>`;
+      } else {
+        grYearLabel.innerHTML = `<span class="placeholder">Not Selected</span>`;
+      }
+    }
+
+    function updatePsLabel(value) {
+      if (value) {
+        psNameLabel.innerHTML = `<span class="value">${value}</span>`;
+      } else {
+        psNameLabel.innerHTML = `<span class="placeholder">Not Selected</span>`;
+      }
+    }
 
     // ---------- PASSWORD REMEMBER ----------
     function loadRememberedPassword() {
@@ -488,6 +560,7 @@
         btn.dataset.year = year;
         btn.onclick = () => {
           grYearInput.value = year;
+          updateYearLabel(year);
           yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
           btn.className = 'btn btn-primary';
         };
@@ -504,6 +577,7 @@
         btn.textContent = ps.btn;
         btn.onclick = () => {
           psNameInput.value = ps.value;
+          updatePsLabel(ps.value);
           psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
           btn.className = 'btn btn-primary';
         };
@@ -516,8 +590,11 @@
       const entries = getEntries();
       const editIndex = getEditIndex();
       
+      // reset labels & hidden
       grYearInput.value = '';
       psNameInput.value = '';
+      updateYearLabel('');
+      updatePsLabel('');
       firNoInput.value = '';
       
       yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
@@ -527,6 +604,8 @@
         const entry = entries[editIndex];
         grYearInput.value = entry.grYear || '';
         psNameInput.value = entry.psName || '';
+        updateYearLabel(entry.grYear || '');
+        updatePsLabel(entry.psName || '');
         grNoInput.value = entry.grNo || '';
         firNoInput.value = entry.firNo || '';
         
@@ -545,6 +624,7 @@
           grNoInput.value = Number(lastEntry.grNo) + 1;
           if (lastEntry.grYear) {
             grYearInput.value = lastEntry.grYear;
+            updateYearLabel(lastEntry.grYear);
             yearButtons.querySelectorAll('.btn').forEach(b => {
               if (Number(b.dataset.year) === Number(lastEntry.grYear)) b.className = 'btn btn-primary';
               else b.className = 'btn btn-outline-secondary';
@@ -653,7 +733,7 @@
       setTimeout(() => { statusDiv.textContent = ''; statusDiv.className = ''; }, 1500);
     });
 
-    // ---------- SYNC ----------
+    // ---------- SYNC (same as original) ----------
     function showProgressModal(title, desc, showProgress = true) {
       modalIcon.textContent = '⏳';
       modalTitle.textContent = title;
