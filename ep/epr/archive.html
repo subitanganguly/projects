@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Archive · GR Entries</title>
+  <!-- Bootstrap 5 + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    body { background: #f0f2f5; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; padding: 16px 0; }
+    .app-container { max-width: 800px; margin: 0 auto; }
+    .card { border: none; border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.06), inset 0 0px 20px rgba(117, 117, 117, 0.788); }
+    .card-header { background: transparent; border-bottom: none; padding: 1rem 1.25rem 0.25rem 1.25rem; }
+    .card-body { padding: 1rem 1.25rem 1.25rem; }
+    .btn { border-radius: 40px; font-weight: 600; padding: 0.6rem 1.5rem; }
+    .btn-primary { background: #4f46e5; border: none; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25); }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-danger-outline { background: transparent; border: 1.5px solid #e2e8f0; color: #b91c1c; }
+    .btn-danger-outline:hover { background: #fee2e2; }
+    .btn-outline-archive { background: transparent; border: 1.5px solid #4f46e5; color: #4f46e5; }
+    .btn-outline-archive:hover { background: #eef2ff; }
+    .table-wrap { overflow-x: auto; border-radius: 20px; }
+    .table th { background: #f8fafc; color: #334155; font-weight: 600; border-bottom: 1.5px solid #e9edf2; padding: 0.6rem 0.4rem; font-size: 0.75rem; white-space: nowrap; }
+    .table td { padding: 0.6rem 0.4rem; border-bottom: 1px solid #f0f2f5; vertical-align: middle; color: #1e293b; font-size: 0.75rem; }
+    .table-action-btn { background: transparent; border: none; padding: 0.15rem 0.5rem; border-radius: 30px; font-weight: 500; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 3px; transition: 0.1s; }
+    .table-action-btn.delete { color: #b91c1c; background: #fee2e2; }
+    .table-action-btn:active { opacity: 0.6; }
+    .modal-content { border-radius: 40px; border: none; box-shadow: 0 32px 64px rgba(0,0,0,0.2); }
+    .modal-header, .modal-footer { border: none; }
+    .modal-icon { font-size: 3.5rem; line-height: 1; }
+    .lock-icon { font-size: 2.5rem; color: #4f46e5; }
+    .password-input-group .btn { width: auto; }
+    .nav-links { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; }
+    .nav-links .btn { padding: 0.4rem 1.2rem; font-size: 0.85rem; }
+    .stats-bar { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; }
+    .stat-item { background: white; padding: 8px 16px; border-radius: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .stat-item .number { font-weight: 700; font-size: 1.2rem; color: #4f46e5; }
+    .stat-item .label { font-size: 0.7rem; color: #64748b; }
+
+    /* District Selection Styles */
+    .district-selection {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin: 10px 0;
+    }
+    .district-selection .btn {
+      flex: 1;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 16px;
+      border: 2px solid #e2e8f0;
+      background: #fafbfc;
+      color: #1e293b;
+      transition: all 0.2s;
+    }
+    .district-selection .btn:hover {
+      border-color: #4f46e5;
+      background: #eef2ff;
+    }
+    .district-selection .btn.selected {
+      border-color: #4f46e5;
+      background: #4f46e5;
+      color: white;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    .district-selection .btn .badge {
+      font-size: 0.7rem;
+      margin-left: 6px;
+      background: rgba(0,0,0,0.1);
+      color: inherit;
+    }
+    .district-selection .btn.selected .badge {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+
+    @media (max-width: 576px) {
+      .password-input-group .btn { width: 100%; }
+      .card-body { padding: 0.75rem 1rem 1rem; }
+      .table th, .table td { font-size: 0.65rem; padding: 0.4rem 0.2rem; }
+      .stats-bar { gap: 8px; }
+      .stat-item { padding: 6px 12px; }
+      .stat-item .number { font-size: 1rem; }
+      .district-selection {
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container px-3 px-sm-0">
+
+  <!-- Navigation Links -->
+  <div class="nav-links">
+    <a href="index.html" class="btn btn-outline-secondary">📝 Entry</a>
+    <a href="view.html" class="btn btn-outline-secondary">📊 View & Sync</a>
+    <a href="archive.html" class="btn btn-primary">📦 Archive</a>
+  </div>
+
+  <!-- DISTRICT SELECTION & PASSWORD CARD -->
+  <div class="card mb-3" id="authCard">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-building"></i> District Selection
+        </h5>
+      </div>
+      
+      <div class="text-center my-2">
+        <i class="bi bi-geo-alt lock-icon"></i>
+        <p class="text-secondary small mb-0">Select your district to continue</p>
+      </div>
+      <div class="district-selection">
+        <button class="btn" id="districtAPD" data-district="APD">
+          📍 Alipurduar
+          <span class="badge">APD</span>
+        </button>
+        <button class="btn" id="districtJPG" data-district="JPG">
+          📍 Jalpaiguri
+          <span class="badge">JPG</span>
+        </button>
+      </div>
+      <div id="districtStatus" class="mt-1 fw-semibold text-center small text-secondary">Please select a district</div>
+      
+      <hr class="my-3">
+      
+      <!-- Password Section -->
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-lock"></i> Authentication
+        </h5>
+      </div>
+      <div class="text-center my-2">
+        <i class="bi bi-unlock lock-icon"></i>
+        <p class="text-secondary small mb-0">Enter password to access Archive</p>
+      </div>
+      <div class="password-input-group d-flex flex-column flex-sm-row gap-2">
+        <input type="password" id="passwordInput" class="form-control" placeholder="Enter password" style="flex:1;">
+        <button id="unlockBtn" class="btn btn-primary d-flex align-items-center gap-1" style="white-space:nowrap;">
+          <i class="bi bi-key"></i> Unlock
+        </button>
+      </div>
+      <div class="form-check mt-2">
+        <input class="form-check-input" type="checkbox" id="rememberPassword">
+        <label class="form-check-label text-secondary small" for="rememberPassword">Remember Password</label>
+      </div>
+      <div id="passwordStatus" class="mt-1 fw-semibold text-center small"></div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="mainContent" style="display:none;">
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="number" id="archivedCount">0</span>
+        <span class="label">Archived Entries</span>
+      </div>
+      <div class="stat-item">
+        <span class="number" id="districtBadge" style="font-size:0.8rem; color:#64748b;">📍 --</span>
+        <span class="label">District</span>
+      </div>
+    </div>
+
+    <!-- ARCHIVE CARD -->
+    <div class="card">
+      <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+        <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-archive"></i> Archive
+        </h5>
+        <div class="d-flex gap-1">
+          <button class="btn btn-sm btn-danger-outline d-flex align-items-center gap-1" onclick="clearArchive()" style="font-size:0.75rem; padding:0.2rem 0.6rem;">
+            <i class="bi bi-trash"></i> Clear Archive
+          </button>
+          <button class="btn btn-sm btn-outline-archive d-flex align-items-center gap-1" onclick="downloadExcelArchive()" style="font-size:0.75rem; padding:0.2rem 0.6rem;">
+            <i class="bi bi-file-earmark-excel"></i> Excel
+          </button>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0.5rem 0.75rem 0.75rem;">
+        <div class="table-wrap">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Year</th>
+                <th>No</th>
+                <th>PS</th>
+                <th>FIR</th>
+                <th>Date</th>
+                <th>Type</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal fade" id="appModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-body text-center p-4">
+          <div class="modal-icon" id="modalIcon">✅</div>
+          <h5 class="modal-title fw-semibold mt-2" id="modalTitle">Success</h5>
+          <p class="text-secondary small" id="modalDesc">Operation completed.</p>
+        </div>
+        <div class="modal-footer justify-content-center border-0 pb-4">
+          <button class="btn btn-primary px-5" id="modalBtn" style="font-size:0.9rem;">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  (function() {
+    // ---------- CONST ----------
+    const DISTRICT_STORAGE_KEY = "selectedDistrict";
+    const ARCHIVE_KEY = "grArchive";
+    const REMEMBER_PASSWORD_KEY = "rememberedPassword";
+    const AUTH_KEY = "grAuth";
+
+    // DOM
+    const passwordCard = document.getElementById('authCard');
+    const passwordInput = document.getElementById('passwordInput');
+    const unlockBtn = document.getElementById('unlockBtn');
+    const passwordStatus = document.getElementById('passwordStatus');
+    const rememberCheckbox = document.getElementById('rememberPassword');
+    const mainContent = document.getElementById('mainContent');
+    const tableBody = document.getElementById('tableBody');
+    const archivedCount = document.getElementById('archivedCount');
+    const districtBadge = document.getElementById('districtBadge');
+
+    // Modal elements
+    const modalEl = document.getElementById('appModal');
+    const modalIcon = document.getElementById('modalIcon');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDesc = document.getElementById('modalDesc');
+    const modalBtn = document.getElementById('modalBtn');
+
+    let isUnlocked = false;
+    let modalInstance = null;
+    let scriptLoaded = false;
+
+    // ---------- DISTRICT SELECTION ----------
+    function getSelectedDistrict() {
+      return localStorage.getItem(DISTRICT_STORAGE_KEY) || null;
+    }
+    
+    function setSelectedDistrict(district) {
+      localStorage.setItem(DISTRICT_STORAGE_KEY, district);
+    }
+    
+    function loadDistrictScript(district) {
+      // Remove any existing district scripts
+      document.querySelectorAll('script[data-district-script]').forEach(el => el.remove());
+      
+      scriptLoaded = false;
+      
+      const script = document.createElement('script');
+      script.setAttribute('data-district-script', 'true');
+      
+      if (district === 'APD') {
+        script.src = 'apd-script.js?' + Date.now();
+      } else if (district === 'JPG') {
+        script.src = 'jpg-script.js?' + Date.now();
+      } else {
+        console.error('Unknown district:', district);
+        return;
+      }
+      
+      script.onload = function() {
+        console.log('Loaded script for district:', district);
+        scriptLoaded = true;
+        if (window.SCRIPT_URL) {
+          document.getElementById('districtStatus').textContent = '✅ Loaded: ' + district;
+          document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-success';
+          districtBadge.textContent = '📍 ' + district;
+        } else {
+          document.getElementById('districtStatus').textContent = '⚠️ Script loaded but URL missing for: ' + district;
+          document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-warning';
+        }
+      };
+      
+      script.onerror = function() {
+        console.error('Failed to load script for district:', district);
+        document.getElementById('districtStatus').textContent = '❌ Failed to load: ' + district;
+        document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-danger';
+      };
+      
+      document.head.appendChild(script);
+    }
+
+    // ---------- HELPERS ----------
+    function getArchive() {
+      try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]'); } catch { return []; }
+    }
+    function setArchive(archive) { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archive)); }
+
+    // ---------- AUTH ----------
+    function setAuthStatus(status) { localStorage.setItem(AUTH_KEY, JSON.stringify(status)); }
+    function getAuthStatus() { try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; } }
+    function clearAuth() { localStorage.removeItem(AUTH_KEY); localStorage.removeItem(REMEMBER_PASSWORD_KEY); }
+
+    // ---------- UPDATE STATS ----------
+    function updateStats() {
+      const archive = getArchive();
+      archivedCount.textContent = archive.length;
+      
+      const district = getSelectedDistrict();
+      if (district) {
+        districtBadge.textContent = '📍 ' + district;
+      }
+    }
+
+    // ---------- PASSWORD ----------
+    function loadRememberedPassword() {
+      const saved = localStorage.getItem(REMEMBER_PASSWORD_KEY);
+      if (saved) { 
+        passwordInput.value = saved; 
+        rememberCheckbox.checked = true;
+      }
+    }
+    function saveRememberedPassword(password) {
+      if (rememberCheckbox.checked) localStorage.setItem(REMEMBER_PASSWORD_KEY, password);
+      else localStorage.removeItem(REMEMBER_PASSWORD_KEY);
+    }
+
+    function unlockApp() {
+      if (!window.SCRIPT_URL) {
+        passwordStatus.textContent = '⚠️ District data not loaded. Please select district again.';
+        passwordStatus.className = 'text-danger';
+        return;
+      }
+      
+      isUnlocked = true;
+      setAuthStatus({ unlocked: true, timestamp: Date.now() });
+      passwordCard.style.display = 'none';
+      mainContent.style.display = 'block';
+      renderTable();
+      updateStats();
+    }
+
+    // ---------- RENDER TABLE ----------
+    function renderTable() {
+      const archive = getArchive();
+      if (archive.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-secondary py-3 small">No archived entries yet.</td></tr>`;
+        return;
+      }
+      let html = '';
+      archive.forEach((entry, index) => {
+        html += `
+          <tr>
+            <td class="small">${index + 1}</td>
+            <td class="small">${entry.grYear || ''}</td>
+            <td class="small">${entry.grNo || ''}</td>
+            <td class="small">${entry.psName || ''}</td>
+            <td class="small">${entry.firNo || ''}</td>
+            <td class="small">${entry.firRgDate || ''}</td>
+            <td class="small">${entry.type || ''}</td>
+            <td class="text-end text-nowrap">
+              <button class="table-action-btn delete" onclick="deleteArchiveEntry(${index})">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tableBody.innerHTML = html;
+    }
+
+    // ---------- ACTIONS ----------
+    window.deleteArchiveEntry = function(index) {
+      if (!confirm('Delete this archived entry?')) return;
+      const archive = getArchive();
+      archive.splice(index, 1);
+      setArchive(archive);
+      renderTable();
+      updateStats();
+    };
+
+    window.clearArchive = function() {
+      if (!confirm('Delete all archived entries?')) return;
+      setArchive([]);
+      renderTable();
+      updateStats();
+    };
+
+    // ---------- EXCEL DOWNLOAD (archive) ----------
+    window.downloadExcelArchive = function() {
+      const archive = getArchive();
+      if (archive.length === 0) {
+        showModal('⚠️', 'No Data', 'No archived entries to export.', false);
+        return;
+      }
+      const headers = ['GR Year', 'GR No', 'PS Name', 'FIR No', 'FIR Date', 'Type', 'Details', 'Remarks', 'Synced At'];
+      const rows = archive.map(e => [
+        e.grYear || '', e.grNo || '', e.psName || '', e.firNo || '', 
+        e.firRgDate || '', e.type || '', e.details || '', e.remarks || '',
+        e.syncedAt || e.updatedAt || ''
+      ]);
+      let csv = headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'gr_entries_archive.csv';
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showModal('📥', 'Excel Download', 'Archived entries exported as CSV.', true);
+    };
+
+    function showModal(icon, title, desc, isSuccess) {
+      modalIcon.textContent = icon;
+      modalTitle.textContent = title;
+      modalDesc.textContent = desc;
+      modalBtn.disabled = false;
+      modalBtn.textContent = 'OK';
+      modalBtn.className = `btn ${isSuccess ? 'btn-success' : 'btn-primary'} px-5`;
+      if (!modalInstance) modalInstance = new bootstrap.Modal(modalEl);
+      modalInstance.show();
+    }
+
+    modalBtn.addEventListener('click', function() {
+      if (modalInstance) modalInstance.hide();
+    });
+
+    // ---------- UNLOCK BUTTON ----------
+    unlockBtn.addEventListener('click', async function() {
+      const district = getSelectedDistrict();
+      if (!district) {
+        passwordStatus.textContent = '⚠️ Please select a district first!';
+        passwordStatus.className = 'text-danger';
+        return;
+      }
+      
+      if (!window.SCRIPT_URL) {
+        passwordStatus.textContent = '⚠️ District data not loaded. Please select district again.';
+        passwordStatus.className = 'text-danger';
+        return;
+      }
+      
+      const password = passwordInput.value.trim();
+      if (!password) { 
+        passwordStatus.textContent = '⚠️ Please enter password'; 
+        passwordStatus.className = 'text-danger'; 
+        return; 
+      }
+      
+      unlockBtn.disabled = true;
+      unlockBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Checking...';
+      passwordStatus.textContent = '⏳ Verifying...';
+      passwordStatus.className = '';
+      
+      try {
+        const formData = new FormData();
+        formData.append('action', 'verifyPassword');
+        formData.append('password', password);
+        formData.append('district', district);
+        
+        const response = await fetch(window.SCRIPT_URL, { 
+          method: 'POST', 
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          passwordStatus.textContent = '✅ Access granted!';
+          passwordStatus.className = 'text-success';
+          saveRememberedPassword(password);
+          unlockApp();
+        } else {
+          passwordStatus.textContent = '❌ Invalid password';
+          passwordStatus.className = 'text-danger';
+          passwordInput.value = '';
+          passwordInput.focus();
+        }
+        
+      } catch (error) {
+        passwordStatus.textContent = '❌ Error verifying password';
+        passwordStatus.className = 'text-danger';
+        passwordInput.value = '';
+        passwordInput.focus();
+      } finally {
+        unlockBtn.disabled = false;
+        unlockBtn.innerHTML = '<i class="bi bi-key"></i> Unlock';
+      }
+    });
+
+    passwordInput.addEventListener('keypress', e => { if (e.key === 'Enter') unlockBtn.click(); });
+
+    function tryAutoUnlock() {
+      const authStatus = getAuthStatus();
+      if (authStatus && authStatus.unlocked && getSelectedDistrict() && window.SCRIPT_URL) {
+        unlockApp();
+        return;
+      }
+
+      const saved = localStorage.getItem(REMEMBER_PASSWORD_KEY);
+      if (saved && getSelectedDistrict() && window.SCRIPT_URL) { 
+        passwordInput.value = saved; 
+        rememberCheckbox.checked = true;
+        setTimeout(() => { 
+          unlockBtn.click(); 
+        }, 300); 
+      }
+    }
+
+    // ---------- DISTRICT UI ----------
+    const districtAPD = document.getElementById('districtAPD');
+    const districtJPG = document.getElementById('districtJPG');
+    const districtStatus = document.getElementById('districtStatus');
+    
+    const savedDistrict = getSelectedDistrict();
+    if (savedDistrict) {
+      if (savedDistrict === 'APD') {
+        districtAPD.classList.add('selected');
+      } else if (savedDistrict === 'JPG') {
+        districtJPG.classList.add('selected');
+      }
+      districtStatus.textContent = '⏳ Loading: ' + savedDistrict + '...';
+      districtStatus.className = 'mt-1 fw-semibold text-center small text-primary';
+      loadDistrictScript(savedDistrict);
+    }
+    
+    districtAPD.addEventListener('click', function() {
+      districtAPD.classList.add('selected');
+      districtJPG.classList.remove('selected');
+      setSelectedDistrict('APD');
+      districtStatus.textContent = '⏳ Loading Alipurduar...';
+      districtStatus.className = 'mt-1 fw-semibold text-center small text-primary';
+      loadDistrictScript('APD');
+    });
+    
+    districtJPG.addEventListener('click', function() {
+      districtJPG.classList.add('selected');
+      districtAPD.classList.remove('selected');
+      setSelectedDistrict('JPG');
+      districtStatus.textContent = '⏳ Loading Jalpaiguri...';
+      districtStatus.className = 'mt-1 fw-semibold text-center small text-primary';
+      loadDistrictScript('JPG');
+    });
+
+    // ---------- INIT ----------
+    loadRememberedPassword();
+    
+    setTimeout(() => {
+      tryAutoUnlock();
+    }, 1000);
+
+  })();
+</script>
+
+</body>
+</html>
