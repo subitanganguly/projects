@@ -104,13 +104,9 @@
       transform: scale(1.05);
       z-index: 1;
     }
+    /* USED CHIP: hide completely */
     #firScrollWrapper .fir-chip.used-chip {
-      opacity: 0.4;
-      pointer-events: none;
-      text-decoration: line-through;
-      background: #f1f5f9;
-      border-color: #e2e8f0;
-      color: #94a3b8;
+      display: none !important;
     }
     #firScrollWrapper .fir-chip.recommended-chip {
       background: #f0fdf4;
@@ -379,7 +375,6 @@
       margin-left: 4px;
     }
 
-    /* New styles for FIR year with +/- buttons */
     .fir-year-group {
       display: flex;
       gap: 6px;
@@ -403,7 +398,6 @@
       transform: scale(0.92);
     }
 
-    /* Date input - hide keyboard */
     .date-input-no-keyboard {
       cursor: pointer;
       -webkit-user-select: none;
@@ -709,9 +703,12 @@
       if (val > 0) {
         firYearInput.value = val - 1;
       }
-      // Trigger validation if FIR No is present
-      if (firNoInput.value && psNameInput.value && grYearInput.value) {
-        validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+      // Re-render FIR bar and validate when FIR year changes
+      if (psNameInput.value) {
+        renderFirBar();
+        if (firNoInput.value) {
+          validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+        }
       }
     });
 
@@ -720,15 +717,17 @@
       if (val < 2100) {
         firYearInput.value = val + 1;
       }
-      // Trigger validation if FIR No is present
-      if (firNoInput.value && psNameInput.value && grYearInput.value) {
-        validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+      if (psNameInput.value) {
+        renderFirBar();
+        if (firNoInput.value) {
+          validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+        }
       }
     });
 
-    // ---------- FIR VALIDATION ----------
+    // ---------- FIR VALIDATION (uses FIR year, not GR year) ----------
     function validateFIRNumber(firNumber, psName, grYear, firYear) {
-      if (!firNumber || !psName || !grYear) {
+      if (!firNumber || !psName || !firYear) {
         firNoInput.className = 'form-control form-control-sm';
         firValidationMsg.className = 'fir-validation-msg';
         firValidationMsg.style.display = 'none';
@@ -744,58 +743,40 @@
         return false;
       }
       
-      // Check if FIR is used in sheet for this specific year
+      // Check sheet data using FIR year (not GR year)
       const sheetData = firDataFromSheet[psName];
       if (sheetData && !sheetData.available) {
-        // Check if the FIR data has a specific year
-        if (sheetData.year && sheetData.year !== parseInt(grYear)) {
-          // Different year, skip validation for this year
-          firNoInput.className = 'form-control form-control-sm';
-          firValidationMsg.className = 'fir-validation-msg';
-          firValidationMsg.style.display = 'none';
-          return true;
-        }
-        
-        const usedFIRs = sheetData.usedFIRs || [];
-        if (usedFIRs.includes(firNum)) {
-          firNoInput.className = 'form-control form-control-sm fir-invalid';
-          firValidationMsg.className = 'fir-validation-msg visible invalid';
-          firValidationText.textContent = `⚠️ FIR No. ${firNum} is already used for ${psName} (${grYear}) in the sheet`;
-          firValidationMsg.style.display = 'block';
-          return false;
+        // Only apply sheet validation if the sheet year matches the FIR year
+        if (sheetData.year && sheetData.year === parseInt(firYear)) {
+          const usedFIRs = sheetData.usedFIRs || [];
+          if (usedFIRs.includes(firNum)) {
+            firNoInput.className = 'form-control form-control-sm fir-invalid';
+            firValidationMsg.className = 'fir-validation-msg visible invalid';
+            firValidationText.textContent = `⚠️ FIR No. ${firNum} is already used for ${psName} (${firYear}) in the sheet`;
+            firValidationMsg.style.display = 'block';
+            return false;
+          }
         }
       }
       
-      // Check if FIR is used locally
+      // Check local entries using FIR year (not GR year)
       const entries = getEntries();
       const localUsed = entries
-        .filter(e => e.psName === psName && e.grYear === grYear && e.firNo)
+        .filter(e => e.psName === psName && e.firYear === firYear && e.firNo)
         .map(e => parseInt(e.firNo, 10))
         .filter(n => !isNaN(n));
       
       if (localUsed.includes(firNum)) {
-        const editIndex = getEditIndex();
-        if (editIndex >= 0 && editIndex < entries.length) {
-          const currentEntry = entries[editIndex];
-          if (currentEntry.firNo && parseInt(currentEntry.firNo, 10) === firNum) {
-            firNoInput.className = 'form-control form-control-sm fir-valid';
-            firValidationMsg.className = 'fir-validation-msg visible valid';
-            firValidationText.textContent = `FIR No. ${firNum}/${grYear} is valid for ${psName}`;
-            firValidationMsg.style.display = 'block';
-            return true;
-          }
-        }
-        
         firNoInput.className = 'form-control form-control-sm fir-invalid';
         firValidationMsg.className = 'fir-validation-msg visible invalid';
-        firValidationText.textContent = `⚠️ FIR No. ${firNum} is already used for ${psName} in local entries`;
+        firValidationText.textContent = `⚠️ FIR No. ${firNum} is already used for ${psName} (${firYear}) in local entries`;
         firValidationMsg.style.display = 'block';
         return false;
       }
       
       firNoInput.className = 'form-control form-control-sm fir-valid';
       firValidationMsg.className = 'fir-validation-msg visible valid';
-      firValidationText.textContent = `FIR No. ${firNum}/${grYear} is available for ${psName}`;
+      firValidationText.textContent = `FIR No. ${firNum}/${firYear} is available for ${psName}`;
       firValidationMsg.style.display = 'block';
       return true;
     }
@@ -868,11 +849,11 @@
           firDataFromSheet = data.firData;
           console.log('Fetched FIR data from sheet:', firDataFromSheet);
           
-          if (psNameInput.value && grYearInput.value) {
+          if (psNameInput.value && firYearInput.value) {
             renderFirBar();
           }
           
-          if (firNoInput.value && psNameInput.value && grYearInput.value) {
+          if (firNoInput.value && psNameInput.value && firYearInput.value) {
             validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
           }
         } else if (data.success && data.values) {
@@ -894,13 +875,13 @@
               firDataFromSheet[psName] = { available: false, usedFIRs: firNumbers, year: year };
             }
           });
-          console.log('Parsed FIR data from sheet (fallback):', firDataFromSheet);
+          // console.log('Parsed FIR data from sheet (fallback):', firDataFromSheet);
           
-          if (psNameInput.value && grYearInput.value) {
+          if (psNameInput.value && firYearInput.value) {
             renderFirBar();
           }
           
-          if (firNoInput.value && psNameInput.value && grYearInput.value) {
+          if (firNoInput.value && psNameInput.value && firYearInput.value) {
             validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
           }
         } else {
@@ -912,9 +893,9 @@
     }
 
     // ---------- PS WISE LAST FIR HELPERS ----------
-    function getPSLastFIR(psName, grYear) {
+    function getPSLastFIR(psName, firYear) {
       try {
-        const key = `${PS_LAST_FIR_KEY}_${psName}_${grYear}`;
+        const key = `${PS_LAST_FIR_KEY}_${psName}_${firYear}`;
         const data = localStorage.getItem(key);
         return data ? parseInt(data, 10) : null;
       } catch {
@@ -922,9 +903,9 @@
       }
     }
 
-    function setPSLastFIR(psName, grYear, firNo) {
+    function setPSLastFIR(psName, firYear, firNo) {
       try {
-        const key = `${PS_LAST_FIR_KEY}_${psName}_${grYear}`;
+        const key = `${PS_LAST_FIR_KEY}_${psName}_${firYear}`;
         localStorage.setItem(key, String(firNo));
       } catch {}
     }
@@ -943,10 +924,13 @@
     function updateYearLabel(value) {
       if (value) {
         grYearDisplay.innerHTML = `GR Year: <span class="field-value">${value}</span>`;
-        firYearInput.value = value;
+        // Auto-set FIR year if not already set
+        if (!firYearInput.value) {
+          firYearInput.value = value;
+        }
       } else {
         grYearDisplay.innerHTML = `GR Year: <span class="field-placeholder">Not Selected</span>`;
-        firYearInput.value = '';
+        // Don't clear FIR year automatically
       }
     }
 
@@ -1004,18 +988,18 @@
       }
     }
 
-    // ---------- GET USED FIRS (Local + Sheet) ----------
-    function getUsedFIRs(psName, grYear) {
+    // ---------- GET USED FIRS (Local + Sheet) using FIR year ----------
+    function getUsedFIRs(psName, firYear) {
       const entries = getEntries();
       const localUsed = entries
-        .filter(e => e.psName === psName && e.grYear === grYear && e.firNo)
+        .filter(e => e.psName === psName && e.firYear === firYear && e.firNo)
         .map(e => parseInt(e.firNo, 10))
         .filter(n => !isNaN(n));
       
       let sheetUsed = [];
       const sheetData = firDataFromSheet[psName];
       if (sheetData && !sheetData.available) {
-        if (sheetData.year === null || sheetData.year === parseInt(grYear)) {
+        if (sheetData.year === null || sheetData.year === parseInt(firYear)) {
           sheetUsed = sheetData.usedFIRs || [];
         }
       }
@@ -1024,12 +1008,11 @@
       return combined;
     }
 
-    function generateFirNumbers(psName, grYear) {
-      if (!psName || !grYear) return [];
+    function generateFirNumbers(psName, firYear) {
+      if (!psName || !firYear) return [];
       
-      const usedFIRs = getUsedFIRs(psName, grYear);
-      const usedSet = new Set(usedFIRs);
-      const storedLastFIR = getPSLastFIR(psName, grYear);
+      const usedFIRs = getUsedFIRs(psName, firYear);
+      const storedLastFIR = getPSLastFIR(psName, firYear);
       
       const sheetData = firDataFromSheet[psName];
       if (sheetData && sheetData.available) {
@@ -1077,296 +1060,153 @@
       return [...new Set(allNumbers)].sort((a, b) => a - b);
     }
 
-    // ---------- RENDER FIR SCROLLABLE BAR ----------
-    // function renderFirBar() {
-    //   const psName = psNameInput.value.trim();
-    //   const grYear = grYearInput.value.trim();
+    // ---------- RENDER FIR SCROLLABLE BAR (uses FIR year) ----------
+    function renderFirBar() {
+      const psName = psNameInput.value.trim();
+      const firYear = firYearInput.value.trim();
       
-    //   firScrollWrapper.innerHTML = '';
+      firScrollWrapper.innerHTML = '';
       
-    //   if (!psName || !grYear) {
-    //     const placeholder = document.createElement('span');
-    //     placeholder.className = 'fir-chip placeholder-chip';
-    //     placeholder.textContent = 'Select PS & Year';
-    //     firScrollWrapper.appendChild(placeholder);
-    //     firRangeLabel.textContent = '–';
-    //     firHintText.textContent = '💡 Select PS and Year to see FIR recommendations';
-    //     firStatusBadge.textContent = 'Waiting';
-    //     firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
-    //     return;
-    //   }
-
-    //   const sheetData = firDataFromSheet[psName];
-    //   if (!sheetData) {
-    //     const placeholder = document.createElement('span');
-    //     placeholder.className = 'fir-chip placeholder-chip';
-    //     placeholder.textContent = 'Loading FIR data...';
-    //     firScrollWrapper.appendChild(placeholder);
-    //     firRangeLabel.textContent = '–';
-    //     firHintText.textContent = '⏳ Loading FIR data from server...';
-    //     firStatusBadge.textContent = 'Loading';
-    //     firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
-    //     return;
-    //   }
-
-    //   const usedFIRs = getUsedFIRs(psName, grYear);
-    //   const usedSet = new Set(usedFIRs);
-      
-    //   const numbers = generateFirNumbers(psName, grYear);
-      
-    //   if (numbers.length === 0) {
-    //     const placeholder = document.createElement('span');
-    //     placeholder.className = 'fir-chip placeholder-chip';
-    //     placeholder.textContent = 'No FIRs available';
-    //     firScrollWrapper.appendChild(placeholder);
-    //     firRangeLabel.textContent = '–';
-    //     firHintText.textContent = 'No FIR data available';
-    //     firStatusBadge.textContent = 'No data';
-    //     firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
-    //     return;
-    //   }
-
-    //   const totalFIRs = numbers.length;
-    //   const usedCount = usedFIRs.length;
-    //   const availableCount = totalFIRs - usedCount;
-      
-    //   if (sheetData.available) {
-    //     firStatusBadge.textContent = `✅ All FIRs Available`;
-    //     firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
-    //   } else if (usedCount === 0) {
-    //     firStatusBadge.textContent = `✅ ${totalFIRs} FIRs Available`;
-    //     firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
-    //   } else {
-    //     firStatusBadge.textContent = `📊 ${availableCount} Available / ${usedCount} Used`;
-    //     firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
-    //   }
-      
-    //   let lastUsedFIR = 0;
-    //   let firstAvailableFIR = null;
-    //   let recommendedCount = 0;
-      
-    //   numbers.forEach(num => {
-    //     const chip = document.createElement('span');
-    //     chip.className = 'fir-chip';
-        
-    //     if (usedSet.has(num)) {
-    //       chip.classList.add('used-chip');
-    //       if (num > lastUsedFIR) lastUsedFIR = num;
-    //     } else {
-    //       chip.classList.add('recommended-chip');
-    //       recommendedCount++;
-    //       if (firstAvailableFIR === null) firstAvailableFIR = num;
-    //     }
-        
-    //     chip.textContent = num;
-    //     chip.dataset.value = num;
-    //     chip.onclick = () => {
-    //       if (chip.classList.contains('used-chip')) {
-    //         chip.style.transform = 'scale(0.9)';
-    //         setTimeout(() => { chip.style.transform = ''; }, 200);
-    //         return;
-    //       }
-    //       firNoInput.value = num;
-    //       validateFIRNumber(num, psName, grYear, firYearInput.value);
-    //       firScrollWrapper.querySelectorAll('.fir-chip').forEach(c => c.classList.remove('active-chip'));
-    //       chip.classList.add('active-chip');
-    //       chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    //     };
-    //     firScrollWrapper.appendChild(chip);
-    //   });
-
-    //   firRangeLabel.textContent = numbers.length > 0 ? `${numbers[0]} – ${numbers[numbers.length-1]}` : '–';
-      
-    //   if (sheetData.available) {
-    //     firHintText.textContent = `✅ All FIR numbers are available. Click any to select.`;
-    //   } else if (usedCount === 0) {
-    //     firHintText.textContent = '✨ All FIR numbers in this range are available. Click any to select.';
-    //   } else if (availableCount === 0) {
-    //     firHintText.textContent = '⚠️ All FIR numbers in this range are used. Try a different PS or Year.';
-    //   } else {
-    //     firHintText.textContent = `💡 ${availableCount} FIR(s) available. Used FIRs are crossed out.`;
-    //   }
-
-    //   setTimeout(() => {
-    //     let targetChip = null;
-        
-    //     const currentFirValue = firNoInput.value.trim();
-    //     if (currentFirValue) {
-    //       const currentFirNum = parseInt(currentFirValue, 10);
-    //       if (!isNaN(currentFirNum) && !usedSet.has(currentFirNum)) {
-    //         const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
-    //         for (let chip of chips) {
-    //           if (parseInt(chip.dataset.value) === currentFirNum) {
-    //             targetChip = chip;
-    //             chip.classList.add('active-chip');
-    //             break;
-    //           }
-    //         }
-    //       }
-    //     }
-        
-    //     if (!targetChip && firstAvailableFIR !== null) {
-    //       const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
-    //       if (chips.length > 0) {
-    //         targetChip = chips[0];
-    //         targetChip.classList.add('active-chip');
-    //         firNoInput.value = parseInt(targetChip.dataset.value);
-    //         validateFIRNumber(firNoInput.value, psName, grYear, firYearInput.value);
-    //       }
-    //     }
-        
-    //     if (targetChip) {
-    //       targetChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    //     }
-    //   }, 150);
-    // }
-
-    // Replace the renderFirBar function with this improved version
-function renderFirBar() {
-  const psName = psNameInput.value.trim();
-  const grYear = grYearInput.value.trim();
-  
-  firScrollWrapper.innerHTML = '';
-  
-  if (!psName || !grYear) {
-    const placeholder = document.createElement('span');
-    placeholder.className = 'fir-chip placeholder-chip';
-    placeholder.textContent = 'Select PS & Year';
-    firScrollWrapper.appendChild(placeholder);
-    firRangeLabel.textContent = '–';
-    firHintText.textContent = '💡 Select PS and Year to see FIR recommendations';
-    firStatusBadge.textContent = 'Waiting';
-    firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
-    return;
-  }
-
-  // Get used FIRs from local entries
-  const entries = getEntries();
-  const localUsed = entries
-    .filter(e => e.psName === psName && e.grYear === grYear && e.firNo)
-    .map(e => parseInt(e.firNo, 10))
-    .filter(n => !isNaN(n));
-  
-  const usedSet = new Set(localUsed);
-  const storedLastFIR = getPSLastFIR(psName, grYear);
-  
-  // Generate FIR numbers range
-  let startRange = 1;
-  let endRange = 30;
-  
-  if (storedLastFIR) {
-    startRange = Math.max(1, storedLastFIR - 10);
-    endRange = storedLastFIR + 20;
-  } else if (localUsed.length > 0) {
-    const maxUsed = Math.max(...localUsed);
-    startRange = Math.max(1, maxUsed - 10);
-    endRange = maxUsed + 20;
-  }
-  
-  const numbers = [];
-  for (let i = startRange; i <= endRange; i++) {
-    numbers.push(i);
-  }
-  
-  if (numbers.length === 0) {
-    const placeholder = document.createElement('span');
-    placeholder.className = 'fir-chip placeholder-chip';
-    placeholder.textContent = 'No FIRs available';
-    firScrollWrapper.appendChild(placeholder);
-    firRangeLabel.textContent = '–';
-    firHintText.textContent = 'No FIR data available';
-    firStatusBadge.textContent = 'No data';
-    firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
-    return;
-  }
-
-  const totalFIRs = numbers.length;
-  const usedCount = localUsed.length;
-  const availableCount = totalFIRs - usedCount;
-  
-  if (usedCount === 0) {
-    firStatusBadge.textContent = `✅ ${totalFIRs} FIRs Available`;
-    firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
-  } else {
-    firStatusBadge.textContent = `📊 ${availableCount} Available / ${usedCount} Used`;
-    firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
-  }
-  
-  let lastUsedFIR = 0;
-  let firstAvailableFIR = null;
-  
-  numbers.forEach(num => {
-    const chip = document.createElement('span');
-    chip.className = 'fir-chip';
-    
-    if (usedSet.has(num)) {
-      chip.classList.add('used-chip');
-      if (num > lastUsedFIR) lastUsedFIR = num;
-    } else {
-      chip.classList.add('recommended-chip');
-      if (firstAvailableFIR === null) firstAvailableFIR = num;
-    }
-    
-    chip.textContent = num;
-    chip.dataset.value = num;
-    chip.onclick = () => {
-      if (chip.classList.contains('used-chip')) {
-        chip.style.transform = 'scale(0.9)';
-        setTimeout(() => { chip.style.transform = ''; }, 200);
+      if (!psName || !firYear) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'fir-chip placeholder-chip';
+        placeholder.textContent = 'Select PS & FIR Year';
+        firScrollWrapper.appendChild(placeholder);
+        firRangeLabel.textContent = '–';
+        firHintText.textContent = '💡 Select PS and FIR Year to see recommendations';
+        firStatusBadge.textContent = 'Waiting';
+        firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
         return;
       }
-      firNoInput.value = num;
-      validateFIRNumber(num, psName, grYear, firYearInput.value);
-      firScrollWrapper.querySelectorAll('.fir-chip').forEach(c => c.classList.remove('active-chip'));
-      chip.classList.add('active-chip');
-      chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    };
-    firScrollWrapper.appendChild(chip);
-  });
 
-  firRangeLabel.textContent = numbers.length > 0 ? `${numbers[0]} – ${numbers[numbers.length-1]}` : '–';
-  
-  if (usedCount === 0) {
-    firHintText.textContent = '✨ All FIR numbers in this range are available. Click any to select.';
-  } else if (availableCount === 0) {
-    firHintText.textContent = '⚠️ All FIR numbers in this range are used. Try a different PS or Year.';
-  } else {
-    firHintText.textContent = `💡 ${availableCount} FIR(s) available. Used FIRs are crossed out.`;
-  }
+      const sheetData = firDataFromSheet[psName];
+      if (!sheetData || Object.keys(firDataFromSheet).length === 0) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'fir-chip placeholder-chip';
+        placeholder.textContent = 'Loading FIR data...';
+        firScrollWrapper.appendChild(placeholder);
+        firRangeLabel.textContent = '–';
+        firHintText.textContent = '⏳ Loading FIR data from server...';
+        firStatusBadge.textContent = 'Loading';
+        firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+        return;
+      }
 
-  setTimeout(() => {
-    let targetChip = null;
-    
-    const currentFirValue = firNoInput.value.trim();
-    if (currentFirValue) {
-      const currentFirNum = parseInt(currentFirValue, 10);
-      if (!isNaN(currentFirNum) && !usedSet.has(currentFirNum)) {
-        const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
-        for (let chip of chips) {
-          if (parseInt(chip.dataset.value) === currentFirNum) {
-            targetChip = chip;
-            chip.classList.add('active-chip');
-            break;
+      const usedFIRs = getUsedFIRs(psName, firYear);
+      const usedSet = new Set(usedFIRs);
+      
+      const numbers = generateFirNumbers(psName, firYear);
+      
+      if (numbers.length === 0) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'fir-chip placeholder-chip';
+        placeholder.textContent = 'No FIRs available';
+        firScrollWrapper.appendChild(placeholder);
+        firRangeLabel.textContent = '–';
+        firHintText.textContent = 'No FIR data available for ' + firYear;
+        firStatusBadge.textContent = 'No data';
+        firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+        return;
+      }
+
+      const totalFIRs = numbers.length;
+      const usedCount = usedFIRs.length;
+      const availableCount = totalFIRs - usedCount;
+      
+      // Check if this specific year has data in sheet
+      const sheetHasYear = sheetData.year && sheetData.year === parseInt(firYear);
+      
+      if (sheetData.available) {
+        firStatusBadge.textContent = `✅ All FIRs Available`;
+        firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
+      } else if (sheetHasYear && usedCount === usedFIRs.length && usedFIRs.length > 0) {
+        firStatusBadge.textContent = `📊 ${availableCount} Available / ${usedCount} Used (Sheet)`;
+        firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
+      } else if (usedCount === 0) {
+        firStatusBadge.textContent = `✅ ${totalFIRs} FIRs Available`;
+        firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
+      } else {
+        firStatusBadge.textContent = `📊 ${availableCount} Available / ${usedCount} Used`;
+        firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
+      }
+      
+      let firstAvailableFIR = null;
+      
+      numbers.forEach(num => {
+        const chip = document.createElement('span');
+        chip.className = 'fir-chip';
+        
+        if (usedSet.has(num)) {
+          chip.classList.add('used-chip');
+        } else {
+          chip.classList.add('recommended-chip');
+          if (firstAvailableFIR === null) firstAvailableFIR = num;
+        }
+        
+        chip.textContent = num;
+        chip.dataset.value = num;
+        chip.onclick = () => {
+          if (chip.classList.contains('used-chip')) {
+            chip.style.transform = 'scale(0.9)';
+            setTimeout(() => { chip.style.transform = ''; }, 200);
+            return;
+          }
+          firNoInput.value = num;
+          validateFIRNumber(num, psName, grYearInput.value, firYear);
+          firScrollWrapper.querySelectorAll('.fir-chip').forEach(c => c.classList.remove('active-chip'));
+          chip.classList.add('active-chip');
+          chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        };
+        firScrollWrapper.appendChild(chip);
+      });
+
+      firRangeLabel.textContent = numbers.length > 0 ? `${numbers[0]} – ${numbers[numbers.length-1]}` : '–';
+      
+      if (sheetData.available) {
+        firHintText.textContent = `✅ All FIR numbers are available for ${firYear}. Click any to select.`;
+      } else if (sheetHasYear && usedCount > 0) {
+        firHintText.textContent = `💡 ${availableCount} FIR(s) available for ${firYear}. Used FIRs (from sheet) are hidden.`;
+      } else if (usedCount === 0) {
+        firHintText.textContent = `✨ All FIR numbers in this range are available for ${firYear}. Click any to select.`;
+      } else if (availableCount === 0) {
+        firHintText.textContent = `⚠️ All FIR numbers in this range are used for ${firYear}. Try a different PS or Year.`;
+      } else {
+        firHintText.textContent = `💡 ${availableCount} FIR(s) available for ${firYear}. Used FIRs are hidden.`;
+      }
+
+      setTimeout(() => {
+        let targetChip = null;
+        
+        const currentFirValue = firNoInput.value.trim();
+        if (currentFirValue) {
+          const currentFirNum = parseInt(currentFirValue, 10);
+          if (!isNaN(currentFirNum) && !usedSet.has(currentFirNum)) {
+            const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
+            for (let chip of chips) {
+              if (parseInt(chip.dataset.value) === currentFirNum) {
+                targetChip = chip;
+                chip.classList.add('active-chip');
+                break;
+              }
+            }
           }
         }
-      }
+        
+        if (!targetChip && firstAvailableFIR !== null) {
+          const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
+          if (chips.length > 0) {
+            targetChip = chips[0];
+            targetChip.classList.add('active-chip');
+            firNoInput.value = parseInt(targetChip.dataset.value);
+            validateFIRNumber(firNoInput.value, psName, grYearInput.value, firYear);
+          }
+        }
+        
+        if (targetChip) {
+          targetChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      }, 150);
     }
-    
-    if (!targetChip && firstAvailableFIR !== null) {
-      const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
-      if (chips.length > 0) {
-        targetChip = chips[0];
-        targetChip.classList.add('active-chip');
-        firNoInput.value = parseInt(targetChip.dataset.value);
-        validateFIRNumber(firNoInput.value, psName, grYear, firYearInput.value);
-      }
-    }
-    
-    if (targetChip) {
-      targetChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-  }, 150);
-}
 
     // ---------- AUTO FILL FROM O2 ----------
     function autoFillFromO2(o2Value) {
@@ -1378,6 +1218,8 @@ function renderFirBar() {
       
       grYearInput.value = year;
       updateYearLabel(year);
+      // Set FIR year to match GR year initially
+      if (!firYearInput.value) firYearInput.value = year;
       
       yearButtons.querySelectorAll('.btn').forEach(b => {
         if (Number(b.dataset.year) === Number(year)) {
@@ -1388,7 +1230,11 @@ function renderFirBar() {
       });
       
       grNoInput.value = grNumber;
-      renderFirBar();
+      
+      // Render FIR bar after setting values
+      setTimeout(() => {
+        renderFirBar();
+      }, 100);
     }
 
     // ---------- UNLOCK APP ----------
@@ -1454,10 +1300,12 @@ function renderFirBar() {
         btn.onclick = () => {
           grYearInput.value = year;
           updateYearLabel(year);
+          // Auto-set FIR year when GR year is selected
+          if (!firYearInput.value) firYearInput.value = year;
           yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
           btn.className = 'btn btn-primary';
           renderFirBar();
-          if (firNoInput.value && psNameInput.value) {
+          if (firNoInput.value && psNameInput.value && firYearInput.value) {
             validateFIRNumber(firNoInput.value, psNameInput.value, year, firYearInput.value);
           }
         };
@@ -1483,7 +1331,7 @@ function renderFirBar() {
           psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
           btn.className = 'btn btn-primary';
           renderFirBar();
-          if (firNoInput.value && grYearInput.value) {
+          if (firNoInput.value && grYearInput.value && firYearInput.value) {
             validateFIRNumber(firNoInput.value, ps.value, grYearInput.value, firYearInput.value);
           }
         };
@@ -1552,10 +1400,9 @@ function renderFirBar() {
     // ---------- FIR INPUT VALIDATION ON CHANGE ----------
     firNoInput.addEventListener('input', function() {
       const psName = psNameInput.value.trim();
-      const grYear = grYearInput.value.trim();
       const firYear = firYearInput.value.trim();
       
-      if (!psName || !grYear) {
+      if (!psName || !firYear) {
         firNoInput.className = 'form-control form-control-sm';
         firValidationMsg.className = 'fir-validation-msg';
         firValidationMsg.style.display = 'none';
@@ -1563,7 +1410,7 @@ function renderFirBar() {
       }
       
       if (this.value) {
-        validateFIRNumber(this.value, psName, grYear, firYear);
+        validateFIRNumber(this.value, psName, grYearInput.value, firYear);
       } else {
         firNoInput.className = 'form-control form-control-sm';
         firValidationMsg.className = 'fir-validation-msg';
@@ -1571,129 +1418,70 @@ function renderFirBar() {
       }
     });
 
-    // ---------- LOAD DATA ----------
+    // ---------- LOAD DATA (NO EDIT) ----------
     function loadData() {
       const entries = getEntries();
-      const editIndex = getEditIndex();
       
-      if (editIndex < 0 || editIndex >= entries.length) {
-        grYearInput.value = '';
-        psNameInput.value = '';
-        updateYearLabel('');
-        updatePsLabel('');
-        firNoInput.value = '';
-        firYearInput.value = '';
-        firRgDate.value = '';
-        typeInput.value = 'Charge Sheet';
-        updateTypeLabel('Charge Sheet');
+      grYearInput.value = '';
+      psNameInput.value = '';
+      updateYearLabel('');
+      updatePsLabel('');
+      firNoInput.value = '';
+      firYearInput.value = '';
+      firRgDate.value = '';
+      typeInput.value = 'Charge Sheet';
+      updateTypeLabel('Charge Sheet');
+      
+      firNoInput.className = 'form-control form-control-sm';
+      firValidationMsg.className = 'fir-validation-msg';
+      firValidationMsg.style.display = 'none';
+      
+      const defaultDetails = `Complainant:\nI.O:`;
+      detailsInput.value = defaultDetails;
+      remarksInput.value = '';
+      
+      yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
+      psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
+      typeButtons.querySelectorAll('.btn').forEach(b => {
+        b.className = b.dataset.value === 'Charge Sheet' ? 'btn btn-primary' : 'btn btn-outline-secondary';
+      });
+      remarksScrollWrapper.querySelectorAll('.remarks-chip').forEach(c => c.classList.remove('active-chip'));
+      
+      if (entries.length > 0) {
+        const lastEntry = entries[entries.length - 1];
+        grNoInput.value = Number(lastEntry.grNo) + 1;
         
-        firNoInput.className = 'form-control form-control-sm';
-        firValidationMsg.className = 'fir-validation-msg';
-        firValidationMsg.style.display = 'none';
-        
-        const defaultDetails = `Complainant:\nI.O:`;
-        detailsInput.value = defaultDetails;
-        remarksInput.value = '';
-        
-        yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
-        psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
-        typeButtons.querySelectorAll('.btn').forEach(b => {
-          b.className = b.dataset.value === 'Charge Sheet' ? 'btn btn-primary' : 'btn btn-outline-secondary';
-        });
-        remarksScrollWrapper.querySelectorAll('.remarks-chip').forEach(c => c.classList.remove('active-chip'));
-        
-        if (entries.length > 0) {
-          const lastEntry = entries[entries.length - 1];
-          grNoInput.value = Number(lastEntry.grNo) + 1;
-          
-          if (lastEntry.grYear && !grYearInput.value) {
-            grYearInput.value = lastEntry.grYear;
-            updateYearLabel(lastEntry.grYear);
-            yearButtons.querySelectorAll('.btn').forEach(b => {
-              if (Number(b.dataset.year) === Number(lastEntry.grYear)) {
-                b.className = 'btn btn-primary';
-              }
-            });
-          }
-          
-          if (lastEntry.psName && !psNameInput.value && window.psList) {
-            psNameInput.value = lastEntry.psName;
-            updatePsLabel(lastEntry.psName);
-            psButtons.querySelectorAll('.btn').forEach(b => {
-              const psObj = window.psList.find(p => p.btn === b.textContent);
-              if (psObj && psObj.value === lastEntry.psName) {
-                b.className = 'btn btn-primary';
-              }
-            });
-          }
-        } else {
-          grNoInput.value = 1;
-        }
-        
-        saveBtn.innerHTML = '<i class="bi bi-save"></i> Save Entry';
-        clearEditIndex();
-        
-        setTimeout(() => {
-          renderFirBar();
-        }, 100);
-        
-      } else {
-        const entry = entries[editIndex];
-        grYearInput.value = entry.grYear || '';
-        psNameInput.value = entry.psName || '';
-        updateYearLabel(entry.grYear || '');
-        updatePsLabel(entry.psName || '');
-        grNoInput.value = entry.grNo || '';
-        firNoInput.value = entry.firNo || '';
-        firYearInput.value = entry.firYear || entry.grYear || '';
-        if (entry.firRgDate) {
-          if (entry.firRgDate.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
-            firRgDate.value = entry.firRgDate;
-          } else {
-            try {
-              const date = new Date(entry.firRgDate);
-              if (!isNaN(date.getTime())) {
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                firRgDate.value = `${day}/${month}/${year}`;
-              }
-            } catch (e) {
-              firRgDate.value = entry.firRgDate || '';
+        if (lastEntry.grYear && !grYearInput.value) {
+          grYearInput.value = lastEntry.grYear;
+          updateYearLabel(lastEntry.grYear);
+          if (!firYearInput.value) firYearInput.value = lastEntry.grYear;
+          yearButtons.querySelectorAll('.btn').forEach(b => {
+            if (Number(b.dataset.year) === Number(lastEntry.grYear)) {
+              b.className = 'btn btn-primary';
             }
-          }
-        } else {
-          firRgDate.value = '';
+          });
         }
         
-        typeInput.value = entry.type || 'Legal Options';
-        updateTypeLabel(entry.type || 'Legal Options');
-        detailsInput.value = entry.details || '';
-        remarksInput.value = entry.remarks || '';
-        
-        yearButtons.querySelectorAll('.btn').forEach(b => {
-          if (Number(b.dataset.year) === Number(entry.grYear)) b.className = 'btn btn-primary';
-          else b.className = 'btn btn-outline-secondary';
-        });
-        psButtons.querySelectorAll('.btn').forEach(b => {
-          if (window.psList) {
+        if (lastEntry.psName && !psNameInput.value && window.psList) {
+          psNameInput.value = lastEntry.psName;
+          updatePsLabel(lastEntry.psName);
+          psButtons.querySelectorAll('.btn').forEach(b => {
             const psObj = window.psList.find(p => p.btn === b.textContent);
-            if (psObj && psObj.value === entry.psName) b.className = 'btn btn-primary';
-            else b.className = 'btn btn-outline-secondary';
-          }
-        });
-        typeButtons.querySelectorAll('.btn').forEach(b => {
-          b.className = b.dataset.value === entry.type ? 'btn btn-primary' : 'btn btn-outline-secondary';
-        });
-        saveBtn.innerHTML = '<i class="bi bi-pencil"></i> Update Entry';
-        
-        setTimeout(() => {
-          renderFirBar();
-          if (entry.firNo && entry.psName && entry.grYear) {
-            validateFIRNumber(entry.firNo, entry.psName, entry.grYear, entry.firYear || entry.grYear);
-          }
-        }, 100);
+            if (psObj && psObj.value === lastEntry.psName) {
+              b.className = 'btn btn-primary';
+            }
+          });
+        }
+      } else {
+        grNoInput.value = 1;
       }
+      
+      saveBtn.innerHTML = '<i class="bi bi-save"></i> Save Entry';
+      clearEditIndex();
+      
+      setTimeout(() => {
+        renderFirBar();
+      }, 100);
       
       updatePendingCount();
     }
@@ -1707,7 +1495,7 @@ function renderFirBar() {
       const firYear = firYearInput.value.trim() || grYear;
       let firRgDateVal = "";
 
-      if (firNo && psName && grYear) {
+      if (firNo && psName && firYear) {
         const isValid = validateFIRNumber(firNo, psName, grYear, firYear);
         if (!isValid) {
           statusDiv.innerHTML = '⚠️ Please enter a valid and available FIR number';
@@ -1737,13 +1525,13 @@ function renderFirBar() {
       if (!grNo) { alert('Enter GR No'); return; }
       if (!psName) { alert('Select PS Name'); return; }
       if (!firNo) { alert('Enter FIR No'); return; }
+      if (!firYear) { alert('Enter FIR Year'); return; }
 
       const entries = getEntries();
-      const editIndex = getEditIndex();
 
       const firNum = parseInt(firNo, 10);
-      if (!isNaN(firNum) && psName && grYear) {
-        setPSLastFIR(psName, grYear, firNum);
+      if (!isNaN(firNum) && psName && firYear) {
+        setPSLastFIR(psName, firYear, firNum);
       }
 
       const entryData = { 
@@ -1753,28 +1541,15 @@ function renderFirBar() {
         type: typeVal, 
         details: detailsVal, 
         remarks: remarksVal,
-        updatedAt: new Date().toLocaleString() 
+        createdAt: new Date().toLocaleString(),
+        updatedAt: new Date().toLocaleString()
       };
 
-      if (editIndex >= 0 && editIndex < entries.length) {
-        if (entries[editIndex].createdAt) {
-          entryData.createdAt = entries[editIndex].createdAt;
-        } else {
-          entryData.createdAt = new Date().toLocaleString();
-        }
-        entries[editIndex] = entryData;
-        setEntries(entries);
-        statusDiv.innerHTML = '✓ Entry Updated Successfully!';
-        statusDiv.className = 'text-success';
-        clearEditIndex();
-        saveBtn.innerHTML = '<i class="bi bi-save"></i> Save Entry';
-      } else {
-        entryData.createdAt = new Date().toLocaleString();
-        entries.push(entryData);
-        setEntries(entries);
-        statusDiv.innerHTML = '✓ Entry Saved Successfully!';
-        statusDiv.className = 'text-success';
-      }
+      entries.push(entryData);
+      setEntries(entries);
+      
+      statusDiv.innerHTML = '✓ Entry Saved Successfully!';
+      statusDiv.className = 'text-success';
       
       renderFirBar();
       loadData();
@@ -1944,11 +1719,10 @@ function renderFirBar() {
 // Flatpickr for FIR Registration Date - with mobile keyboard disabled
 const fp = flatpickr("#firRgDate", {
     dateFormat: "d/m/Y",
-    allowInput: false,  // Disable manual input to prevent keyboard
-    disableMobile: true, // Disable mobile native date picker
-    clickOpens: true,    // Opens calendar on click
+    allowInput: false,
+    disableMobile: true,
+    clickOpens: true,
     onOpen(selectedDates, dateStr, instance) {
-        // Dismiss any keyboard that might try to open
         document.activeElement?.blur();
         
         const entries = JSON.parse(localStorage.getItem("grEntries") || "[]");
@@ -1966,14 +1740,11 @@ const fp = flatpickr("#firRgDate", {
     }
 });
 
-// Prevent keyboard from opening on mobile for date input
 document.getElementById('firRgDate').addEventListener('focus', function(e) {
     this.blur();
-    // Open the flatpickr calendar manually
     fp.open();
 });
 
-// Also prevent touch keyboard on mobile
 document.getElementById('firRgDate').addEventListener('touchstart', function(e) {
     e.preventDefault();
     fp.open();

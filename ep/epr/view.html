@@ -31,7 +31,6 @@
     .table th { background: #f8fafc; color: #334155; font-weight: 600; border-bottom: 1.5px solid #e9edf2; padding: 0.6rem 0.4rem; font-size: 0.75rem; white-space: nowrap; }
     .table td { padding: 0.6rem 0.4rem; border-bottom: 1px solid #f0f2f5; vertical-align: middle; color: #1e293b; font-size: 0.75rem; }
     .table-action-btn { background: transparent; border: none; padding: 0.15rem 0.5rem; border-radius: 30px; font-weight: 500; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 3px; transition: 0.1s; }
-    .table-action-btn.edit { color: #4f46e5; background: #eef2ff; }
     .table-action-btn.delete { color: #b91c1c; background: #fee2e2; }
     .table-action-btn:active { opacity: 0.6; }
     .modal-content { border-radius: 40px; border: none; box-shadow: 0 32px 64px rgba(0,0,0,0.2); }
@@ -41,8 +40,25 @@
     .progress-bar { background: linear-gradient(90deg, #4f46e5, #818cf8); border-radius: 40px; }
     .lock-icon { font-size: 2.5rem; color: #4f46e5; }
     .password-input-group .btn { width: auto; }
-    .nav-links { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; }
-    .nav-links .btn { padding: 0.4rem 1.2rem; font-size: 0.85rem; }
+    
+    /* Nav Links - Mobile Responsive */
+    .nav-links {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .nav-links .btn {
+      padding: 0.35rem 0.8rem;
+      font-size: 0.75rem;
+      border-radius: 30px;
+      white-space: nowrap;
+    }
+    .nav-links .btn i {
+      font-size: 0.9rem;
+    }
+    
     .stats-bar { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; }
     .stat-item { background: white; padding: 8px 16px; border-radius: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
     .stat-item .number { font-weight: 700; font-size: 1.2rem; color: #4f46e5; }
@@ -104,14 +120,25 @@
     @media (max-width: 576px) {
       .password-input-group .btn { width: 100%; }
       .card-body { padding: 0.75rem 1rem 1rem; }
-      .table th, .table td { font-size: 0.65rem; padding: 0.4rem 0.2rem; }
-      .stats-bar { gap: 8px; }
-      .stat-item { padding: 6px 12px; }
-      .stat-item .number { font-size: 1rem; }
+      .table th, .table td { font-size: 0.6rem; padding: 0.3rem 0.15rem; }
+      .stats-bar { gap: 6px; }
+      .stat-item { padding: 4px 10px; }
+      .stat-item .number { font-size: 0.9rem; }
+      .stat-item .label { font-size: 0.6rem; }
       .district-selection {
         flex-direction: column;
         gap: 8px;
       }
+      .nav-links .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.65rem;
+      }
+      .nav-links .btn i {
+        font-size: 0.75rem;
+        margin-right: 2px;
+      }
+      .sync-status-bar .status-text { font-size: 0.65rem; }
+      .badge-soft { font-size: 0.65rem; padding: 0.15rem 0.6rem; }
     }
   </style>
 </head>
@@ -119,11 +146,12 @@
 
 <div class="app-container px-3 px-sm-0">
 
-  <!-- Navigation Links -->
+  <!-- Navigation Links - Mobile Responsive -->
   <div class="nav-links">
-    <a href="index.html" class="btn btn-outline-secondary">📝 Entry</a>
-    <a href="view.html" class="btn btn-primary">📊 View & Sync</a>
-    <a href="archive.html" class="btn btn-outline-secondary">📦 Archive</a>
+    <a href="index.html" class="btn btn-outline-secondary"><i class="bi bi-pencil-square"></i> Entry</a>
+    <a href="view.html" class="btn btn-primary"><i class="bi bi-cloud-sync"></i> View & Sync</a>
+    <a href="update.html" class="btn btn-outline-secondary"><i class="bi bi-cloud-sync"></i> Update</a>
+    <a href="archive.html" class="btn btn-outline-secondary"><i class="bi bi-archive"></i> Archive</a>
   </div>
 
   <!-- DISTRICT SELECTION & PASSWORD CARD -->
@@ -243,9 +271,9 @@
     </div>
   </div>
 
-  <!-- MODAL -->
+  <!-- MODAL - No detailedResults -->
   <div class="modal fade" id="appModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content">
         <div class="modal-body text-center p-4">
           <div class="modal-icon" id="modalIcon">✅</div>
@@ -257,8 +285,6 @@
             </div>
             <div class="mt-1 fw-medium text-secondary small" id="progressText">0%</div>
           </div>
-          <!-- Detailed results -->
-          <div id="detailedResults" style="display:none; max-height:200px; overflow-y:auto; text-align:left; margin-top:10px; font-size:0.8rem;"></div>
         </div>
         <div class="modal-footer justify-content-center border-0 pb-4">
           <button class="btn btn-primary px-5" id="modalBtn" style="font-size:0.9rem;">OK</button>
@@ -305,7 +331,6 @@
     const progressContainer = document.getElementById('progressContainer');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
-    const detailedResults = document.getElementById('detailedResults');
 
     let isSyncing = false;
     let isUnlocked = false;
@@ -323,7 +348,6 @@
     }
     
     function loadDistrictScript(district) {
-      // Remove any existing district scripts
       document.querySelectorAll('script[data-district-script]').forEach(el => el.remove());
       
       scriptLoaded = false;
@@ -373,10 +397,6 @@
     }
     function setArchive(archive) { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archive)); }
 
-    function getEditIndex() {
-      try { return parseInt(localStorage.getItem(EDIT_INDEX_KEY) || '-1'); } catch { return -1; }
-    }
-
     function getCurrentPassword() {
       return currentPassword || localStorage.getItem(REMEMBER_PASSWORD_KEY) || '';
     }
@@ -401,7 +421,6 @@
         syncStatusBadge.className = 'badge-soft badge-warning';
       }
       
-      // Update district badge
       const district = getSelectedDistrict();
       if (district) {
         districtBadge.textContent = '📍 ' + district;
@@ -438,7 +457,7 @@
       updateStats();
     }
 
-    // ---------- RENDER TABLE ----------
+    // ---------- RENDER TABLE (No Edit Button) ----------
     function renderTable() {
       const entries = getEntries();
       if (entries.length === 0) {
@@ -447,7 +466,6 @@
       }
       let html = '';
       entries.forEach((entry, index) => {
-        const firDisplay = entry.firNo ? `${entry.firNo}${entry.firYear ? '/' + entry.firYear : ''}` : '';
         html += `
           <tr>
             <td class="small">${index + 1}</td>
@@ -459,7 +477,6 @@
             <td class="small">${entry.firRgDate || ''}</td>
             <td class="small">${entry.type || ''}</td>
             <td class="text-end text-nowrap">
-              <button class="table-action-btn edit" onclick="editEntry(${index})"><i class="bi bi-pencil"></i></button>
               <button class="table-action-btn delete" onclick="deleteEntry(${index})"><i class="bi bi-trash"></i></button>
             </td>
           </tr>
@@ -469,11 +486,6 @@
     }
 
     // ---------- ACTIONS ----------
-    window.editEntry = function(index) {
-      localStorage.setItem(EDIT_INDEX_KEY, String(index));
-      window.location.href = 'index.html';
-    };
-
     window.deleteEntry = function(index) {
       if (!confirm('Delete this entry?')) return;
       const entries = getEntries();
@@ -525,7 +537,6 @@
       const total = entries.length;
       let syncedCount = 0;
       let failedCount = 0;
-      const results = [];
       
       try {
         const formData = new FormData();
@@ -554,16 +565,13 @@
             if (result.success) {
               syncedCount++;
               archiveEntry(entries[idx]);
-              results.push(`✅ ${entries[idx].grYear}/${entries[idx].grNo} - ${entries[idx].psName}`);
             } else {
               failedCount++;
-              results.push(`❌ ${entries[idx].grYear}/${entries[idx].grNo} - ${result.message}`);
             }
           });
         } else {
           syncedCount = total;
           entries.forEach(e => archiveEntry(e));
-          results.push(`✅ All ${total} entries synced successfully`);
         }
         
         const remainingEntries = getEntries().filter(e => {
@@ -583,12 +591,8 @@
         updateProgress(100, 'Complete!');
         
         setTimeout(() => {
-          completeProgressModal('✅', 'Sync Complete', 
-            `${syncedCount} entries synced, ${failedCount} failed.`, true);
-          if (results.length > 0) {
-            detailedResults.style.display = 'block';
-            detailedResults.innerHTML = results.map(r => `<div>${r}</div>`).join('');
-          }
+          const msg = `${syncedCount} entries synced${failedCount > 0 ? `, ${failedCount} failed` : ''}.`;
+          completeProgressModal('✅', 'Sync Complete', msg, true);
           syncAllBtn.disabled = false;
           isSyncing = false;
         }, 500);
@@ -596,8 +600,7 @@
       } catch (error) {
         updateProgress(100, 'Failed!');
         setTimeout(() => {
-          completeProgressModal('❌', 'Sync Failed', 
-            'Batch sync failed: ' + error.message, false);
+          completeProgressModal('❌', 'Sync Failed', 'Batch sync failed: ' + error.message, false);
           syncAllBtn.disabled = false;
           isSyncing = false;
         }, 300);
@@ -609,8 +612,6 @@
       modalIcon.textContent = '⏳';
       modalTitle.textContent = title;
       modalDesc.textContent = desc;
-      detailedResults.style.display = 'none';
-      detailedResults.innerHTML = '';
       if (showProgress) {
         progressContainer.style.display = 'block';
         progressFill.style.width = '0%';
@@ -643,8 +644,6 @@
       modalIcon.textContent = icon;
       modalTitle.textContent = title;
       modalDesc.textContent = desc;
-      detailedResults.style.display = 'none';
-      detailedResults.innerHTML = '';
       progressContainer.style.display = 'none';
       modalBtn.disabled = false;
       modalBtn.textContent = 'OK';
