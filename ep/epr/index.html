@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GR Entry</title>
-    <link rel="manifest" href="manifest.json">
+   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#002357">
   <!-- Bootstrap 5 + Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -20,6 +20,24 @@
     .form-control { border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 0.6rem 0.9rem; font-weight: 450; background: #fafbfc; font-size: 0.95rem; }
     .form-control:focus { border-color: #818cf8; box-shadow: 0 0 0 4px rgba(99,102,241,0.10); }
     .form-control-sm { padding: 0.4rem 0.7rem; font-size: 0.85rem; }
+    
+    /* FIR Input Validation Styles */
+    .form-control.fir-valid { border-color: #22c55e; background-color: #f0fdf4; }
+    .form-control.fir-invalid { border-color: #dc2626; background-color: #fef2f2; }
+    .form-control.fir-valid:focus { border-color: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,0.15); }
+    .form-control.fir-invalid:focus { border-color: #dc2626; box-shadow: 0 0 0 4px rgba(220,38,38,0.15); }
+    
+    .fir-validation-msg {
+      font-size: 0.7rem;
+      margin-top: 2px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: none;
+    }
+    .fir-validation-msg.visible { display: block; }
+    .fir-validation-msg.valid { color: #16a34a; background: #f0fdf4; }
+    .fir-validation-msg.invalid { color: #dc2626; background: #fef2f2; }
+    
     .btn { border-radius: 40px; font-weight: 600; padding: 0.6rem 1.5rem; }
     .btn-primary { background: #4f46e5; border: none; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25); }
     .btn-primary:hover { background: #4338ca; }
@@ -28,10 +46,10 @@
     .btn-outline-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
     .badge-soft { background: #eef2ff; color: #4f46e5; font-weight: 500; padding: 0.25rem 0.9rem; border-radius: 40px; font-size: 0.75rem; }
     .chip-grid-5 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 6px; }
-    .chip-grid-5 .btn { width: 100%; min-height: 32px; padding: 0; border-radius: 12px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center; white-space: nowrap; }
+    .chip-grid-5 .btn { width: 100%; min-height: 26px; padding: 0; border-radius: 12px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center; white-space: nowrap; }
     .chip-grid-5 .btn-primary { background: #4f46e5; color: white; box-shadow: 0 4px 8px rgba(79, 70, 229, 0.2); }
     .chip-grid-5 .btn-outline-secondary { background: transparent; border: 1.5px solid #e2e8f0; }
-    #psButtons .btn { font-size: 0.65rem; height: 40px; display: flex; align-items: center; justify-content: center; }
+    #psButtons .btn { font-size: 0.65rem; height: 32px; display: flex; align-items: center; justify-content: center; }
     
     /* FIR Chip Styles - Enhanced */
     #firScrollWrapper {
@@ -171,6 +189,10 @@
     .fir-status-badge.bg-secondary {
       background: #f1f5f9 !important;
       color: #64748b !important;
+    }
+    .fir-status-badge.bg-danger {
+      background: #fee2e2 !important;
+      color: #b91c1c !important;
     }
 
     #firHintText {
@@ -350,6 +372,47 @@
       color: white;
     }
 
+    /* FIR Year Display */
+    #firYearDisplay {
+      font-weight: 600;
+      color: #0f172a;
+      margin-left: 4px;
+    }
+
+    /* New styles for FIR year with +/- buttons */
+    .fir-year-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .fir-year-group .form-control {
+      flex: 1;
+      text-align: center;
+    }
+    .fir-year-group .btn {
+      padding: 0.2rem 0.6rem;
+      font-size: 1rem;
+      min-width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+    }
+    .fir-year-group .btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Date input - hide keyboard */
+    .date-input-no-keyboard {
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .date-input-no-keyboard:focus {
+      outline: none;
+    }
+
     @media (max-width: 576px) {
       .password-input-group .btn { width: 100%; }
       .chip-grid-5 { gap: 4px; }
@@ -367,18 +430,18 @@
         flex-direction: column;
         gap: 8px;
       }
+      .fir-year-group .btn {
+        min-width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+        padding: 0.1rem 0.4rem;
+      }
     }
   </style>
 </head>
 <body>
 
 <div class="app-container px-3 px-sm-0">
-
-  <!-- Navigation Links -->
-  <!-- <div class="nav-links mb-1 text-center">
-    <a href="index.html" class="btn btn-primary">📝 Entry</a>
-    <a href="view.html" class="btn btn-secondary">📊 View & Sync</a>
-  </div> -->
 
   <!-- DISTRICT SELECTION & PASSWORD CARD -->
   <div class="card mb-3" id="authCard">
@@ -437,12 +500,12 @@
     <!-- ENTRY CARD -->
     <div class="card mb-3">
       <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
-        <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2">
+        <p class="fw-semibold mb-0 d-flex align-items-center gap-2">
           <i class="bi bi-pencil-square"></i> Last GR
           <div id="o2Value" class="fw-bold text-primary">
             <span class="loading-spinner"></span>
           </div>
-        </h5>
+        </p>
         <div class="d-flex align-items-center gap-2">
           <span class="badge-soft" id="entryCountBadge">0</span>
           <button class="btn btn-outline-secondary btn-sm" onclick="lockApp()" style="padding:0.15rem 0.6rem; color:#dc2626; font-size:0.8rem;">
@@ -458,7 +521,7 @@
             GR Year: <span class="field-placeholder">Not Selected</span>
           </label>
           <input type="hidden" id="grYearInput" value="">
-          <div class="chip-grid-5" id="yearButtons" style="grid-template-columns: repeat(3, 1fr);"></div>
+          <div class="chip-grid-5" id="yearButtons"></div>
         </div>
 
         <!-- GR No -->
@@ -476,18 +539,33 @@
           <div class="chip-grid-5" id="psButtons"></div>
         </div>
 
-        <!-- FIR No -->
+        <!-- FIR No with FIR Year -->
         <div class="mb-2">
           <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">
             FIR No.
             <span id="firStatusBadge" class="fir-status-badge bg-secondary rounded px-1 text-white">Waiting</span>
           </label>
-          <input type="number" id="firNo" class="form-control form-control-sm" placeholder="Enter FIR No" inputmode="numeric" pattern="[0-9]*">
+          <div class="d-flex gap-2">
+            <input type="number" id="firNo" class="form-control form-control-sm" placeholder="Enter FIR No" inputmode="numeric" pattern="[0-9]*" style="flex:1.8; min-width:110px;">
+            <span class="fw-bold text-secondary d-flex align-items-center" style="font-size:0.9rem;">/</span>
+            <!-- FIR Year with +/- buttons -->
+            <div class="fir-year-group">
+              <button type="button" class="btn btn-outline-secondary" id="firYearDecrement">−</button>
+              <input type="number" id="firYear" class="form-control form-control-sm" placeholder="Year" inputmode="numeric" pattern="[0-9]*" style="flex:1; min-width:60px; text-align:center;">
+              <button type="button" class="btn btn-outline-secondary" id="firYearIncrement">+</button>
+            </div>
+          </div>
+          
+          <!-- FIR Validation Message -->
+          <div id="firValidationMsg" class="fir-validation-msg">
+            <i class="bi bi-check-circle-fill"></i> 
+            <span id="firValidationText">FIR number is available</span>
+          </div>
           
           <div class="fir-nav-arrows d-flex justify-content-between mt-1">
-            <button class="btn btn-outline-secondary btn-sm" id="firScrollLeft" style="padding:0.1rem 0.5rem;"><i class="bi bi-chevron-left"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" id="firScrollLeft"><i class="bi bi-chevron-left"></i></button>
             <span class="small text-secondary" id="firRangeLabel">0 – 0</span>
-            <button class="btn btn-outline-secondary btn-sm" id="firScrollRight" style="padding:0.1rem 0.5rem;"><i class="bi bi-chevron-right"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" id="firScrollRight"><i class="bi bi-chevron-right"></i></button>
           </div>
           <div id="firScrollWrapper">
             <div class="fir-loading-placeholder">
@@ -498,10 +576,10 @@
         </div>
 
         <!-- Additional Fields - Two Column Row -->
-        <div class="row mb-2">
+        <div class="row mb-1">
           <div class="col-6">
             <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">FIR Registration Date</label>
-            <input id="firRgDate" class="form-control form-control-sm" placeholder="DD/MM/YYYY">
+            <input id="firRgDate" class="form-control form-control-sm date-input-no-keyboard" placeholder="DD/MM/YYYY" readonly>
           </div>
           <div class="col-6">
             <label class="field-label" id="typeDisplay">
@@ -509,8 +587,8 @@
             </label>
             <input type="hidden" id="typeInput" value="Legal Options">
             <div class="type-chip-grid" id="typeButtons">
-              <button type="button" class="btn btn-primary" data-value="Legal Options">LO</button>
-              <button type="button" class="btn btn-outline-secondary" data-value="Charge Sheet">CS</button>
+              <button type="button" class="btn btn-primary" data-value="Legal Options">⚖️ LO</button>
+              <button type="button" class="btn btn-outline-secondary" data-value="Charge Sheet">📄 CS</button>
             </div>
           </div>
         </div>
@@ -589,6 +667,9 @@
     const grNoInput = document.getElementById('grNo');
     const psNameInput = document.getElementById('psNameInput');
     const firNoInput = document.getElementById('firNo');
+    const firYearInput = document.getElementById('firYear');
+    const firYearDecrement = document.getElementById('firYearDecrement');
+    const firYearIncrement = document.getElementById('firYearIncrement');
     const firRgDate = document.getElementById('firRgDate');
     const typeInput = document.getElementById('typeInput');
     const detailsInput = document.getElementById('details');
@@ -602,6 +683,8 @@
     const firRangeLabel = document.getElementById('firRangeLabel');
     const firHintText = document.getElementById('firHintText');
     const firStatusBadge = document.getElementById('firStatusBadge');
+    const firValidationMsg = document.getElementById('firValidationMsg');
+    const firValidationText = document.getElementById('firValidationText');
     const saveBtn = document.getElementById('saveBtn');
     const statusDiv = document.getElementById('status');
     const entryCountBadge = document.getElementById('entryCountBadge');
@@ -618,6 +701,104 @@
 
     let isUnlocked = false;
     let currentPassword = '';
+    let firDataFromSheet = {};
+
+    // ---------- FIR YEAR +/- BUTTONS ----------
+    firYearDecrement.addEventListener('click', function() {
+      let val = parseInt(firYearInput.value) || 0;
+      if (val > 0) {
+        firYearInput.value = val - 1;
+      }
+      // Trigger validation if FIR No is present
+      if (firNoInput.value && psNameInput.value && grYearInput.value) {
+        validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+      }
+    });
+
+    firYearIncrement.addEventListener('click', function() {
+      let val = parseInt(firYearInput.value) || 0;
+      if (val < 2100) {
+        firYearInput.value = val + 1;
+      }
+      // Trigger validation if FIR No is present
+      if (firNoInput.value && psNameInput.value && grYearInput.value) {
+        validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+      }
+    });
+
+    // ---------- FIR VALIDATION ----------
+    function validateFIRNumber(firNumber, psName, grYear, firYear) {
+      if (!firNumber || !psName || !grYear) {
+        firNoInput.className = 'form-control form-control-sm';
+        firValidationMsg.className = 'fir-validation-msg';
+        firValidationMsg.style.display = 'none';
+        return true;
+      }
+      
+      const firNum = parseInt(firNumber, 10);
+      if (isNaN(firNum)) {
+        firNoInput.className = 'form-control form-control-sm fir-invalid';
+        firValidationMsg.className = 'fir-validation-msg visible invalid';
+        firValidationText.textContent = 'Please enter a valid FIR number';
+        firValidationMsg.style.display = 'block';
+        return false;
+      }
+      
+      // Check if FIR is used in sheet for this specific year
+      const sheetData = firDataFromSheet[psName];
+      if (sheetData && !sheetData.available) {
+        // Check if the FIR data has a specific year
+        if (sheetData.year && sheetData.year !== parseInt(grYear)) {
+          // Different year, skip validation for this year
+          firNoInput.className = 'form-control form-control-sm';
+          firValidationMsg.className = 'fir-validation-msg';
+          firValidationMsg.style.display = 'none';
+          return true;
+        }
+        
+        const usedFIRs = sheetData.usedFIRs || [];
+        if (usedFIRs.includes(firNum)) {
+          firNoInput.className = 'form-control form-control-sm fir-invalid';
+          firValidationMsg.className = 'fir-validation-msg visible invalid';
+          firValidationText.textContent = `⚠️ FIR No. ${firNum} is already used for ${psName} (${grYear}) in the sheet`;
+          firValidationMsg.style.display = 'block';
+          return false;
+        }
+      }
+      
+      // Check if FIR is used locally
+      const entries = getEntries();
+      const localUsed = entries
+        .filter(e => e.psName === psName && e.grYear === grYear && e.firNo)
+        .map(e => parseInt(e.firNo, 10))
+        .filter(n => !isNaN(n));
+      
+      if (localUsed.includes(firNum)) {
+        const editIndex = getEditIndex();
+        if (editIndex >= 0 && editIndex < entries.length) {
+          const currentEntry = entries[editIndex];
+          if (currentEntry.firNo && parseInt(currentEntry.firNo, 10) === firNum) {
+            firNoInput.className = 'form-control form-control-sm fir-valid';
+            firValidationMsg.className = 'fir-validation-msg visible valid';
+            firValidationText.textContent = `FIR No. ${firNum}/${grYear} is valid for ${psName}`;
+            firValidationMsg.style.display = 'block';
+            return true;
+          }
+        }
+        
+        firNoInput.className = 'form-control form-control-sm fir-invalid';
+        firValidationMsg.className = 'fir-validation-msg visible invalid';
+        firValidationText.textContent = `⚠️ FIR No. ${firNum} is already used for ${psName} in local entries`;
+        firValidationMsg.style.display = 'block';
+        return false;
+      }
+      
+      firNoInput.className = 'form-control form-control-sm fir-valid';
+      firValidationMsg.className = 'fir-validation-msg visible valid';
+      firValidationText.textContent = `FIR No. ${firNum}/${grYear} is available for ${psName}`;
+      firValidationMsg.style.display = 'block';
+      return true;
+    }
 
     // ---------- DISTRICT SELECTION ----------
     function getSelectedDistrict() {
@@ -649,6 +830,7 @@
           document.getElementById('districtStatus').textContent = '✅ Loaded: ' + district + ' (' + window.psList.length + ' PS)';
           document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-success';
           initializeApp();
+          fetchFirDataFromSheet();
         } else {
           document.getElementById('districtStatus').textContent = '⚠️ Script loaded but data missing for: ' + district;
           document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-warning';
@@ -662,6 +844,71 @@
       };
       
       document.head.appendChild(script);
+    }
+
+    // ---------- FETCH FIR DATA FROM GOOGLE SHEET ----------
+    async function fetchFirDataFromSheet() {
+      if (!window.SCRIPT_URL) {
+        console.warn('SCRIPT_URL not defined yet');
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('action', 'getFirDetails');
+
+        const response = await fetch(window.SCRIPT_URL, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.firData) {
+          firDataFromSheet = data.firData;
+          console.log('Fetched FIR data from sheet:', firDataFromSheet);
+          
+          if (psNameInput.value && grYearInput.value) {
+            renderFirBar();
+          }
+          
+          if (firNoInput.value && psNameInput.value && grYearInput.value) {
+            validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+          }
+        } else if (data.success && data.values) {
+          firDataFromSheet = {};
+          data.values.forEach(line => {
+            if (!line || line.trim() === '') return;
+            
+            if (line.includes('All FIRs are available')) {
+              const psName = line.split(':')[0].trim();
+              firDataFromSheet[psName] = { available: true, usedFIRs: [], year: null };
+              return;
+            }
+            
+            const match = line.match(/^(.+?):\s*(\d{4})?\s*Used FIRs\s*\[([\d,\s]*)\]/);
+            if (match) {
+              const psName = match[1].trim();
+              const year = match[2] ? parseInt(match[2], 10) : null;
+              const firNumbers = match[3].trim() ? match[3].split(',').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n)) : [];
+              firDataFromSheet[psName] = { available: false, usedFIRs: firNumbers, year: year };
+            }
+          });
+          console.log('Parsed FIR data from sheet (fallback):', firDataFromSheet);
+          
+          if (psNameInput.value && grYearInput.value) {
+            renderFirBar();
+          }
+          
+          if (firNoInput.value && psNameInput.value && grYearInput.value) {
+            validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+          }
+        } else {
+          console.warn('Failed to fetch FIR data:', data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching FIR data:', error);
+      }
     }
 
     // ---------- PS WISE LAST FIR HELPERS ----------
@@ -696,8 +943,10 @@
     function updateYearLabel(value) {
       if (value) {
         grYearDisplay.innerHTML = `GR Year: <span class="field-value">${value}</span>`;
+        firYearInput.value = value;
       } else {
         grYearDisplay.innerHTML = `GR Year: <span class="field-placeholder">Not Selected</span>`;
+        firYearInput.value = '';
       }
     }
 
@@ -755,13 +1004,24 @@
       }
     }
 
-    // ---------- GET RECOMMENDED FIR NUMBERS ----------
+    // ---------- GET USED FIRS (Local + Sheet) ----------
     function getUsedFIRs(psName, grYear) {
       const entries = getEntries();
-      return entries
+      const localUsed = entries
         .filter(e => e.psName === psName && e.grYear === grYear && e.firNo)
         .map(e => parseInt(e.firNo, 10))
         .filter(n => !isNaN(n));
+      
+      let sheetUsed = [];
+      const sheetData = firDataFromSheet[psName];
+      if (sheetData && !sheetData.available) {
+        if (sheetData.year === null || sheetData.year === parseInt(grYear)) {
+          sheetUsed = sheetData.usedFIRs || [];
+        }
+      }
+      
+      const combined = [...new Set([...localUsed, ...sheetUsed])];
+      return combined;
     }
 
     function generateFirNumbers(psName, grYear) {
@@ -770,6 +1030,27 @@
       const usedFIRs = getUsedFIRs(psName, grYear);
       const usedSet = new Set(usedFIRs);
       const storedLastFIR = getPSLastFIR(psName, grYear);
+      
+      const sheetData = firDataFromSheet[psName];
+      if (sheetData && sheetData.available) {
+        let startRange = 1;
+        let endRange = 30;
+        
+        if (storedLastFIR) {
+          startRange = Math.max(1, storedLastFIR - 10);
+          endRange = storedLastFIR + 20;
+        } else if (usedFIRs.length > 0) {
+          const maxUsed = Math.max(...usedFIRs);
+          startRange = Math.max(1, maxUsed - 10);
+          endRange = maxUsed + 20;
+        }
+        
+        const numbers = [];
+        for (let i = startRange; i <= endRange; i++) {
+          numbers.push(i);
+        }
+        return [...new Set(numbers)].sort((a, b) => a - b);
+      }
       
       let allNumbers = [];
       let startRange = 1;
@@ -815,9 +1096,21 @@
         return;
       }
 
+      const sheetData = firDataFromSheet[psName];
+      if (!sheetData) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'fir-chip placeholder-chip';
+        placeholder.textContent = 'Loading FIR data...';
+        firScrollWrapper.appendChild(placeholder);
+        firRangeLabel.textContent = '–';
+        firHintText.textContent = '⏳ Loading FIR data from server...';
+        firStatusBadge.textContent = 'Loading';
+        firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+        return;
+      }
+
       const usedFIRs = getUsedFIRs(psName, grYear);
       const usedSet = new Set(usedFIRs);
-      const storedLastFIR = getPSLastFIR(psName, grYear);
       
       const numbers = generateFirNumbers(psName, grYear);
       
@@ -837,7 +1130,10 @@
       const usedCount = usedFIRs.length;
       const availableCount = totalFIRs - usedCount;
       
-      if (usedCount === 0) {
+      if (sheetData.available) {
+        firStatusBadge.textContent = `✅ All FIRs Available`;
+        firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
+      } else if (usedCount === 0) {
         firStatusBadge.textContent = `✅ ${totalFIRs} FIRs Available`;
         firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
       } else {
@@ -846,8 +1142,8 @@
       }
       
       let lastUsedFIR = 0;
-      let lastRecommendedFIR = 0;
       let firstAvailableFIR = null;
+      let recommendedCount = 0;
       
       numbers.forEach(num => {
         const chip = document.createElement('span');
@@ -858,7 +1154,7 @@
           if (num > lastUsedFIR) lastUsedFIR = num;
         } else {
           chip.classList.add('recommended-chip');
-          if (num > lastRecommendedFIR) lastRecommendedFIR = num;
+          recommendedCount++;
           if (firstAvailableFIR === null) firstAvailableFIR = num;
         }
         
@@ -871,6 +1167,7 @@
             return;
           }
           firNoInput.value = num;
+          validateFIRNumber(num, psName, grYear, firYearInput.value);
           firScrollWrapper.querySelectorAll('.fir-chip').forEach(c => c.classList.remove('active-chip'));
           chip.classList.add('active-chip');
           chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
@@ -880,8 +1177,10 @@
 
       firRangeLabel.textContent = numbers.length > 0 ? `${numbers[0]} – ${numbers[numbers.length-1]}` : '–';
       
-      if (usedCount === 0) {
-        firHintText.textContent = '✨ All FIR numbers are available. Click any to select.';
+      if (sheetData.available) {
+        firHintText.textContent = `✅ All FIR numbers are available. Click any to select.`;
+      } else if (usedCount === 0) {
+        firHintText.textContent = '✨ All FIR numbers in this range are available. Click any to select.';
       } else if (availableCount === 0) {
         firHintText.textContent = '⚠️ All FIR numbers in this range are used. Try a different PS or Year.';
       } else {
@@ -890,7 +1189,6 @@
 
       setTimeout(() => {
         let targetChip = null;
-        let targetFIR = 0;
         
         const currentFirValue = firNoInput.value.trim();
         if (currentFirValue) {
@@ -900,7 +1198,6 @@
             for (let chip of chips) {
               if (parseInt(chip.dataset.value) === currentFirNum) {
                 targetChip = chip;
-                targetFIR = currentFirNum;
                 chip.classList.add('active-chip');
                 break;
               }
@@ -908,40 +1205,13 @@
           }
         }
         
-        if (!targetChip && storedLastFIR !== null) {
-          targetFIR = storedLastFIR;
-          const chips = firScrollWrapper.querySelectorAll('.fir-chip');
-          for (let chip of chips) {
-            if (parseInt(chip.dataset.value) === targetFIR) {
-              targetChip = chip;
-              break;
-            }
-          }
-        }
-        
-        if (!targetChip && lastUsedFIR > 0) {
-          targetFIR = lastUsedFIR;
-          const chips = firScrollWrapper.querySelectorAll('.fir-chip');
-          for (let chip of chips) {
-            if (parseInt(chip.dataset.value) === targetFIR) {
-              targetChip = chip;
-              break;
-            }
-          }
-        }
-        
         if (!targetChip && firstAvailableFIR !== null) {
-          targetFIR = firstAvailableFIR;
           const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
           if (chips.length > 0) {
             targetChip = chips[0];
-          }
-        }
-        
-        if (!targetChip) {
-          const chips = firScrollWrapper.querySelectorAll('.fir-chip');
-          if (chips.length > 0) {
-            targetChip = chips[chips.length - 1];
+            targetChip.classList.add('active-chip');
+            firNoInput.value = parseInt(targetChip.dataset.value);
+            validateFIRNumber(firNoInput.value, psName, grYear, firYearInput.value);
           }
         }
         
@@ -989,7 +1259,7 @@
       
       initializeApp();
       loadO2Value();
-      renderFirBar();
+      fetchFirDataFromSheet();
       
       setTimeout(() => {
         grNoInput.focus();
@@ -1026,7 +1296,7 @@
     // ---------- BUILD CHIPS ----------
     function buildYearButtons() {
       const currentYear = new Date().getFullYear();
-      const years = [currentYear - 1, currentYear, currentYear + 1];
+      const years = [currentYear - 2, currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
       yearButtons.innerHTML = '';
       years.forEach(year => {
         const btn = document.createElement('button');
@@ -1040,6 +1310,9 @@
           yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
           btn.className = 'btn btn-primary';
           renderFirBar();
+          if (firNoInput.value && psNameInput.value) {
+            validateFIRNumber(firNoInput.value, psNameInput.value, year, firYearInput.value);
+          }
         };
         yearButtons.appendChild(btn);
       });
@@ -1063,6 +1336,9 @@
           psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
           btn.className = 'btn btn-primary';
           renderFirBar();
+          if (firNoInput.value && grYearInput.value) {
+            validateFIRNumber(firNoInput.value, ps.value, grYearInput.value, firYearInput.value);
+          }
         };
         psButtons.appendChild(btn);
       });
@@ -1126,6 +1402,28 @@
       remarksScrollWrapper.scrollBy({ left: 120, behavior: 'smooth' });
     });
 
+    // ---------- FIR INPUT VALIDATION ON CHANGE ----------
+    firNoInput.addEventListener('input', function() {
+      const psName = psNameInput.value.trim();
+      const grYear = grYearInput.value.trim();
+      const firYear = firYearInput.value.trim();
+      
+      if (!psName || !grYear) {
+        firNoInput.className = 'form-control form-control-sm';
+        firValidationMsg.className = 'fir-validation-msg';
+        firValidationMsg.style.display = 'none';
+        return;
+      }
+      
+      if (this.value) {
+        validateFIRNumber(this.value, psName, grYear, firYear);
+      } else {
+        firNoInput.className = 'form-control form-control-sm';
+        firValidationMsg.className = 'fir-validation-msg';
+        firValidationMsg.style.display = 'none';
+      }
+    });
+
     // ---------- LOAD DATA ----------
     function loadData() {
       const entries = getEntries();
@@ -1137,9 +1435,14 @@
         updateYearLabel('');
         updatePsLabel('');
         firNoInput.value = '';
+        firYearInput.value = '';
         firRgDate.value = '';
-        typeInput.value = 'Legal Options';
-        updateTypeLabel('Legal Options');
+        typeInput.value = 'Charge Sheet';
+        updateTypeLabel('Charge Sheet');
+        
+        firNoInput.className = 'form-control form-control-sm';
+        firValidationMsg.className = 'fir-validation-msg';
+        firValidationMsg.style.display = 'none';
         
         const defaultDetails = `Complainant:\nI.O:`;
         detailsInput.value = defaultDetails;
@@ -1148,7 +1451,7 @@
         yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
         psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
         typeButtons.querySelectorAll('.btn').forEach(b => {
-          b.className = b.dataset.value === 'Legal Options' ? 'btn btn-primary' : 'btn btn-outline-secondary';
+          b.className = b.dataset.value === 'Charge Sheet' ? 'btn btn-primary' : 'btn btn-outline-secondary';
         });
         remarksScrollWrapper.querySelectorAll('.remarks-chip').forEach(c => c.classList.remove('active-chip'));
         
@@ -1195,7 +1498,7 @@
         updatePsLabel(entry.psName || '');
         grNoInput.value = entry.grNo || '';
         firNoInput.value = entry.firNo || '';
-        
+        firYearInput.value = entry.firYear || entry.grYear || '';
         if (entry.firRgDate) {
           if (entry.firRgDate.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
             firRgDate.value = entry.firRgDate;
@@ -1239,6 +1542,9 @@
         
         setTimeout(() => {
           renderFirBar();
+          if (entry.firNo && entry.psName && entry.grYear) {
+            validateFIRNumber(entry.firNo, entry.psName, entry.grYear, entry.firYear || entry.grYear);
+          }
         }, 100);
       }
       
@@ -1251,7 +1557,18 @@
       const grNo = grNoInput.value.trim();
       const psName = psNameInput.value.trim();
       const firNo = firNoInput.value.trim();
+      const firYear = firYearInput.value.trim() || grYear;
       let firRgDateVal = "";
+
+      if (firNo && psName && grYear) {
+        const isValid = validateFIRNumber(firNo, psName, grYear, firYear);
+        if (!isValid) {
+          statusDiv.innerHTML = '⚠️ Please enter a valid and available FIR number';
+          statusDiv.className = 'text-danger';
+          firNoInput.focus();
+          return;
+        }
+      }
 
       if (firRgDate.value.trim()) {
         const parts = firRgDate.value.split("/");
@@ -1284,6 +1601,7 @@
 
       const entryData = { 
         grYear, grNo, psName, firNo, 
+        firYear: firYear,
         firRgDate: firRgDateVal, 
         type: typeVal, 
         details: detailsVal, 
@@ -1476,18 +1794,16 @@
 </script>
 
 <script>
-// Flatpickr for FIR Registration Date
-flatpickr("#firRgDate", {
-    dateFormat: "d/m/Y",
-    allowInput: true
-});
-
+// Flatpickr for FIR Registration Date - with mobile keyboard disabled
 const fp = flatpickr("#firRgDate", {
     dateFormat: "d/m/Y",
-    allowInput: true,
-    disableMobile: true,
-
+    allowInput: false,  // Disable manual input to prevent keyboard
+    disableMobile: true, // Disable mobile native date picker
+    clickOpens: true,    // Opens calendar on click
     onOpen(selectedDates, dateStr, instance) {
+        // Dismiss any keyboard that might try to open
+        document.activeElement?.blur();
+        
         const entries = JSON.parse(localStorage.getItem("grEntries") || "[]");
         if (entries.length > 0) {
             const lastEntry = entries[entries.length - 1];
@@ -1501,6 +1817,19 @@ const fp = flatpickr("#firRgDate", {
             instance.jumpToDate(new Date(year, 0, 1));
         }
     }
+});
+
+// Prevent keyboard from opening on mobile for date input
+document.getElementById('firRgDate').addEventListener('focus', function(e) {
+    this.blur();
+    // Open the flatpickr calendar manually
+    fp.open();
+});
+
+// Also prevent touch keyboard on mobile
+document.getElementById('firRgDate').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    fp.open();
 });
 </script>
 <script>

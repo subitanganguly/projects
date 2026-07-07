@@ -189,11 +189,12 @@
             <thead>
               <tr>
                 <th>#</th>
-                <th>Year</th>
-                <th>No</th>
+                <th>GR Year</th>
+                <th>GR No</th>
                 <th>PS</th>
-                <th>FIR</th>
-                <th>Date</th>
+                <th>FIR No</th>
+                <th>FIR Year</th>
+                <th>FIR Date</th>
                 <th>Type</th>
                 <th class="text-end">Actions</th>
               </tr>
@@ -358,7 +359,7 @@
     function renderTable() {
       const archive = getArchive();
       if (archive.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-secondary py-3 small">No archived entries yet.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" class="text-center text-secondary py-3 small">No archived entries yet.</td></tr>`;
         return;
       }
       let html = '';
@@ -370,6 +371,7 @@
             <td class="small">${entry.grNo || ''}</td>
             <td class="small">${entry.psName || ''}</td>
             <td class="small">${entry.firNo || ''}</td>
+            <td class="small">${entry.firYear || entry.grYear || ''}</td>
             <td class="small">${entry.firRgDate || ''}</td>
             <td class="small">${entry.type || ''}</td>
             <td class="text-end text-nowrap">
@@ -407,10 +409,10 @@
         showModal('⚠️', 'No Data', 'No archived entries to export.', false);
         return;
       }
-      const headers = ['GR Year', 'GR No', 'PS Name', 'FIR No', 'FIR Date', 'Type', 'Details', 'Remarks', 'Synced At'];
+      const headers = ['GR Year', 'GR No', 'PS Name', 'FIR No', 'FIR Year', 'FIR Date', 'Type', 'Details', 'Remarks', 'Synced At'];
       const rows = archive.map(e => [
         e.grYear || '', e.grNo || '', e.psName || '', e.firNo || '', 
-        e.firRgDate || '', e.type || '', e.details || '', e.remarks || '',
+        e.firYear || e.grYear || '', e.firRgDate || '', e.type || '', e.details || '', e.remarks || '',
         e.syncedAt || e.updatedAt || ''
       ]);
       let csv = headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n');
