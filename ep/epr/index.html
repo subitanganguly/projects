@@ -480,12 +480,18 @@
           <i class="bi bi-key"></i> Unlock
         </button>
       </div>
+
       <div class="form-check mt-2">
         <input class="form-check-input" type="checkbox" id="rememberPassword">
         <label class="form-check-label text-secondary small" for="rememberPassword">Remember Password</label>
       </div>
       <div id="passwordStatus" class="mt-1 fw-semibold text-center small"></div>
     </div>
+    <div class="p-2 text-end">
+    <button class="btn btn-danger" onclick="clearSiteData()">
+    <i class="bi bi-trash"></i> ClearData
+      </button>
+      </div>
   </div>
 
   <!-- MAIN CONTENT -->
@@ -1772,6 +1778,46 @@ document.getElementById('firRgDate').addEventListener('touchstart', function(e) 
     e.preventDefault();
     fp.open();
 });
+</script>
+<script>
+  async function clearSiteData() {
+    if (!confirm("Remove all stored data for this website?")) return;
+
+    // Storage
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Cookies
+    document.cookie.split(";").forEach(cookie => {
+        const name = cookie.split("=")[0].trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+    });
+
+    // Cache Storage
+    if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+    }
+
+    // IndexedDB
+    if ("indexedDB" in window && indexedDB.databases) {
+        const dbs = await indexedDB.databases();
+        await Promise.all(
+            dbs.map(db => db.name && indexedDB.deleteDatabase(db.name))
+        );
+    }
+
+    // Unregister Service Workers
+    if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(
+            registrations.map(reg => reg.unregister())
+        );
+    }
+
+    alert("All site data has been removed. Reloading...");
+    location.reload();
+}
 </script>
 <script>
 if ('serviceWorker' in navigator) {
