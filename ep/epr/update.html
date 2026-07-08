@@ -15,7 +15,128 @@
     .filter-btn .badge { font-size: 0.65rem; margin-left: 4px; }
     .eproc-input:disabled { background-color: #e9ecef; cursor: default; }
     .eproc-input.editable { background-color: #fff; cursor: text; }
-    .edit-icon-btn { padding: 0.3rem 0.3rem; font-size: 0.7rem; line-height: 1; }
+    .edit-icon-btn { padding: 0.4rem 0.4rem; font-size: 0.7rem; line-height: 1; }
+
+    /* side panel */
+    .filter-side-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      max-width: 92vw;
+      height: 100%;
+      background: #fff;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+      transition: right 0.3s ease;
+      z-index: 1050;
+      display: flex;
+      flex-direction: column;
+      padding: 1.2rem 1rem;
+      border-left: 1px solid #dee2e6;
+    }
+    .filter-side-panel.open { right: 0; }
+    .filter-side-panel .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e9ecef;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .filter-side-panel .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+    .filter-side-panel .filter-group {
+      margin-bottom: 1.2rem;
+    }
+    .filter-side-panel .filter-group label {
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #495057;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+    .filter-side-panel .filter-group .filter-values {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .filter-side-panel .filter-group .filter-values .badge {
+      font-size: 0.7rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 30px;
+      background: #f1f3f5;
+      color: #212529;
+      cursor: pointer;
+      user-select: none;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .filter-side-panel .filter-group .filter-values .badge.active {
+      background: #0d6efd;
+      color: #fff;
+      border-color: #0d6efd;
+    }
+    .filter-side-panel .filter-group .filter-values .badge:hover { background: #e9ecef; }
+    .filter-side-panel .filter-group .filter-values .badge.active:hover { background: #0b5ed7; }
+    .filter-side-panel .panel-footer {
+      border-top: 1px solid #e9ecef;
+      padding-top: 0.8rem;
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .filter-side-panel .panel-footer .btn { flex: 1; }
+    .overlay-blur {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.2);
+      backdrop-filter: blur(2px);
+      z-index: 1040;
+      display: none;
+    }
+    .overlay-blur.show { display: block; }
+    /* ensure table row stays */
+    .filter-badge-count { font-size: 0.6rem; margin-left: 4px; }
+    
+    /* range input styles */
+    .range-input-group {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .range-input-group input {
+      flex: 1;
+      min-width: 60px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+    .range-input-group input:focus {
+      border-color: #0d6efd;
+      outline: none;
+      box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+    }
+    .range-input-group span {
+      font-size: 0.75rem;
+      color: #6c757d;
+    }
+    .filter-text-input {
+      width: 100%;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+    .filter-text-input:focus {
+      border-color: #0d6efd;
+      outline: none;
+      box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -53,23 +174,26 @@
     <div class="card shadow-sm">
       <div class="card-header bg-transparent d-flex flex-wrap align-items-center justify-content-between">
         <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2"><i class="bi bi-database"></i> All Records</h5>
-        <a href="view.html" class="btn btn-sm btn-outline-secondary"><i class="bi bi-cloud-sync"></i> View</a>
-           <div class="d-flex flex-wrap gap-2 align-items-center entry-stats">
-        <span class="stat-item border border-success"><span class="fw-bold text-success" id="todayCount">0</span> <span class="text-secondary small">Today</span></span>
-        <span class="stat-item border border-primary"><span class="fw-bold text-primary" id="monthCount">0</span> <span class="text-secondary small">This Month</span></span>
-        <span class="stat-item border border-dark"><span class="fw-bold text-dark" id="yearCount">0</span> <span class="text-secondary small">This Year</span></span>
-      </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <a href="view.html" class="btn btn-sm btn-outline-secondary"><i class="bi bi-cloud-sync"></i> View</a>
+          <button class="btn btn-sm btn-outline-primary" id="filterPanelToggle"><i class="bi bi-funnel"></i> Filter</button>
+          <button class="btn btn-sm btn-outline-success" id="excelDownloadBtn"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center entry-stats">
+          <span class="stat-item border border-success"><span class="fw-bold text-success" id="todayCount">0</span> <span class="text-secondary small">Today</span></span>
+          <span class="stat-item border border-primary"><span class="fw-bold text-primary" id="monthCount">0</span> <span class="text-secondary small">This Month</span></span>
+          <span class="stat-item border border-dark"><span class="fw-bold text-dark" id="yearCount">0</span> <span class="text-secondary small">This Year</span></span>
+        </div>
         <div class="d-flex flex-wrap gap-2">
-
-           <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="all" id="filterAll" style="max-height: 30px;">
-          📋 All <span class="badge bg-secondary" id="allCount">0</span>
-        </button>
-        <button class="btn btn-sm btn-outline-success filter-btn" data-filter="with" id="filterWith"  style="max-height: 30px;">
-          ✅ With E-Proc <span class="badge bg-success" id="withCount">0</span>
-        </button>
-        <button class="btn btn-sm btn-outline-danger filter-btn" data-filter="without" id="filterWithout"  style="max-height: 30px;">
-          ❌ Without <span class="badge bg-danger" id="withoutCount">0</span>
-        </button>
+          <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="all" id="filterAll" style="max-height: 30px;">
+            📋 All <span class="badge bg-secondary" id="allCount">0</span>
+          </button>
+          <button class="btn btn-sm btn-outline-success filter-btn" data-filter="with" id="filterWith" style="max-height: 30px;">
+            ✅ With E-Proc <span class="badge bg-success" id="withCount">0</span>
+          </button>
+          <button class="btn btn-sm btn-outline-danger filter-btn" data-filter="without" id="filterWithout" style="max-height: 30px;">
+            ❌ Without <span class="badge bg-danger" id="withoutCount">0</span>
+          </button>
           <div class="rounded-pill"><span class="badge bg-success" id="liveStatus">🟢 Live</span> <span class="text-secondary small"></span></div>
           <div class="d-flex gap-2">
             <button class="btn btn-sm btn-outline-secondary" onclick="refreshRecords()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
@@ -77,23 +201,23 @@
           </div>
         </div>
       </div>
-      <div class="card-body p-1 p-sm-3">
-        <div class="d-flex flex-wrap gap-2 align-items-center bg-light rounded-3 p-2 mb-1">
+      <div class="card-body p-2 p-sm-3">
+        <div class="d-flex flex-wrap gap-2 align-items-center bg-light rounded-3 p-2 mb-2">
           <span class="text-secondary small" id="syncStatusText">📊 Loading records...</span>
           <span class="badge bg-secondary" id="syncStatusBadge">0</span>
           <span class="text-secondary small ms-auto" id="lastUpdateTime">Last update: --</span>
         </div>
-        <div class="table-responsive rounded border shadow-sm p-2">
-          <table class="table table-hover align-middle mb-0 table-sm ">
+        <div class="table-responsive rounded-4 border shadow-sm p-2">
+          <table class="table table-hover align-middle mb-0 table-sm">
             <thead class="table-light">
               <tr>
                 <th>#</th><th>GR Year</th><th>GR No</th><th>PS Name</th><th>FIR No</th><th>FIR Year</th>
                 <th>FIR Date</th><th>Type</th><th>Details</th><th>Remarks</th>
-                <th style="min-width:220px;">E-Proc ID</th><th>Entry Date</th>
+                <th>E-Proc ID</th><th>Entry Date</th>
               </tr>
             </thead>
             <tbody id="tableBody">
-              <tr><td colspan="12" class="text-center text-secondary py-1 small">Loading records from sheet...</td></tr>
+              <tr><td colspan="12" class="text-center text-secondary py-3 small">Loading records from sheet...</td></tr>
             </tbody>
           </table>
         </div>
@@ -101,11 +225,28 @@
     </div>
   </div>
 
+  <!-- FILTER SIDE PANEL -->
+  <div class="overlay-blur" id="filterOverlay"></div>
+  <div class="filter-side-panel" id="filterSidePanel">
+    <div class="panel-header">
+      <h6 class="fw-bold mb-0"><i class="bi bi-funnel"></i> Filter Records</h6>
+      <button class="btn-close" id="closeFilterPanel" aria-label="Close"></button>
+    </div>
+    <div class="panel-body" id="filterPanelBody">
+      <!-- dynamic filter groups will be injected here -->
+      <div class="text-secondary small text-center py-4">Loading filter options...</div>
+    </div>
+    <div class="panel-footer">
+      <button class="btn btn-outline-secondary btn-sm" id="clearAllFilters">Clear All</button>
+      <button class="btn btn-primary btn-sm" id="applyFilters">Apply Filters</button>
+    </div>
+  </div>
+
   <!-- MODAL -->
   <div class="modal fade" id="appModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content">
-        <div class="modal-body text-center p-1">
+        <div class="modal-body text-center p-4">
           <div class="fs-1" id="modalIcon">✅</div>
           <h5 class="fw-semibold mt-2" id="modalTitle">Success</h5>
           <p class="text-secondary small" id="modalDesc">Operation completed.</p>
@@ -153,11 +294,9 @@
     const allCount = document.getElementById('allCount');
     const withCount = document.getElementById('withCount');
     const withoutCount = document.getElementById('withoutCount');
-
     const filterAll = document.getElementById('filterAll');
     const filterWith = document.getElementById('filterWith');
     const filterWithout = document.getElementById('filterWithout');
-
     const modalEl = document.getElementById('appModal');
     const modalIcon = document.getElementById('modalIcon');
     const modalTitle = document.getElementById('modalTitle');
@@ -166,6 +305,16 @@
     const progressContainer = document.getElementById('progressContainer');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
+
+    // filter panel
+    const filterSidePanel = document.getElementById('filterSidePanel');
+    const filterOverlay = document.getElementById('filterOverlay');
+    const filterPanelBody = document.getElementById('filterPanelBody');
+    const closeFilterPanel = document.getElementById('closeFilterPanel');
+    const filterPanelToggle = document.getElementById('filterPanelToggle');
+    const clearAllFilters = document.getElementById('clearAllFilters');
+    const applyFiltersBtn = document.getElementById('applyFilters');
+    const excelDownloadBtn = document.getElementById('excelDownloadBtn');
 
     let isUnlocked = false;
     let modalInstance = null;
@@ -177,6 +326,9 @@
     let isLiveEnabled = true;
     let previousRecordsHash = '';
     let currentFilter = 'all';
+
+    // advanced filter state
+    let advancedFilter = {};
 
     // ---------- DISTRICT SELECTION ----------
     function getSelectedDistrict() { return localStorage.getItem(DISTRICT_STORAGE_KEY) || null; }
@@ -289,16 +441,9 @@
           if (newHash !== previousRecordsHash) {
             allRecords = newRecords;
             previousRecordsHash = newHash;
-            const withE = allRecords.filter(r => r['E-PROSECUTION-ID'] && r['E-PROSECUTION-ID'].trim() !== '');
-            const withoutE = allRecords.filter(r => !r['E-PROSECUTION-ID'] || r['E-PROSECUTION-ID'].trim() === '');
-            allCount.textContent = allRecords.length;
-            withCount.textContent = withE.length;
-            withoutCount.textContent = withoutE.length;
+            updateStatsAndCounts();
             applyFilter(currentFilter);
-            const stats = computeEntryDateStats(allRecords);
-            todayCount.textContent = stats.today;
-            monthCount.textContent = stats.month;
-            yearCount.textContent = stats.year;
+            buildFilterOptions(); // rebuild side panel filters
             const now = new Date();
             lastUpdateTime.textContent = `Last update: ${now.toLocaleTimeString()}`;
             if (!silent) {
@@ -329,13 +474,284 @@
       }
     }
 
-    // ---------- FILTER LOGIC ----------
+    function updateStatsAndCounts() {
+      const withE = allRecords.filter(r => r['E-PROSECUTION-ID'] && r['E-PROSECUTION-ID'].trim() !== '');
+      const withoutE = allRecords.filter(r => !r['E-PROSECUTION-ID'] || r['E-PROSECUTION-ID'].trim() === '');
+      allCount.textContent = allRecords.length;
+      withCount.textContent = withE.length;
+      withoutCount.textContent = withoutE.length;
+      const stats = computeEntryDateStats(allRecords);
+      todayCount.textContent = stats.today;
+      monthCount.textContent = stats.month;
+      yearCount.textContent = stats.year;
+    }
+
+    // ---------- BUILD FILTER OPTIONS (side panel) ----------
+    function buildFilterOptions() {
+      if (!allRecords.length) {
+        filterPanelBody.innerHTML = `<div class="text-secondary small text-center py-4">No records to filter.</div>`;
+        return;
+      }
+      
+      // Get unique GR Years
+      const grYears = [...new Set(allRecords.map(r => r['GR YEAR'] || '').filter(v => v.trim() !== ''))].sort();
+      
+      // Get unique PS Names
+      const psNames = [...new Set(allRecords.map(r => r['PS NAME'] || '').filter(v => v.trim() !== ''))].sort();
+      
+      // Get unique FIR Years
+      const firYears = [...new Set(allRecords.map(r => r['FIR YEAR'] || '').filter(v => v.trim() !== ''))].sort();
+      
+      // Get unique Types
+      const types = [...new Set(allRecords.map(r => r['TYPE'] || '').filter(v => v.trim() !== ''))].sort();
+      
+      // Get GR No range
+      const grNos = allRecords.map(r => parseInt(r['GR NO.'])).filter(v => !isNaN(v) && v > 0);
+      const minGrNo = grNos.length ? Math.min(...grNos) : 0;
+      const maxGrNo = grNos.length ? Math.max(...grNos) : 0;
+      
+      // Get Entry Date range
+      const entryDates = allRecords.map(r => r['Entry Date'] || '').filter(v => v.trim() !== '');
+      
+      let html = '';
+      
+      // GR Year filter (multiselect badges)
+      if (grYears.length) {
+        html += `<div class="filter-group" data-field="gr_year">
+          <label>GR Year</label>
+          <div class="filter-values">`;
+        grYears.forEach(val => {
+          const active = advancedFilter.gr_year && advancedFilter.gr_year.includes(val) ? 'active' : '';
+          html += `<span class="badge ${active}" data-value="${val.replace(/"/g, '&quot;')}">${val}</span>`;
+        });
+        html += `</div></div>`;
+      }
+      
+      // GR No range filter
+      if (minGrNo > 0 || maxGrNo > 0) {
+        const grNoFrom = advancedFilter.gr_no_from || '';
+        const grNoTo = advancedFilter.gr_no_to || '';
+        html += `<div class="filter-group" data-field="gr_no_range">
+          <label>GR No (Range)</label>
+          <div class="range-input-group">
+            <input type="number" class="gr-no-from" placeholder="From" value="${grNoFrom}" min="${minGrNo}" max="${maxGrNo}">
+            <span>to</span>
+            <input type="number" class="gr-no-to" placeholder="To" value="${grNoTo}" min="${minGrNo}" max="${maxGrNo}">
+            <span class="text-muted small">(${minGrNo} - ${maxGrNo})</span>
+          </div>
+        </div>`;
+      }
+      
+      // PS Name filter (multiselect badges)
+      if (psNames.length) {
+        html += `<div class="filter-group" data-field="ps_name">
+          <label>PS Name</label>
+          <div class="filter-values">`;
+        psNames.forEach(val => {
+          const active = advancedFilter.ps_name && advancedFilter.ps_name.includes(val) ? 'active' : '';
+          html += `<span class="badge ${active}" data-value="${val.replace(/"/g, '&quot;')}">${val}</span>`;
+        });
+        html += `</div></div>`;
+      }
+      
+      // FIR Year filter (multiselect badges)
+      if (firYears.length) {
+        html += `<div class="filter-group" data-field="fir_year">
+          <label>FIR Year</label>
+          <div class="filter-values">`;
+        firYears.forEach(val => {
+          const active = advancedFilter.fir_year && advancedFilter.fir_year.includes(val) ? 'active' : '';
+          html += `<span class="badge ${active}" data-value="${val.replace(/"/g, '&quot;')}">${val}</span>`;
+        });
+        html += `</div></div>`;
+      }
+      
+      // Type filter (multiselect badges)
+      if (types.length) {
+        html += `<div class="filter-group" data-field="type">
+          <label>Type</label>
+          <div class="filter-values">`;
+        types.forEach(val => {
+          const active = advancedFilter.type && advancedFilter.type.includes(val) ? 'active' : '';
+          html += `<span class="badge ${active}" data-value="${val.replace(/"/g, '&quot;')}">${val}</span>`;
+        });
+        html += `</div></div>`;
+      }
+      
+      // Remarks filter (text input)
+      html += `<div class="filter-group" data-field="remarks">
+        <label>Remarks (contains)</label>
+        <input type="text" class="filter-text-input remarks-input" placeholder="Search in remarks..." value="${advancedFilter.remarks || ''}">
+      </div>`;
+      
+      // E-Proc ID filter (starts with)
+      html += `<div class="filter-group" data-field="eproc_id">
+        <label>E-Proc ID (starts with)</label>
+        <input type="text" class="filter-text-input eproc-id-input" placeholder="Enter beginning of E-Proc ID..." value="${advancedFilter.eproc_id || ''}">
+      </div>`;
+      
+      // Entry Date range filter
+      if (entryDates.length) {
+        const entryDateFrom = advancedFilter.entry_date_from || '';
+        const entryDateTo = advancedFilter.entry_date_to || '';
+        html += `<div class="filter-group" data-field="entry_date_range">
+          <label>Entry Date (Range)</label>
+          <div class="range-input-group">
+            <input type="date" class="entry-date-from" placeholder="From" value="${entryDateFrom}">
+            <span>to</span>
+            <input type="date" class="entry-date-to" placeholder="To" value="${entryDateTo}">
+          </div>
+        </div>`;
+      }
+      
+      filterPanelBody.innerHTML = html || `<div class="text-secondary small text-center py-4">No filterable columns.</div>`;
+
+      // attach click toggles for badges
+      filterPanelBody.querySelectorAll('.filter-values .badge').forEach(badge => {
+        badge.addEventListener('click', function(e) {
+          e.stopPropagation();
+          this.classList.toggle('active');
+        });
+      });
+      
+      // For range inputs and text inputs, we store values in advancedFilter when apply is clicked
+    }
+
+    // ---------- APPLY ADVANCED FILTER ----------
+    function applyAdvancedFilter() {
+      // read from panel
+      const newFilter = {};
+      
+      // Get badge selections
+      const groups = filterPanelBody.querySelectorAll('.filter-group');
+      groups.forEach(group => {
+        const fieldKey = group.dataset.field;
+        if (fieldKey === 'gr_no_range' || fieldKey === 'entry_date_range' || fieldKey === 'remarks' || fieldKey === 'eproc_id') {
+          // handled separately
+          return;
+        }
+        const activeVals = [];
+        group.querySelectorAll('.filter-values .badge.active').forEach(b => {
+          activeVals.push(b.dataset.value);
+        });
+        if (activeVals.length) newFilter[fieldKey] = activeVals;
+      });
+      
+      // Get GR No range
+      const grNoFrom = filterPanelBody.querySelector('.gr-no-from')?.value || '';
+      const grNoTo = filterPanelBody.querySelector('.gr-no-to')?.value || '';
+      if (grNoFrom) newFilter.gr_no_from = grNoFrom;
+      if (grNoTo) newFilter.gr_no_to = grNoTo;
+      
+      // Get Entry Date range
+      const entryDateFrom = filterPanelBody.querySelector('.entry-date-from')?.value || '';
+      const entryDateTo = filterPanelBody.querySelector('.entry-date-to')?.value || '';
+      if (entryDateFrom) newFilter.entry_date_from = entryDateFrom;
+      if (entryDateTo) newFilter.entry_date_to = entryDateTo;
+      
+      // Get Remarks
+      const remarks = filterPanelBody.querySelector('.remarks-input')?.value || '';
+      if (remarks.trim()) newFilter.remarks = remarks.trim();
+      
+      // Get E-Proc ID
+      const eprocId = filterPanelBody.querySelector('.eproc-id-input')?.value || '';
+      if (eprocId.trim()) newFilter.eproc_id = eprocId.trim();
+      
+      advancedFilter = newFilter;
+      applyFilter(currentFilter);
+      // update sync status
+      const activeCount = Object.values(advancedFilter).flat().length;
+      if (activeCount) {
+        syncStatusText.textContent = `🔍 Filtered: ${filteredRecords.length} of ${allRecords.length} records`;
+        syncStatusBadge.textContent = `${filteredRecords.length}`;
+        syncStatusBadge.className = 'badge bg-info';
+      } else {
+        syncStatusText.textContent = `📊 ${allRecords.length} records (filter cleared)`;
+        syncStatusBadge.textContent = `${allRecords.length}`;
+        syncStatusBadge.className = 'badge bg-secondary';
+      }
+      closePanel();
+    }
+
+    // ---------- FILTER LOGIC (with advanced) ----------
     function applyFilter(filter) {
       currentFilter = filter;
-      if (filter === 'all') filteredRecords = [...allRecords];
-      else if (filter === 'with') filteredRecords = allRecords.filter(r => r['E-PROSECUTION-ID'] && r['E-PROSECUTION-ID'].trim() !== '');
-      else if (filter === 'without') filteredRecords = allRecords.filter(r => !r['E-PROSECUTION-ID'] || r['E-PROSECUTION-ID'].trim() === '');
+      let base = [];
+      if (filter === 'all') base = [...allRecords];
+      else if (filter === 'with') base = allRecords.filter(r => r['E-PROSECUTION-ID'] && r['E-PROSECUTION-ID'].trim() !== '');
+      else if (filter === 'without') base = allRecords.filter(r => !r['E-PROSECUTION-ID'] || r['E-PROSECUTION-ID'].trim() === '');
+
+      // advanced filter
+      if (Object.keys(advancedFilter).length) {
+        base = base.filter(r => {
+          // Check badge filters
+          for (let key in advancedFilter) {
+            if (key === 'gr_no_from' || key === 'gr_no_to' || key === 'entry_date_from' || key === 'entry_date_to' || key === 'remarks' || key === 'eproc_id') continue;
+            
+            const fieldMap = {
+              'gr_year': 'GR YEAR',
+              'ps_name': 'PS NAME',
+              'fir_year': 'FIR YEAR',
+              'type': 'TYPE'
+            };
+            const field = fieldMap[key] || key;
+            const val = r[field] || '';
+            if (!advancedFilter[key].includes(val)) return false;
+          }
+          
+          // GR No range
+          if (advancedFilter.gr_no_from || advancedFilter.gr_no_to) {
+            const grNo = parseInt(r['GR NO.']);
+            if (isNaN(grNo)) return false;
+            if (advancedFilter.gr_no_from && grNo < parseInt(advancedFilter.gr_no_from)) return false;
+            if (advancedFilter.gr_no_to && grNo > parseInt(advancedFilter.gr_no_to)) return false;
+          }
+          
+          // Entry Date range
+          if (advancedFilter.entry_date_from || advancedFilter.entry_date_to) {
+            const entryDate = r['Entry Date'] || '';
+            if (!entryDate) return false;
+            // Parse date - format "DD Month YYYY"
+            const parts = entryDate.split(' ');
+            if (parts.length !== 3) return false;
+            const day = parseInt(parts[0]);
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const month = monthNames.indexOf(parts[1]);
+            const year = parseInt(parts[2]);
+            if (isNaN(day) || month === -1 || isNaN(year)) return false;
+            const dateObj = new Date(year, month, day);
+            
+            if (advancedFilter.entry_date_from) {
+              const fromParts = advancedFilter.entry_date_from.split('-');
+              const fromDate = new Date(parseInt(fromParts[0]), parseInt(fromParts[1]) - 1, parseInt(fromParts[2]));
+              if (dateObj < fromDate) return false;
+            }
+            if (advancedFilter.entry_date_to) {
+              const toParts = advancedFilter.entry_date_to.split('-');
+              const toDate = new Date(parseInt(toParts[0]), parseInt(toParts[1]) - 1, parseInt(toParts[2]));
+              if (dateObj > toDate) return false;
+            }
+          }
+          
+          // Remarks contains
+          if (advancedFilter.remarks) {
+            const remarks = r['REMARKS'] || '';
+            if (!remarks.toLowerCase().includes(advancedFilter.remarks.toLowerCase())) return false;
+          }
+          
+          // E-Proc ID starts with
+          if (advancedFilter.eproc_id) {
+            const eproc = r['E-PROSECUTION-ID'] || '';
+            if (!eproc.toLowerCase().startsWith(advancedFilter.eproc_id.toLowerCase())) return false;
+          }
+          
+          return true;
+        });
+      }
+      filteredRecords = base;
       renderTable(filteredRecords);
+
+      // update button styles
       [filterAll, filterWith, filterWithout].forEach(b => {
         b.classList.remove('btn-primary', 'btn-success', 'btn-danger', 'btn-outline-secondary', 'btn-outline-success', 'btn-outline-danger');
       });
@@ -347,7 +763,7 @@
       else { filterWithout.classList.add('btn-outline-danger'); filterWithout.classList.remove('btn-danger'); }
     }
 
-    // ---------- RENDER TABLE with edit icon button ----------
+    // ---------- RENDER TABLE ----------
     function renderTable(records) {
       if (!records || records.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="12" class="text-center text-secondary py-3 small">No records match filter.</td></tr>`;
@@ -387,11 +803,11 @@
             <td class="small text-truncate" style="max-width:80px;" title="${remarks}">${remarks || '—'}</td>
             <td>
               <div class="d-flex align-items-center gap-1">
-                <input type="text" class="form-control form-control-sm eproc-input" 
+                <input type="text" class="form-control form-control-sm eproc-input ${hasEProc ? 'border border-1 fw-bold text-success border-success' : 'border border-1 border-danger'}" 
                        data-global="${globalIdx}" 
                        value="${eProcId}" 
                        placeholder="${hasRequired ? 'Enter E-Proc ID' : '⚠️ Missing fields'}"
-                       style="min-width:120px; font-size:0.75rem; flex:1;"
+                       style="max-width:250px; font-size:0.75rem; flex:1;"
                        ${isDisabled ? 'disabled' : ''}>
                 ${hasRequired ? `
                 ${hasEProc ? `
@@ -401,12 +817,13 @@
                     <i class="bi bi-pencil"></i>
                   </button>
                 ` : ''}
-                  <button class="btn btn-sm btn-success save-eproc-btn" 
-                          data-global="${globalIdx}" 
-                          style="display:none; font-size:0.7rem; white-space:nowrap; padding:0.15rem 0.5rem;">
-                    <i class="bi bi-check2"></i> Save
-                  </button>
-                ` : ''}
+
+                <button class="btn btn-sm btn-success save-eproc-btn"
+                        data-global="${globalIdx}"
+                        style="display:none; font-size:0.7rem; white-space:nowrap; padding:0.15rem 0.5rem;">
+                  <i class="bi bi-check2"></i> Save
+                </button>
+              ` : ''}
               </div>
               ${!hasRequired ? '<div class="text-danger small mt-1">⚠️ Missing fields</div>' : ''}
               ${hasEProc ? '<div class="text-success small mt-1">✅ ID present</div>' : ''}
@@ -420,7 +837,6 @@
       });
       tableBody.innerHTML = html;
 
-      // Attach event listeners using delegation
       tableBody.removeEventListener('click', handleTableClick);
       tableBody.removeEventListener('input', handleInputChange);
       tableBody.addEventListener('click', handleTableClick);
@@ -523,17 +939,24 @@
           allRecords[globalIdx]['E-PROSECUTION-ID'] = eProcId;
           previousRecordsHash = '';
           showModal('✅', 'Update Successful', data.message || 'E-Prosecution ID updated.', true);
-          const stats = computeEntryDateStats(allRecords);
-          todayCount.textContent = stats.today; monthCount.textContent = stats.month; yearCount.textContent = stats.year;
-          const withE = allRecords.filter(r => r['E-PROSECUTION-ID'] && r['E-PROSECUTION-ID'].trim() !== '');
-          const withoutE = allRecords.filter(r => !r['E-PROSECUTION-ID'] || r['E-PROSECUTION-ID'].trim() === '');
-          allCount.textContent = allRecords.length;
-          withCount.textContent = withE.length;
-          withoutCount.textContent = withoutE.length;
+          updateStatsAndCounts();
           saveBtn.style.display = 'none';
-          inputElement.value = eProcId;
-          inputElement.disabled = true;
-          inputElement.classList.remove('editable');
+          // inputElement.value = eProcId;
+          // inputElement.disabled = true;
+          // inputElement.classList.remove('editable');
+
+          inputElement.classList.remove(
+              'editable',
+              'border-danger',
+              'border-2'
+          );
+
+          inputElement.classList.add(
+              'bg-success',
+              'text-light',
+              'border-success'
+          );
+
           const tr = inputElement.closest('tr');
           const editBtn = tr.querySelector('.edit-toggle-btn');
           if (editBtn) {
@@ -605,6 +1028,71 @@
     modalBtn.addEventListener('click', function() {
       if (modalBtn.disabled) return;
       if (modalInstance) modalInstance.hide();
+    });
+
+    // ---------- PANEL CONTROLS ----------
+    function openPanel() {
+      filterSidePanel.classList.add('open');
+      filterOverlay.classList.add('show');
+      buildFilterOptions();
+    }
+    function closePanel() {
+      filterSidePanel.classList.remove('open');
+      filterOverlay.classList.remove('show');
+    }
+    filterPanelToggle.addEventListener('click', openPanel);
+    closeFilterPanel.addEventListener('click', closePanel);
+    filterOverlay.addEventListener('click', closePanel);
+
+    clearAllFilters.addEventListener('click', function() {
+      // Clear all badge selections
+      filterPanelBody.querySelectorAll('.filter-values .badge.active').forEach(b => b.classList.remove('active'));
+      // Clear all text inputs
+      filterPanelBody.querySelectorAll('.filter-text-input').forEach(input => input.value = '');
+      // Clear all range inputs
+      filterPanelBody.querySelectorAll('.range-input-group input').forEach(input => input.value = '');
+      advancedFilter = {};
+      applyFilter(currentFilter);
+      syncStatusText.textContent = `📊 ${allRecords.length} records (filter cleared)`;
+      syncStatusBadge.textContent = `${allRecords.length}`;
+      syncStatusBadge.className = 'badge bg-secondary';
+      closePanel();
+    });
+
+    applyFiltersBtn.addEventListener('click', applyAdvancedFilter);
+
+    // ---------- EXCEL DOWNLOAD ----------
+    excelDownloadBtn.addEventListener('click', function() {
+      const dataToExport = filteredRecords.length ? filteredRecords : allRecords;
+      if (!dataToExport.length) {
+        showModal('⚠️', 'No Data', 'No records available for download.', false);
+        return;
+      }
+      // Build CSV
+      const headers = ['GR YEAR', 'GR NO.', 'PS NAME', 'FIR NO', 'FIR YEAR', 'FIR RG DATE', 'TYPE', 'DETAILS', 'REMARKS', 'E-PROSECUTION-ID', 'Entry Date'];
+      let csvRows = [];
+      csvRows.push(headers.join(','));
+      dataToExport.forEach(row => {
+        const values = headers.map(h => {
+          let val = row[h] || '';
+          if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
+            val = `"${val.replace(/"/g, '""')}"`;
+          }
+          return val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvString = csvRows.join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `gr_entries_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showModal('✅', 'Download Started', `Exported ${dataToExport.length} records.`, true);
     });
 
     // ---------- UNLOCK ----------
