@@ -1,4 +1,4 @@
-window.SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5v2gHEZURaWKxjfV26M1xMZzrYxIEFVIX9h27yQDLGwJ6MBmN-P32EzSnk2KBmuTgVA/exec";
+window.SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8XsklIgD1u6Rdfpww_IdiEF_2ViwZHs-kHcYTVSicDbAAwcOYnqbLxz5FnLQ3UoIBbw/exec";
 window.psList = [
   { btn: "BANT", value: "Banarhat" },
   { btn: "CYBER", value: "Cyber Crime" },
