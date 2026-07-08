@@ -1061,177 +1061,165 @@
     }
 
     // ---------- RENDER FIR SCROLLABLE BAR (uses FIR year) ----------
-    function renderFirBar() {
-      const psName = psNameInput.value.trim();
-      const firYear = firYearInput.value.trim();
-      
-      firScrollWrapper.innerHTML = '';
-      
-      if (!psName || !firYear) {
-        const placeholder = document.createElement('span');
-        placeholder.className = 'fir-chip placeholder-chip';
-        placeholder.textContent = 'Select PS & FIR Year';
-        firScrollWrapper.appendChild(placeholder);
-        firRangeLabel.textContent = '–';
-        firHintText.textContent = '💡 Select PS and FIR Year to see recommendations';
-        firStatusBadge.textContent = 'Waiting';
-        firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
-        return;
-      }
+// ---------- RENDER FIR SCROLLABLE BAR (uses FIR year) ----------
+function renderFirBar() {
+  const psName = psNameInput.value.trim();
+  const firYear = firYearInput.value.trim();
+  
+  firScrollWrapper.innerHTML = '';
+  
+  if (!psName || !firYear) {
+    const placeholder = document.createElement('span');
+    placeholder.className = 'fir-chip placeholder-chip';
+    placeholder.textContent = 'Select PS & FIR Year';
+    firScrollWrapper.appendChild(placeholder);
+    firRangeLabel.textContent = '–';
+    firHintText.textContent = '💡 Select PS and FIR Year to see recommendations';
+    firStatusBadge.textContent = 'Waiting';
+    firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+    return;
+  }
 
-      // const sheetData = firDataFromSheet[psName];
-      // if (!sheetData || Object.keys(firDataFromSheet).length === 0) {
-      //   const placeholder = document.createElement('span');
-      //   placeholder.className = 'fir-chip placeholder-chip';
-      //   placeholder.textContent = 'Loading FIR data...';
-      //   firScrollWrapper.appendChild(placeholder);
-      //   firRangeLabel.textContent = '–';
-      //   firHintText.textContent = '⏳ Loading FIR data from server...';
-      //   firStatusBadge.textContent = 'Loading';
-      //   firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
-      //   return;
-      // }
+  const isLoading = Object.keys(firDataFromSheet).length === 0;
 
-      const isLoading = Object.keys(firDataFromSheet).length === 0;
+  if (isLoading) {
+    const placeholder = document.createElement('span');
+    placeholder.className = 'fir-chip placeholder-chip';
+    placeholder.textContent = 'Loading...';
+    firScrollWrapper.appendChild(placeholder);
+    firRangeLabel.textContent = '–';
+    firHintText.textContent = '⏳ Loading FIR data...';
+    firStatusBadge.textContent = 'Loading';
+    firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+    return;
+  }
 
-if (isLoading) {
-  // While fetching
-  const placeholder = document.createElement('span');
-  placeholder.className = 'fir-chip placeholder-chip';
-  placeholder.textContent = 'Loading...';
-  firScrollWrapper.appendChild(placeholder);
+  // Clear any existing FIR validation when PS changes
+  firNoInput.value = '';
+  firNoInput.className = 'form-control form-control-sm';
+  firValidationMsg.className = 'fir-validation-msg';
+  firValidationMsg.style.display = 'none';
 
-  firRangeLabel.textContent = '–';
-  firHintText.textContent = '⏳ Loading FIR data...';
-  firStatusBadge.textContent = 'Loading';
-  firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
-  return;
-}
+  const sheetData = firDataFromSheet[psName] || {
+    available: true,
+    usedFIRs: [],
+    year: null
+  };
 
-// Sheet finished loading.
-// If this PS does not exist in the sheet (or sheet returned {})
-// continue with local recommendations.
-const sheetData = firDataFromSheet[psName] || {
-  available: true,
-  usedFIRs: [],
-  year: null
-};
+  const usedFIRs = getUsedFIRs(psName, firYear);
+  const usedSet = new Set(usedFIRs);
+  
+  const numbers = generateFirNumbers(psName, firYear);
+  
+  if (numbers.length === 0) {
+    const placeholder = document.createElement('span');
+    placeholder.className = 'fir-chip placeholder-chip';
+    placeholder.textContent = 'No FIRs available';
+    firScrollWrapper.appendChild(placeholder);
+    firRangeLabel.textContent = '–';
+    firHintText.textContent = 'No FIR data available for ' + firYear;
+    firStatusBadge.textContent = 'No data';
+    firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+    return;
+  }
 
-      const usedFIRs = getUsedFIRs(psName, firYear);
-      const usedSet = new Set(usedFIRs);
-      
-      const numbers = generateFirNumbers(psName, firYear);
-      
-      if (numbers.length === 0) {
-        const placeholder = document.createElement('span');
-        placeholder.className = 'fir-chip placeholder-chip';
-        placeholder.textContent = 'No FIRs available';
-        firScrollWrapper.appendChild(placeholder);
-        firRangeLabel.textContent = '–';
-        firHintText.textContent = 'No FIR data available for ' + firYear;
-        firStatusBadge.textContent = 'No data';
-        firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
-        return;
-      }
-
-      const totalFIRs = numbers.length;
-      const usedCount = usedFIRs.length;
-      const availableCount = totalFIRs - usedCount;
-      
-      // Check if this specific year has data in sheet
-      const sheetHasYear = sheetData.year && sheetData.year === parseInt(firYear);
-      
-      if (sheetData.available) {
-        firStatusBadge.textContent = `✅ All FIRs Available`;
-        firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
-      } else if (sheetHasYear && usedCount === usedFIRs.length && usedFIRs.length > 0) {
-        firStatusBadge.textContent = `📊 ${availableCount} Available / ${usedCount} Used (Sheet)`;
-        firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
-      } else if (usedCount === 0) {
-        firStatusBadge.textContent = `✅ ${totalFIRs} FIRs Available`;
-        firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
-      } else {
-        firStatusBadge.textContent = `📊 ${availableCount} Available / ${usedCount} Used`;
-        firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
-      }
-      
-      let firstAvailableFIR = null;
-      
-      numbers.forEach(num => {
-        const chip = document.createElement('span');
-        chip.className = 'fir-chip';
-        
-        if (usedSet.has(num)) {
-          chip.classList.add('used-chip');
-        } else {
-          chip.classList.add('recommended-chip');
-          if (firstAvailableFIR === null) firstAvailableFIR = num;
-        }
-        
-        chip.textContent = num;
-        chip.dataset.value = num;
-        chip.onclick = () => {
-          if (chip.classList.contains('used-chip')) {
-            chip.style.transform = 'scale(0.9)';
-            setTimeout(() => { chip.style.transform = ''; }, 200);
-            return;
-          }
-          firNoInput.value = num;
-          validateFIRNumber(num, psName, grYearInput.value, firYear);
-          firScrollWrapper.querySelectorAll('.fir-chip').forEach(c => c.classList.remove('active-chip'));
-          chip.classList.add('active-chip');
-          chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        };
-        firScrollWrapper.appendChild(chip);
-      });
-
-      firRangeLabel.textContent = numbers.length > 0 ? `${numbers[0]} – ${numbers[numbers.length-1]}` : '–';
-      
-      if (sheetData.available) {
-        firHintText.textContent = `✅ All FIR numbers are available for ${firYear}. Click any to select.`;
-      } else if (sheetHasYear && usedCount > 0) {
-        firHintText.textContent = `💡 ${availableCount} FIR(s) available for ${firYear}. Used FIRs (from sheet) are hidden.`;
-      } else if (usedCount === 0) {
-        firHintText.textContent = `✨ All FIR numbers in this range are available for ${firYear}. Click any to select.`;
-      } else if (availableCount === 0) {
-        firHintText.textContent = `⚠️ All FIR numbers in this range are used for ${firYear}. Try a different PS or Year.`;
-      } else {
-        firHintText.textContent = `💡 ${availableCount} FIR(s) available for ${firYear}. Used FIRs are hidden.`;
-      }
-
-      setTimeout(() => {
-        let targetChip = null;
-        
-        const currentFirValue = firNoInput.value.trim();
-        if (currentFirValue) {
-          const currentFirNum = parseInt(currentFirValue, 10);
-          if (!isNaN(currentFirNum) && !usedSet.has(currentFirNum)) {
-            const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
-            for (let chip of chips) {
-              if (parseInt(chip.dataset.value) === currentFirNum) {
-                targetChip = chip;
-                chip.classList.add('active-chip');
-                break;
-              }
-            }
-          }
-        }
-        
-        if (!targetChip && firstAvailableFIR !== null) {
-          const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
-          if (chips.length > 0) {
-            targetChip = chips[0];
-            targetChip.classList.add('active-chip');
-            firNoInput.value = parseInt(targetChip.dataset.value);
-            validateFIRNumber(firNoInput.value, psName, grYearInput.value, firYear);
-          }
-        }
-        
-        if (targetChip) {
-          targetChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
-      }, 150);
+  const totalFIRs = numbers.length;
+  const usedCount = usedFIRs.length;
+  const availableCount = totalFIRs - usedCount;
+  
+  const sheetHasYear = sheetData.year && sheetData.year === parseInt(firYear);
+  
+  if (sheetData.available) {
+    firStatusBadge.textContent = `✅ All FIRs Available`;
+    firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
+  } else if (sheetHasYear && usedCount === usedFIRs.length && usedFIRs.length > 0) {
+    firStatusBadge.textContent = `📊 ${availableCount} Available / ${usedCount} Used (Sheet)`;
+    firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
+  } else if (usedCount === 0) {
+    firStatusBadge.textContent = `✅ ${totalFIRs} FIRs Available`;
+    firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
+  } else {
+    firStatusBadge.textContent = `📊 ${availableCount} Available / ${usedCount} Used`;
+    firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
+  }
+  
+  let firstAvailableFIR = null;
+  
+  numbers.forEach(num => {
+    const chip = document.createElement('span');
+    chip.className = 'fir-chip';
+    
+    if (usedSet.has(num)) {
+      chip.classList.add('used-chip');
+    } else {
+      chip.classList.add('recommended-chip');
+      if (firstAvailableFIR === null) firstAvailableFIR = num;
     }
+    
+    chip.textContent = num;
+    chip.dataset.value = num;
+    chip.onclick = () => {
+      if (chip.classList.contains('used-chip')) {
+        chip.style.transform = 'scale(0.9)';
+        setTimeout(() => { chip.style.transform = ''; }, 200);
+        return;
+      }
+      firNoInput.value = num;
+      validateFIRNumber(num, psName, grYearInput.value, firYear);
+      firScrollWrapper.querySelectorAll('.fir-chip').forEach(c => c.classList.remove('active-chip'));
+      chip.classList.add('active-chip');
+      chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    };
+    firScrollWrapper.appendChild(chip);
+  });
+
+  firRangeLabel.textContent = numbers.length > 0 ? `${numbers[0]} – ${numbers[numbers.length-1]}` : '–';
+  
+  if (sheetData.available) {
+    firHintText.textContent = `<i class="bi bi-check-circle-fill"></i> All FIR numbers are available for ${firYear}. Click any to select.`;
+  } else if (sheetHasYear && usedCount > 0) {
+    firHintText.textContent = `💡 ${availableCount} FIR(s) available for ${firYear}. Used FIRs (from sheet) are hidden.`;
+  } else if (usedCount === 0) {
+    firHintText.textContent = `✨ All FIR numbers in this range are available for ${firYear}. Click any to select.`;
+  } else if (availableCount === 0) {
+    firHintText.textContent = `⚠️ All FIR numbers in this range are used for ${firYear}. Try a different PS or Year.`;
+  } else {
+    firHintText.textContent = `💡 ${availableCount} FIR(s) available for ${firYear}. Used FIRs are hidden.`;
+  }
+
+  setTimeout(() => {
+    let targetChip = null;
+    
+    const currentFirValue = firNoInput.value.trim();
+    if (currentFirValue) {
+      const currentFirNum = parseInt(currentFirValue, 10);
+      if (!isNaN(currentFirNum) && !usedSet.has(currentFirNum)) {
+        const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
+        for (let chip of chips) {
+          if (parseInt(chip.dataset.value) === currentFirNum) {
+            targetChip = chip;
+            chip.classList.add('active-chip');
+            break;
+          }
+        }
+      }
+    }
+    
+    if (!targetChip && firstAvailableFIR !== null) {
+      const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
+      if (chips.length > 0) {
+        targetChip = chips[0];
+        targetChip.classList.add('active-chip');
+        firNoInput.value = parseInt(targetChip.dataset.value);
+        validateFIRNumber(firNoInput.value, psName, grYearInput.value, firYear);
+      }
+    }
+    
+    if (targetChip) {
+      targetChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, 150);
+}
 
     // ---------- AUTO FILL FROM O2 ----------
     function autoFillFromO2(o2Value) {
@@ -1338,31 +1326,41 @@ const sheetData = firDataFromSheet[psName] || {
       });
     }
 
-    function buildPSButtons() {
-      if (!window.psList) {
-        console.warn('psList not defined yet');
-        return;
+function buildPSButtons() {
+  if (!window.psList) {
+    console.warn('psList not defined yet');
+    return;
+  }
+  psButtons.innerHTML = '';
+  window.psList.forEach(ps => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline-secondary';
+    btn.textContent = ps.btn;
+    btn.dataset.value = ps.value;
+    btn.onclick = () => {
+      psNameInput.value = ps.value;
+      updatePsLabel(ps.value);
+      psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
+      btn.className = 'btn btn-primary';
+      
+      // Clear FIR number when PS changes
+      firNoInput.value = '';
+      firNoInput.className = 'form-control form-control-sm';
+      firValidationMsg.className = 'fir-validation-msg';
+      firValidationMsg.style.display = 'none';
+      
+      // Re-render FIR bar for new PS
+      renderFirBar();
+      
+      // Validate if FIR number exists after render
+      if (firNoInput.value && grYearInput.value && firYearInput.value) {
+        validateFIRNumber(firNoInput.value, ps.value, grYearInput.value, firYearInput.value);
       }
-      psButtons.innerHTML = '';
-      window.psList.forEach(ps => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'btn btn-outline-secondary';
-        btn.textContent = ps.btn;
-        btn.dataset.value = ps.value;
-        btn.onclick = () => {
-          psNameInput.value = ps.value;
-          updatePsLabel(ps.value);
-          psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
-          btn.className = 'btn btn-primary';
-          renderFirBar();
-          if (firNoInput.value && grYearInput.value && firYearInput.value) {
-            validateFIRNumber(firNoInput.value, ps.value, grYearInput.value, firYearInput.value);
-          }
-        };
-        psButtons.appendChild(btn);
-      });
-    }
+    };
+    psButtons.appendChild(btn);
+  });
+}
 
     function buildTypeButtons() {
       typeButtons.querySelectorAll('.btn').forEach(btn => {
