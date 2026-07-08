@@ -779,7 +779,11 @@
         const firYear = record['FIR YEAR'] || record['FIR Year'] || '';
         const firDate = record['FIR RG DATE'] || record['FIR Rg Date'] || '';
         const type = record['TYPE'] || record['Type'] || '';
-        const details = record['DETAILS'] || record['Details'] || '';
+        
+        // const details = record['DETAILS'] || record['Details'] || '';
+        const details = (record['DETAILS'] || record['Details'] || '')
+        .replace(/\r\n|\r|\n/g, '<br>');
+        
         const remarks = record['REMARKS'] || record['Remarks'] || '';
         const eProcId = record['E-PROSECUTION-ID'] || '';
         const entryDate = record['Entry Date'] || '';
@@ -799,7 +803,13 @@
             <td class="small">${firYear || '—'}</td>
             <td class="small">${firDate || '—'}</td>
             <td class="small">${type || '—'}</td>
-            <td class="small text-truncate" style="max-width:100px;" title="${details}">${details || '—'}</td>
+            
+
+           
+            <td class="small" style="min-width:220px; white-space:normal; line-height:1.4;">
+              ${details || '—'}
+            </td>
+            
             <td class="small text-truncate" style="max-width:80px;" title="${remarks}">${remarks || '—'}</td>
             <td>
               <div class="d-flex align-items-center gap-1">
