@@ -847,7 +847,7 @@
 
         if (data.success && data.firData) {
           firDataFromSheet = data.firData;
-          console.log('Fetched FIR data from sheet:', firDataFromSheet);
+          // console.log('Fetched FIR data from sheet:', firDataFromSheet);
           
           if (psNameInput.value && firYearInput.value) {
             renderFirBar();
@@ -1079,18 +1079,43 @@
         return;
       }
 
-      const sheetData = firDataFromSheet[psName];
-      if (!sheetData || Object.keys(firDataFromSheet).length === 0) {
-        const placeholder = document.createElement('span');
-        placeholder.className = 'fir-chip placeholder-chip';
-        placeholder.textContent = 'Loading FIR data...';
-        firScrollWrapper.appendChild(placeholder);
-        firRangeLabel.textContent = '–';
-        firHintText.textContent = '⏳ Loading FIR data from server...';
-        firStatusBadge.textContent = 'Loading';
-        firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
-        return;
-      }
+      // const sheetData = firDataFromSheet[psName];
+      // if (!sheetData || Object.keys(firDataFromSheet).length === 0) {
+      //   const placeholder = document.createElement('span');
+      //   placeholder.className = 'fir-chip placeholder-chip';
+      //   placeholder.textContent = 'Loading FIR data...';
+      //   firScrollWrapper.appendChild(placeholder);
+      //   firRangeLabel.textContent = '–';
+      //   firHintText.textContent = '⏳ Loading FIR data from server...';
+      //   firStatusBadge.textContent = 'Loading';
+      //   firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+      //   return;
+      // }
+
+      const isLoading = Object.keys(firDataFromSheet).length === 0;
+
+if (isLoading) {
+  // While fetching
+  const placeholder = document.createElement('span');
+  placeholder.className = 'fir-chip placeholder-chip';
+  placeholder.textContent = 'Loading...';
+  firScrollWrapper.appendChild(placeholder);
+
+  firRangeLabel.textContent = '–';
+  firHintText.textContent = '⏳ Loading FIR data...';
+  firStatusBadge.textContent = 'Loading';
+  firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+  return;
+}
+
+// Sheet finished loading.
+// If this PS does not exist in the sheet (or sheet returned {})
+// continue with local recommendations.
+const sheetData = firDataFromSheet[psName] || {
+  available: true,
+  usedFIRs: [],
+  year: null
+};
 
       const usedFIRs = getUsedFIRs(psName, firYear);
       const usedSet = new Set(usedFIRs);
