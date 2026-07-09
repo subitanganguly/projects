@@ -1085,59 +1085,53 @@
       return combined;
     }
 
-    function generateFirNumbers(psName, firYear) {
-      if (!psName || !firYear) return [];
-      
-      const usedFIRs = getUsedFIRs(psName, firYear);
-      const storedLastFIR = getPSLastFIR(psName, firYear);
-      
-      const sheetData = firDataFromSheet[psName];
-      if (sheetData && sheetData.available) {
-        let startRange = 1;
-        let endRange = 30;
-        
-        if (storedLastFIR) {
-          startRange = Math.max(1, storedLastFIR - 10);
-          endRange = storedLastFIR + 20;
-        } else if (usedFIRs.length > 0) {
-          const maxUsed = Math.max(...usedFIRs);
-          startRange = Math.max(1, maxUsed - 10);
-          endRange = maxUsed + 20;
-        }
-        
-        const numbers = [];
-        for (let i = startRange; i <= endRange; i++) {
-          numbers.push(i);
-        }
-        return [...new Set(numbers)].sort((a, b) => a - b);
-      }
-      
-      let allNumbers = [];
-      let startRange = 1;
-      let endRange = 30;
-      
-      if (storedLastFIR) {
-        startRange = Math.max(1, storedLastFIR - 10);
-        endRange = storedLastFIR + 20;
-      } else if (usedFIRs.length > 0) {
-        const maxUsed = Math.max(...usedFIRs);
-        startRange = Math.max(1, maxUsed - 10);
-        endRange = maxUsed + 20;
-      }
-      
-      if (usedFIRs.length === 0 && !storedLastFIR) {
-        startRange = 1;
-        endRange = 30;
-      }
-      
-      for (let i = startRange; i <= endRange; i++) {
-        allNumbers.push(i);
-      }
-      
-      return [...new Set(allNumbers)].sort((a, b) => a - b);
+function generateFirNumbers(psName, firYear) {
+  if (!psName || !firYear) return [];
+  
+  const usedFIRs = getUsedFIRs(psName, firYear);
+  const storedLastFIR = getPSLastFIR(psName, firYear);
+  
+  const sheetData = firDataFromSheet[psName];
+  
+  // Calculate dynamic range that always includes the next recommended FIR
+  let maxUsedFIR = 0;
+  if (usedFIRs.length > 0) {
+    maxUsedFIR = Math.max(...usedFIRs);
+  }
+  if (storedLastFIR && storedLastFIR > maxUsedFIR) {
+    maxUsedFIR = storedLastFIR;
+  }
+  
+  // Next recommended FIR
+  const nextRecommended = maxUsedFIR + 1;
+  
+  let startRange, endRange;
+  
+  if (sheetData && sheetData.available) {
+    // For "all available" case: show from 1 to nextRecommended + 20
+    startRange = 1;
+    endRange = Math.max(30, nextRecommended + 20);
+  } else {
+    // For cases with used FIRs: ensure nextRecommended is always visible
+    if (maxUsedFIR === 0) {
+      // No FIRs used yet
+      startRange = 1;
+      endRange = 30;
+    } else {
+      // Show 10 before max used and ensure nextRecommended + 20 are visible
+      startRange = Math.max(1, maxUsedFIR - 10);
+      endRange = Math.max(maxUsedFIR + 20, nextRecommended + 20);
     }
+  }
+  
+  const numbers = [];
+  for (let i = startRange; i <= endRange; i++) {
+    numbers.push(i);
+  }
+  
+  return [...new Set(numbers)].sort((a, b) => a - b);
+}
 
-    // ---------- RENDER FIR SCROLLABLE BAR (uses FIR year) ----------
 // ---------- RENDER FIR SCROLLABLE BAR (uses FIR year) ----------
 function renderFirBar() {
   const psName = psNameInput.value.trim();
@@ -1217,22 +1211,25 @@ function renderFirBar() {
 
   const totalFIRs = numbers.length;
   const usedCount = usedFIRs.length;
-  const availableCount = totalFIRs - usedCount;
+  const usedInRange = usedFIRs.filter(n => n >= numbers[0] && n <= numbers[numbers.length - 1]).length;
+  const availableInRange = totalFIRs - usedInRange;
   
   const sheetHasYear = sheetData.year && sheetData.year === parseInt(firYear);
   
-  // Update status badge
+  // Update status badge with better logic
   if (sheetData.available) {
     firStatusBadge.textContent = `✅ All FIRs Available`;
     firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
   } else if (sheetHasYear && usedCount > 0) {
-    firStatusBadge.textContent = `📊 ${availableCount} Available / ${usedCount} Used (Sheet)`;
+    // Show "Many available" since FIRs are infinite, just some are used
+    firStatusBadge.textContent = `📊 Many Available / ${usedCount} Used (Sheet)`;
     firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
   } else if (usedCount === 0) {
     firStatusBadge.textContent = `✅ ${totalFIRs} FIRs Available`;
     firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
   } else {
-    firStatusBadge.textContent = `📊 ${availableCount} Available / ${usedCount} Used`;
+    // Show "Many available" since FIRs are infinite
+    firStatusBadge.textContent = `📊 Many Available / ${usedCount} Used`;
     firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
   }
   
@@ -1279,7 +1276,7 @@ function renderFirBar() {
   if (usedCount === 0) {
     firHintText.innerHTML = `✨ All FIR numbers are available. <strong>Recommended: ${nextRecommended}</strong> (Start from 1)`;
     firHintText.className = 'text-success fw-bold';
-  } else if (availableCount > 0 && nextRecommended) {
+  } else if (availableInRange > 0 && nextRecommended) {
     const isAvailable = !usedSet.has(nextRecommended);
     if (isAvailable) {
       firHintText.innerHTML = `⭐ <strong>RECOMMENDED: FIR No. ${nextRecommended}</strong> (Next available after ${maxUsedFIR})`;
@@ -1313,11 +1310,17 @@ function renderFirBar() {
         }
       }, 150);
     }
-  } else if (availableCount === 0) {
-    firHintText.innerHTML = `⚠️ All FIR numbers in this range are used for ${firYear}. <strong>Next would be: ${nextRecommended}</strong>`;
-    firHintText.className = 'text-danger';
+  } else if (availableInRange === 0) {
+    firHintText.innerHTML = `⚠️ All FIR numbers in this range are used for ${firYear}. <strong>Next would be: ${nextRecommended}</strong> (Scroll to see)`;
+    firHintText.className = 'text-warning fw-bold';
+    
+    // Auto-select next recommended even if not in current view
+    setTimeout(() => {
+      firNoInput.value = nextRecommended;
+      validateFIRNumber(nextRecommended, psName, grYearInput.value, firYear);
+    }, 150);
   } else {
-    firHintText.innerHTML = `💡 ${availableCount} FIR(s) available. Used FIRs are hidden.`;
+    firHintText.innerHTML = `💡 ${availableInRange} FIR(s) available in range. Used FIRs are hidden.`;
     firHintText.className = '';
   }
 
