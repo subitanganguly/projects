@@ -11,5 +11,6 @@ window.psList = [
   { btn: "RAJ", value: "Rajganj" },
   { btn: "W.PS", value: "Women PS Jalpaiguri" },
   { btn: "BHK", value: "Bhakti Nagar" },
+  { btn: "BALO", value: "Bhorer Alo" },
   { btn: "NJP", value: "New Jalpaiguri PS" }
 ];

@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GR Entry</title>
+  <!-- Bootstrap 5 + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <style>
+    body { background: #ececec; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; padding: 16px 0; }
+    .app-container { max-width: 500px; margin: 0 auto; }
+    .card { border: none; border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.06), inset 0 0px 20px rgba(117, 117, 117, 0.788); }
+    .card-header { background: transparent; border-bottom: none; padding: 1rem 1.25rem 0.25rem 1.25rem; }
+    .card-body { padding: 1rem 1.25rem 1.25rem; }
+    .form-control { border-radius: 16px; border: 1.5px solid #e2e8f0; padding: 0.6rem 0.9rem; font-weight: 450; background: #fafbfc; font-size: 0.95rem; }
+    .form-control:focus { border-color: #818cf8; box-shadow: 0 0 0 4px rgba(99,102,241,0.10); }
+    .form-control-sm { padding: 0.4rem 0.7rem; font-size: 0.85rem; }
+    
+    /* FIR Input Validation Styles */
+    .form-control.fir-valid { border-color: #22c55e; background-color: #f0fdf4; }
+    .form-control.fir-invalid { border-color: #dc2626; background-color: #fef2f2; }
+    .form-control.fir-valid:focus { border-color: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,0.15); }
+    .form-control.fir-invalid:focus { border-color: #dc2626; box-shadow: 0 0 0 4px rgba(220,38,38,0.15); }
+    
+    .fir-validation-msg {
+      font-size: 0.7rem;
+      margin-top: 2px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: none;
+    }
+    .fir-validation-msg.visible { display: block; }
+    .fir-validation-msg.valid { color: #16a34a; background: #f0fdf4; }
+    .fir-validation-msg.invalid { color: #dc2626; background: #fef2f2; }
+    
+    .btn { border-radius: 40px; font-weight: 600; padding: 0.6rem 1.5rem; }
+    .btn-primary { background: #4f46e5; border: none; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25); }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-outline-secondary { border-color: #e2e8f0; color: #1e293b; }
+    .btn-outline-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .badge-soft { background: #eef2ff; color: #4f46e5; font-weight: 500; padding: 0.25rem 0.9rem; border-radius: 40px; font-size: 0.75rem; }
+    .chip-grid-5 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 6px; }
+    .chip-grid-5 .btn { width: 100%; min-height: 26px; padding: 0; border-radius: 12px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center; white-space: nowrap; }
+    .chip-grid-5 .btn-primary { background: #4f46e5; color: white; box-shadow: 0 4px 8px rgba(79, 70, 229, 0.2); }
+    .chip-grid-5 .btn-outline-secondary { background: transparent; border: 1.5px solid #e2e8f0; }
+    #psButtons .btn { font-size: 0.65rem; height: 32px; display: flex; align-items: center; justify-content: center; }
+    
+    /* FIR Chip Styles - Enhanced */
+    #firScrollWrapper {
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+      padding: 6px 0 10px 0;
+      margin: 4px -4px 0 -4px;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+      min-height: 48px;
+    }
+    #firScrollWrapper::-webkit-scrollbar { height: 6px; }
+    #firScrollWrapper::-webkit-scrollbar-track { background: transparent; border-radius: 12px; }
+    #firScrollWrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 12px; }
+    #firScrollWrapper::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    #firScrollWrapper .fir-chip {
+      flex: 0 0 auto;
+      min-width: 44px;
+      padding: 6px 12px;
+      border-radius: 30px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      color: #1e293b;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      position: relative;
+    }
+    #firScrollWrapper .fir-chip:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-color: #94a3b8;
+    }
+    #firScrollWrapper .fir-chip:active {
+      transform: scale(0.92);
+    }
+    #firScrollWrapper .fir-chip.active-chip {
+      background: #4f46e5;
+      color: white;
+      border-color: #4f46e5;
+      box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35);
+      transform: scale(1.05);
+      z-index: 1;
+    }
+    /* USED CHIP: hide completely */
+    #firScrollWrapper .fir-chip.used-chip {
+      display: none !important;
+    }
+    #firScrollWrapper .fir-chip.recommended-chip {
+      background: #f0fdf4;
+      border-color: #00b041;
+      color: #166534;
+    }
+    #firScrollWrapper .fir-chip.recommended-chip:hover {
+      background: #dcfce7;
+      border-color: #4ade80;
+    }
+    #firScrollWrapper .fir-chip.placeholder-chip {
+      opacity: 0.5;
+      pointer-events: none;
+      border-style: dashed;
+      background: transparent;
+      border-color: #cbd5e1;
+      color: #94a3b8;
+      min-width: 120px;
+    }
+    #firScrollWrapper .fir-chip.recommended-chip.active-chip {
+      background: #4f46e5;
+      color: white;
+      border-color: #4f46e5;
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.35);
+      transform: scale(1.05);
+      z-index: 1;
+    }
+
+    .fir-nav-arrows {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+    }
+    .fir-nav-arrows .btn {
+      padding: 0.2rem 0.6rem;
+      font-size: 0.7rem;
+      border-radius: 30px;
+      border: 1.5px solid #e2e8f0;
+      background: white;
+      color: #1e293b;
+      transition: all 0.15s;
+    }
+    .fir-nav-arrows .btn:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+    .fir-nav-arrows .btn:active {
+      transform: scale(0.92);
+    }
+    #firRangeLabel {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #64748b;
+      padding: 0 4px;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .fir-status-badge {
+      font-size: 0.65rem;
+      padding: 2px 10px;
+      border-radius: 30px;
+      font-weight: 500;
+      display: inline-block;
+      margin-left: 6px;
+    }
+    .fir-status-badge.bg-success {
+      background: #dcfce7 !important;
+      color: #166534 !important;
+    }
+    .fir-status-badge.bg-info {
+      background: #dbeafe !important;
+      color: #1e40af !important;
+    }
+    .fir-status-badge.bg-secondary {
+      background: #f1f5f9 !important;
+      color: #64748b !important;
+    }
+    .fir-status-badge.bg-danger {
+      background: #fee2e2 !important;
+      color: #b91c1c !important;
+    }
+
+    #firHintText {
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-top: 4px;
+      padding: 4px 8px;
+      background: #f8fafc;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+
+
+    /* Next Recommended FIR Chip */
+.fir-chip.next-recommended-chip {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  font-weight: bold;
+  border: 3px solid #2E7D32;
+  box-shadow: 0 0 10px rgba(57, 65, 211, 0.219);
+  transform: scale(1.05);
+  position: relative;
+  animation: pulse-green 1.5s ease-in-out infinite;
+}
+
+.fir-chip.next-recommended-chip::after {
+  content: '💫';
+  position: absolute;
+  top: -7px;
+  right: -3px;
+  font-size: 15px;
+}
+
+.fir-chip.next-recommended-chip.active-chip {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px rgba(0, 1, 47, 0.741);
+}
+
+@keyframes pulse-green {
+  0%, 100% { 
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+    transform: scale(1.05);
+  }
+  50% { 
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.8);
+    transform: scale(1.08);
+  }
+}
+
+/* Used FIR chips (hidden or crossed out) */
+.fir-chip.used-chip {
+  opacity: 0.3;
+  text-decoration: line-through;
+  cursor: not-allowed;
+  background: #e9ecef;
+  color: #6c757d;
+  border-color: #dee2e6;
+  pointer-events: none;
+}
+
+/* Available FIR chips */
+.fir-chip.recommended-chip {
+  cursor: pointer;
+  background: #e3f2fd;
+  border-color: #64b5f6;
+  transition: all 0.2s ease;
+}
+
+.fir-chip.recommended-chip:hover {
+  background: #bbdefb;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.fir-chip.recommended-chip.active-chip {
+  background: #1976d2;
+  color: white;
+  border-color: #0d47a1;
+  transform: scale(1.08);
+  box-shadow: 0 0 20px rgba(25, 118, 210, 0.5);
+}
+
+    .lock-icon { font-size: 2.5rem; color: #4f46e5; }
+    .password-input-group .btn { width: auto; }
+    .mb-2 { margin-bottom: 0.6rem; }
+
+    .field-label {
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: #64748b;
+      display: inline-block;
+      margin-bottom: 2px;
+    }
+    .field-label .field-value {
+      font-weight: 600;
+      color: #0f172a;
+      margin-left: 4px;
+    }
+    .field-label .field-placeholder {
+      font-weight: 400;
+      color: #94a3b8;
+      margin-left: 4px;
+    }
+
+    .type-chip-grid { 
+      display: grid; 
+      grid-template-columns: repeat(2, 1fr); 
+      gap: 6px; 
+      margin-top: 4px; 
+    }
+    .type-chip-grid .btn { 
+      width: 100%; 
+      min-height: 32px; 
+      padding: 0.3rem 0.5rem; 
+      border-radius: 12px; 
+      font-size: 0.75rem; 
+      font-weight: 600; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      text-align: center; 
+      white-space: nowrap; 
+    }
+    .type-chip-grid .btn-primary { 
+      background: #4f46e5; 
+      color: white; 
+      box-shadow: 0 4px 8px rgba(79, 70, 229, 0.2); 
+    }
+    .type-chip-grid .btn-outline-secondary { 
+      background: transparent; 
+      border: 1.5px solid #e2e8f0; 
+    }
+
+    #remarksScrollWrapper {
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+      padding: 4px 0 8px 0;
+      margin: 4px -4px 0 -4px;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+    #remarksScrollWrapper::-webkit-scrollbar { height: 6px; }
+    #remarksScrollWrapper::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 12px; }
+    #remarksScrollWrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 12px; }
+    #remarksScrollWrapper .remarks-chip {
+      flex: 0 0 auto;
+      padding: 4px 12px;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      background: transparent;
+      border: 1.5px solid #e2e8f0;
+      color: #1e293b;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.1s;
+      user-select: none;
+    }
+    #remarksScrollWrapper .remarks-chip:active { transform: scale(0.94); }
+    #remarksScrollWrapper .remarks-chip.active-chip { 
+      background: #4f46e5; 
+      color: white; 
+      border-color: #4f46e5; 
+      box-shadow: 0 4px 10px rgba(79,70,229,0.25); 
+    }
+    #remarksScrollWrapper .remarks-chip:hover { background: #f1f5f9; }
+
+    .remarks-nav-arrows {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+    }
+    .remarks-nav-arrows .btn { padding: 0.15rem 0.5rem; font-size: 0.7rem; border-radius: 30px; }
+
+    .row-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #e2e8f0;
+      border-top: 2px solid #4f46e5;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .fir-loading-placeholder {
+      color: #94a3b8;
+      font-size: 0.75rem;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .district-selection {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin: 10px 0;
+    }
+    .district-selection .btn {
+      flex: 1;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 16px;
+      border: 2px solid #e2e8f0;
+      background: #fafbfc;
+      color: #1e293b;
+      transition: all 0.2s;
+    }
+    .district-selection .btn:hover {
+      border-color: #4f46e5;
+      background: #eef2ff;
+    }
+    .district-selection .btn.selected {
+      border-color: #4f46e5;
+      background: #4f46e5;
+      color: white;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    .district-selection .btn .badge {
+      font-size: 0.7rem;
+      margin-left: 6px;
+      background: rgba(0,0,0,0.1);
+      color: inherit;
+    }
+    .district-selection .btn.selected .badge {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+
+    /* FIR Year Display */
+    #firYearDisplay {
+      font-weight: 600;
+      color: #0f172a;
+      margin-left: 4px;
+    }
+
+    .fir-year-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .fir-year-group .form-control {
+      flex: 1;
+      text-align: center;
+    }
+    .fir-year-group .btn {
+      padding: 0.2rem 0.6rem;
+      font-size: 1rem;
+      min-width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+    }
+    .fir-year-group .btn:active {
+      transform: scale(0.92);
+    }
+
+    .date-input-no-keyboard {
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .date-input-no-keyboard:focus {
+      outline: none;
+    }
+
+    @media (max-width: 576px) {
+      .password-input-group .btn { width: 100%; }
+      .chip-grid-5 { gap: 4px; }
+      .chip-grid-5 .btn { font-size: 0.7rem; padding: 0.2rem 0.1rem; }
+      #psButtons .btn { font-size: 0.55rem; padding: 0.15rem 0.1rem; }
+      .card-body { padding: 0.75rem 1rem 1rem; }
+      #firScrollWrapper .fir-chip { min-width: 36px; padding: 4px 8px; font-size: 0.65rem; }
+      .type-chip-grid { grid-template-columns: repeat(2, 1fr); }
+      #remarksScrollWrapper .remarks-chip { font-size: 0.65rem; padding: 3px 10px; }
+      .row-two-col {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      .district-selection {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .fir-year-group .btn {
+        min-width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+        padding: 0.1rem 0.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container px-3 px-sm-0">
+
+  <!-- DISTRICT SELECTION & PASSWORD CARD -->
+  <div class="card mb-3" id="authCard">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-building"></i> District Selection
+        </h5>
+      </div>
+      
+      <div class="text-center my-2">
+        <i class="bi bi-geo-alt lock-icon"></i>
+        <p class="text-secondary small mb-0">Select your district to continue</p>
+      </div>
+      <div class="district-selection">
+        <button class="btn" id="districtAPD" data-district="APD">
+          📍 Alipurduar
+          <span class="badge">APD</span>
+        </button>
+        <button class="btn" id="districtJPG" data-district="JPG">
+          📍 Jalpaiguri
+          <span class="badge">JPG</span>
+        </button>
+      </div>
+      <div id="districtStatus" class="mt-1 fw-semibold text-center small text-secondary">Please select a district</div>
+      
+      <hr class="my-3">
+      
+      <!-- Password Section -->
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-lock"></i> Authentication
+        </h5>
+      </div>
+      <div class="text-center my-2">
+        <i class="bi bi-unlock lock-icon"></i>
+        <p class="text-secondary small mb-0">Enter password to access GR Entry</p>
+      </div>
+      <div class="password-input-group d-flex flex-column flex-sm-row gap-2">
+        <input type="password" id="passwordInput" class="form-control" placeholder="Enter password" style="flex:1;">
+        <button id="unlockBtn" class="btn btn-primary d-flex align-items-center gap-1" style="white-space:nowrap;">
+          <i class="bi bi-key"></i> Unlock
+        </button>
+      </div>
+
+      <div class="form-check mt-2">
+        <input class="form-check-input" type="checkbox" id="rememberPassword">
+        <label class="form-check-label text-secondary small" for="rememberPassword">Remember Password</label>
+      </div>
+      <div id="passwordStatus" class="mt-1 fw-semibold text-center small"></div>
+    </div>
+    <div class="p-2 text-end">
+    <button class="btn btn-danger" onclick="clearSiteData()">
+    <i class="bi bi-trash"></i> ClearData
+      </button>
+      </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="mainContent" style="display:none;">
+
+    <!-- ENTRY CARD -->
+    <div class="card mb-3">
+      <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
+        <p class="fw-semibold mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-pencil-square"></i> Last GR
+          <div id="o2Value" class="fw-bold text-primary">
+            <span class="loading-spinner"></span>
+          </div>
+        </p>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge-soft" id="entryCountBadge">0</span>
+          <button class="btn btn-outline-secondary btn-sm" onclick="lockApp()" style="padding:0.15rem 0.6rem; color:#dc2626; font-size:0.8rem;">
+            <i class="bi bi-lock"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <!-- GR Year -->
+        <div class="mb-2">
+          <label class="field-label" id="grYearDisplay">
+            GR Year: <span class="field-placeholder">Not Selected</span>
+          </label>
+          <input type="hidden" id="grYearInput" value="">
+          <div class="chip-grid-5" id="yearButtons"></div>
+        </div>
+
+        <!-- GR No -->
+        <div class="mb-2">
+          <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">GR No.</label>
+          <input type="number" id="grNo" class="form-control form-control-sm" placeholder="Enter GR No" inputmode="numeric" pattern="[0-9]*">
+        </div>
+
+        <!-- PS Name -->
+        <div class="mb-2">
+          <label class="field-label" id="psNameDisplay">
+            PS Name: <span class="field-placeholder">Not Selected</span>
+          </label>
+          <input type="hidden" id="psNameInput" value="">
+          <div class="chip-grid-5" id="psButtons"></div>
+        </div>
+
+        <!-- FIR No with FIR Year -->
+        <div class="mb-2">
+          <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">
+            FIR No.
+            <span id="firStatusBadge" class="fir-status-badge bg-secondary rounded px-1 text-white">Waiting</span>
+          </label>
+          <div class="d-flex gap-2">
+            <input type="number" id="firNo" class="form-control form-control-sm" placeholder="Enter FIR No" inputmode="numeric" pattern="[0-9]*" style="flex:1.8; min-width:110px;">
+            <span class="fw-bold text-secondary d-flex align-items-center" style="font-size:0.9rem;">/</span>
+            <!-- FIR Year with +/- buttons -->
+            <div class="fir-year-group">
+              <button type="button" class="btn btn-outline-secondary" id="firYearDecrement">−</button>
+              <input type="number" id="firYear" class="form-control form-control-sm" placeholder="Year" inputmode="numeric" pattern="[0-9]*" style="flex:1; min-width:60px; text-align:center;">
+              <button type="button" class="btn btn-outline-secondary" id="firYearIncrement">+</button>
+            </div>
+          </div>
+          
+          <!-- FIR Validation Message -->
+          <div id="firValidationMsg" class="fir-validation-msg">
+            <i class="bi bi-check-circle-fill"></i> 
+            <span id="firValidationText">FIR number is available</span>
+          </div>
+          
+          <div class="fir-nav-arrows d-flex justify-content-between mt-1">
+            <button class="btn btn-outline-secondary btn-sm" id="firScrollLeft"><i class="bi bi-chevron-left"></i></button>
+            <span class="small text-secondary" id="firRangeLabel">0 – 0</span>
+            <button class="btn btn-outline-secondary btn-sm" id="firScrollRight"><i class="bi bi-chevron-right"></i></button>
+          </div>
+          <div id="firScrollWrapper">
+            <div class="fir-loading-placeholder">
+              Select PS & Year to see recommendations
+            </div>
+          </div>
+          <div class="small text-secondary mt-1" id="firHintText" style="display: none;">💡 FIR recommendations from local data</div>
+        </div>
+
+        <!-- Additional Fields - Two Column Row -->
+        <div class="row mb-1">
+          <div class="col-6">
+            <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">FIR Registration Date</label>
+            <input id="firRgDate" class="form-control form-control-sm date-input-no-keyboard" placeholder="DD/MM/YYYY" readonly>
+          </div>
+          <div class="col-6">
+            <label class="field-label" id="typeDisplay">
+              Type: <span class="field-value">Legal Options</span>
+            </label>
+            <input type="hidden" id="typeInput" value="Legal Options">
+            <div class="type-chip-grid" id="typeButtons">
+              <button type="button" class="btn btn-primary" data-value="Legal Options">⚖️ LO</button>
+              <button type="button" class="btn btn-outline-secondary" data-value="Charge Sheet">📄 CS</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Details -->
+        <div class="mb-2">
+          <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">
+            Details
+          </label>
+          <textarea
+            id="details"
+            class="form-control form-control-sm"
+            rows="2"
+            placeholder="Enter case details">
+          </textarea>
+        </div>
+
+        <!-- Remarks -->
+        <div class="mb-2">
+          <label class="fw-medium text-secondary mb-1" style="font-size:0.8rem;">Remarks</label>
+          <input type="text" id="remarks" class="form-control form-control-sm" placeholder="Enter remarks">
+          
+          <div class="remarks-nav-arrows d-flex justify-content-between mt-1">
+            <button class="btn btn-outline-secondary btn-sm" id="remarksScrollLeft" style="padding:0.1rem 0.5rem;"><i class="bi bi-chevron-left"></i></button>
+            <span class="small text-secondary" id="remarksRangeLabel">Suggestions</span>
+            <button class="btn btn-outline-secondary btn-sm" id="remarksScrollRight" style="padding:0.1rem 0.5rem;"><i class="bi bi-chevron-right"></i></button>
+          </div>
+          <div id="remarksScrollWrapper"></div>
+          <div class="small text-secondary mt-1" id="remarksHintText">💡 Click a suggestion to auto-fill</div>
+        </div>
+
+        <button id="saveBtn" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" style="font-size:0.9rem; padding:0.5rem;">
+          <i class="bi bi-save"></i> Save Entry
+        </button>
+        <div id="status" class="mt-1 fw-semibold text-center small"></div>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="card">
+      <div class="card-body text-center">
+        <p class="mb-0 text-secondary small">
+          <i class="bi bi-database"></i> 
+          <span id="pendingCount">0</span> entries pending sync
+        </p>
+        <a href="view.html" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-eye"></i> View All
+        </a>
+        <a href="index.html" class="btn btn-primary"><i class="bi bi-house"></i> Home</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  (function() {
+    // ---------- CONST ----------
+    const DISTRICT_STORAGE_KEY = "selectedDistrict";
+    const STORAGE_KEY = "grEntries";
+    const EDIT_INDEX_KEY = "editIndex";
+    const REMEMBER_PASSWORD_KEY = "rememberedPassword";
+    const AUTH_KEY = "grAuth";
+    const PS_LAST_FIR_KEY = "psLastFIR";
+
+    // ---------- DOM REFS ----------
+    const passwordCard = document.getElementById('authCard');
+    const passwordInput = document.getElementById('passwordInput');
+    const unlockBtn = document.getElementById('unlockBtn');
+    const passwordStatus = document.getElementById('passwordStatus');
+    const rememberCheckbox = document.getElementById('rememberPassword');
+    const mainContent = document.getElementById('mainContent');
+    
+    const grYearInput = document.getElementById('grYearInput');
+    const grNoInput = document.getElementById('grNo');
+    const psNameInput = document.getElementById('psNameInput');
+    const firNoInput = document.getElementById('firNo');
+    const firYearInput = document.getElementById('firYear');
+    const firYearDecrement = document.getElementById('firYearDecrement');
+    const firYearIncrement = document.getElementById('firYearIncrement');
+    const firRgDate = document.getElementById('firRgDate');
+    const typeInput = document.getElementById('typeInput');
+    const detailsInput = document.getElementById('details');
+    const remarksInput = document.getElementById('remarks');
+    const yearButtons = document.getElementById('yearButtons');
+    const psButtons = document.getElementById('psButtons');
+    const typeButtons = document.getElementById('typeButtons');
+    const firScrollWrapper = document.getElementById('firScrollWrapper');
+    const firScrollLeft = document.getElementById('firScrollLeft');
+    const firScrollRight = document.getElementById('firScrollRight');
+    const firRangeLabel = document.getElementById('firRangeLabel');
+    const firHintText = document.getElementById('firHintText');
+    const firStatusBadge = document.getElementById('firStatusBadge');
+    const firValidationMsg = document.getElementById('firValidationMsg');
+    const firValidationText = document.getElementById('firValidationText');
+    const saveBtn = document.getElementById('saveBtn');
+    const statusDiv = document.getElementById('status');
+    const entryCountBadge = document.getElementById('entryCountBadge');
+    const pendingCount = document.getElementById('pendingCount');
+    const o2ValueElement = document.getElementById('o2Value');
+    const grYearDisplay = document.getElementById('grYearDisplay');
+    const psNameDisplay = document.getElementById('psNameDisplay');
+    const typeDisplay = document.getElementById('typeDisplay');
+    const remarksScrollWrapper = document.getElementById('remarksScrollWrapper');
+    const remarksScrollLeft = document.getElementById('remarksScrollLeft');
+    const remarksScrollRight = document.getElementById('remarksScrollRight');
+    const remarksRangeLabel = document.getElementById('remarksRangeLabel');
+    const remarksHintText = document.getElementById('remarksHintText');
+
+    let isUnlocked = false;
+    let currentPassword = '';
+    let firDataFromSheet = {};
+
+    // ---------- FIR YEAR +/- BUTTONS ----------
+    firYearDecrement.addEventListener('click', function() {
+      let val = parseInt(firYearInput.value) || 0;
+      if (val > 0) {
+        firYearInput.value = val - 1;
+      }
+      // Re-render FIR bar and validate when FIR year changes
+      if (psNameInput.value) {
+        renderFirBar();
+        if (firNoInput.value) {
+          validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+        }
+      }
+    });
+
+    firYearIncrement.addEventListener('click', function() {
+      let val = parseInt(firYearInput.value) || 0;
+      if (val < 2100) {
+        firYearInput.value = val + 1;
+      }
+      if (psNameInput.value) {
+        renderFirBar();
+        if (firNoInput.value) {
+          validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+        }
+      }
+    });
+
+    // ---------- FIR VALIDATION (uses FIR year, not GR year) ----------
+    function validateFIRNumber(firNumber, psName, grYear, firYear) {
+      if (!firNumber || !psName || !firYear) {
+        firNoInput.className = 'form-control form-control-sm';
+        firValidationMsg.className = 'fir-validation-msg';
+        firValidationMsg.style.display = 'none';
+        return true;
+      }
+      
+      const firNum = parseInt(firNumber, 10);
+      if (isNaN(firNum)) {
+        firNoInput.className = 'form-control form-control-sm fir-invalid';
+        firValidationMsg.className = 'fir-validation-msg visible invalid';
+        firValidationText.textContent = 'Please enter a valid FIR number';
+        firValidationMsg.style.display = 'block';
+        return false;
+      }
+      
+      // Check sheet data using FIR year (not GR year)
+      const sheetData = firDataFromSheet[psName];
+      if (sheetData && !sheetData.available) {
+        // Only apply sheet validation if the sheet year matches the FIR year
+        if (sheetData.year && sheetData.year === parseInt(firYear)) {
+          const usedFIRs = sheetData.usedFIRs || [];
+          if (usedFIRs.includes(firNum)) {
+            firNoInput.className = 'form-control form-control-sm fir-invalid';
+            firValidationMsg.className = 'fir-validation-msg visible invalid';
+            firValidationText.textContent = `⚠️ FIR No. ${firNum} is already used for ${psName} (${firYear}) in the sheet`;
+            firValidationMsg.style.display = 'block';
+            return false;
+          }
+        }
+      }
+      
+      // Check local entries using FIR year (not GR year)
+      const entries = getEntries();
+      const localUsed = entries
+        .filter(e => e.psName === psName && e.firYear === firYear && e.firNo)
+        .map(e => parseInt(e.firNo, 10))
+        .filter(n => !isNaN(n));
+      
+      if (localUsed.includes(firNum)) {
+        firNoInput.className = 'form-control form-control-sm fir-invalid';
+        firValidationMsg.className = 'fir-validation-msg visible invalid';
+        firValidationText.textContent = `⚠️ FIR No. ${firNum} is already used for ${psName} (${firYear}) in local entries`;
+        firValidationMsg.style.display = 'block';
+        return false;
+      }
+      
+      firNoInput.className = 'form-control form-control-sm fir-valid';
+      firValidationMsg.className = 'fir-validation-msg visible valid';
+      firValidationText.textContent = `FIR No. ${firNum}/${firYear} is available for ${psName}`;
+      firValidationMsg.style.display = 'block';
+      return true;
+    }
+
+    // ---------- DISTRICT SELECTION ----------
+    function getSelectedDistrict() {
+      return localStorage.getItem(DISTRICT_STORAGE_KEY) || null;
+    }
+    
+    function setSelectedDistrict(district) {
+      localStorage.setItem(DISTRICT_STORAGE_KEY, district);
+    }
+    
+    function loadDistrictScript(district) {
+      document.querySelectorAll('script[data-district-script]').forEach(el => el.remove());
+      
+      const script = document.createElement('script');
+      script.setAttribute('data-district-script', 'true');
+      
+      if (district === 'APD') {
+        script.src = 'apd-script.js?' + Date.now();
+      } else if (district === 'JPG') {
+        script.src = 'jpg-script.js?' + Date.now();
+      } else {
+        console.error('Unknown district:', district);
+        return;
+      }
+      
+      script.onload = function() {
+        console.log('Loaded script for district:', district);
+        if (window.psList && window.SCRIPT_URL) {
+          document.getElementById('districtStatus').textContent = '✅ Loaded: ' + district + ' (' + window.psList.length + ' PS)';
+          document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-success';
+          initializeApp();
+          fetchFirDataFromSheet();
+        } else {
+          document.getElementById('districtStatus').textContent = '⚠️ Script loaded but data missing for: ' + district;
+          document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-warning';
+        }
+      };
+      
+      script.onerror = function() {
+        console.error('Failed to load script for district:', district);
+        document.getElementById('districtStatus').textContent = '❌ Failed to load: ' + district;
+        document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-danger';
+      };
+      
+      document.head.appendChild(script);
+    }
+
+    // ---------- FETCH FIR DATA FROM GOOGLE SHEET ----------
+    async function fetchFirDataFromSheet() {
+      if (!window.SCRIPT_URL) {
+        console.warn('SCRIPT_URL not defined yet');
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('action', 'getFirDetails');
+
+        const response = await fetch(window.SCRIPT_URL, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.firData) {
+          firDataFromSheet = data.firData;
+          // console.log('Fetched FIR data from sheet:', firDataFromSheet);
+          
+          if (psNameInput.value && firYearInput.value) {
+            renderFirBar();
+          }
+          
+          if (firNoInput.value && psNameInput.value && firYearInput.value) {
+            validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+          }
+        } else if (data.success && data.values) {
+          firDataFromSheet = {};
+          data.values.forEach(line => {
+            if (!line || line.trim() === '') return;
+            
+            if (line.includes('All FIRs are available')) {
+              const psName = line.split(':')[0].trim();
+              firDataFromSheet[psName] = { available: true, usedFIRs: [], year: null };
+              return;
+            }
+            
+            const match = line.match(/^(.+?):\s*(\d{4})?\s*Used FIRs\s*\[([\d,\s]*)\]/);
+            if (match) {
+              const psName = match[1].trim();
+              const year = match[2] ? parseInt(match[2], 10) : null;
+              const firNumbers = match[3].trim() ? match[3].split(',').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n)) : [];
+              firDataFromSheet[psName] = { available: false, usedFIRs: firNumbers, year: year };
+            }
+          });
+          // console.log('Parsed FIR data from sheet (fallback):', firDataFromSheet);
+          
+          if (psNameInput.value && firYearInput.value) {
+            renderFirBar();
+          }
+          
+          if (firNoInput.value && psNameInput.value && firYearInput.value) {
+            validateFIRNumber(firNoInput.value, psNameInput.value, grYearInput.value, firYearInput.value);
+          }
+        } else {
+          console.warn('Failed to fetch FIR data:', data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching FIR data:', error);
+      }
+    }
+
+    // ---------- PS WISE LAST FIR HELPERS ----------
+    function getPSLastFIR(psName, firYear) {
+      try {
+        const key = `${PS_LAST_FIR_KEY}_${psName}_${firYear}`;
+        const data = localStorage.getItem(key);
+        return data ? parseInt(data, 10) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function setPSLastFIR(psName, firYear, firNo) {
+      try {
+        const key = `${PS_LAST_FIR_KEY}_${psName}_${firYear}`;
+        localStorage.setItem(key, String(firNo));
+      } catch {}
+    }
+
+    // ---------- HELPERS ----------
+    function getEntries() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+    }
+    function setEntries(entries) { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+    function getEditIndex() {
+      try { return parseInt(localStorage.getItem(EDIT_INDEX_KEY) || '-1'); } catch { return -1; }
+    }
+    function clearEditIndex() { localStorage.removeItem(EDIT_INDEX_KEY); }
+
+    // ---------- UPDATE LABELS ----------
+    function updateYearLabel(value) {
+      if (value) {
+        grYearDisplay.innerHTML = `GR Year: <span class="field-value">${value}</span>`;
+        // Auto-set FIR year if not already set
+        if (!firYearInput.value) {
+          firYearInput.value = value;
+        }
+      } else {
+        grYearDisplay.innerHTML = `GR Year: <span class="field-placeholder">Not Selected</span>`;
+        // Don't clear FIR year automatically
+      }
+    }
+
+    function updatePsLabel(value) {
+      if (value) {
+        psNameDisplay.innerHTML = `PS Name: <span class="field-value">${value}</span>`;
+      } else {
+        psNameDisplay.innerHTML = `PS Name: <span class="field-placeholder">Not Selected</span>`;
+      }
+    }
+
+    function updateTypeLabel(value) {
+      if (value) {
+        typeDisplay.innerHTML = `Type: <span class="field-value">${value}</span>`;
+      } else {
+        typeDisplay.innerHTML = `Type: <span class="field-placeholder">Not Selected</span>`;
+      }
+    }
+
+    function updatePendingCount() {
+      const entries = getEntries();
+      pendingCount.textContent = entries.length;
+      entryCountBadge.textContent = entries.length;
+    }
+
+    // ---------- FETCH LAST GR ----------
+    async function loadO2Value() {
+      if (!window.SCRIPT_URL) {
+        console.warn('SCRIPT_URL not defined yet');
+        return;
+      }
+      try {
+        const formData = new FormData();
+        formData.append("action", "getO2Value");
+
+        const response = await fetch(window.SCRIPT_URL, {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          o2ValueElement.textContent = data.value;
+          const entries = getEntries();
+          if (entries.length === 0) {
+            autoFillFromO2(data.value);
+          }
+        } else {
+          o2ValueElement.textContent = data.message || 'Unable to load';
+        }
+      } catch (err) {
+        console.error('Error loading O2 value:', err);
+        o2ValueElement.textContent = "Unable to load";
+      }
+    }
+
+    // ---------- GET USED FIRS (Local + Sheet) using FIR year ----------
+    function getUsedFIRs(psName, firYear) {
+      const entries = getEntries();
+      const localUsed = entries
+        .filter(e => e.psName === psName && e.firYear === firYear && e.firNo)
+        .map(e => parseInt(e.firNo, 10))
+        .filter(n => !isNaN(n));
+      
+      let sheetUsed = [];
+      const sheetData = firDataFromSheet[psName];
+      if (sheetData && !sheetData.available) {
+        if (sheetData.year === null || sheetData.year === parseInt(firYear)) {
+          sheetUsed = sheetData.usedFIRs || [];
+        }
+      }
+      
+      const combined = [...new Set([...localUsed, ...sheetUsed])];
+      return combined;
+    }
+
+function generateFirNumbers(psName, firYear) {
+  if (!psName || !firYear) return [];
+  
+  const usedFIRs = getUsedFIRs(psName, firYear);
+  const storedLastFIR = getPSLastFIR(psName, firYear);
+  
+  const sheetData = firDataFromSheet[psName];
+  
+  // Calculate dynamic range that always includes the next recommended FIR
+  let maxUsedFIR = 0;
+  if (usedFIRs.length > 0) {
+    maxUsedFIR = Math.max(...usedFIRs);
+  }
+  if (storedLastFIR && storedLastFIR > maxUsedFIR) {
+    maxUsedFIR = storedLastFIR;
+  }
+  
+  // Next recommended FIR
+  const nextRecommended = maxUsedFIR + 1;
+  
+  let startRange, endRange;
+  
+  if (sheetData && sheetData.available) {
+    // For "all available" case: show from 1 to nextRecommended + 20
+    startRange = 1;
+    endRange = Math.max(30, nextRecommended + 20);
+  } else {
+    // For cases with used FIRs: ensure nextRecommended is always visible
+    if (maxUsedFIR === 0) {
+      // No FIRs used yet
+      startRange = 1;
+      endRange = 30;
+    } else {
+      // Show 10 before max used and ensure nextRecommended + 20 are visible
+      startRange = Math.max(1, maxUsedFIR - 10);
+      endRange = Math.max(maxUsedFIR + 20, nextRecommended + 20);
+    }
+  }
+  
+  const numbers = [];
+  for (let i = startRange; i <= endRange; i++) {
+    numbers.push(i);
+  }
+  
+  return [...new Set(numbers)].sort((a, b) => a - b);
+}
+
+// ---------- RENDER FIR SCROLLABLE BAR (uses FIR year) ----------
+function renderFirBar() {
+  const psName = psNameInput.value.trim();
+  const firYear = firYearInput.value.trim();
+  
+  firScrollWrapper.innerHTML = '';
+  
+  if (!psName || !firYear) {
+    const placeholder = document.createElement('span');
+    placeholder.className = 'fir-chip placeholder-chip';
+    placeholder.textContent = 'Select PS & FIR Year';
+    firScrollWrapper.appendChild(placeholder);
+    firRangeLabel.textContent = '–';
+    firHintText.textContent = '💡 Select PS and FIR Year to see recommendations';
+    firStatusBadge.textContent = 'Waiting';
+    firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+    return;
+  }
+
+  const isLoading = Object.keys(firDataFromSheet).length === 0;
+
+  if (isLoading) {
+    const placeholder = document.createElement('span');
+    placeholder.className = 'fir-chip placeholder-chip';
+    placeholder.textContent = 'Loading...';
+    firScrollWrapper.appendChild(placeholder);
+    firRangeLabel.textContent = '–';
+    firHintText.textContent = '⏳ Loading FIR data...';
+    firStatusBadge.textContent = 'Loading';
+    firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+    return;
+  }
+
+  // Clear any existing FIR validation when PS changes
+  firNoInput.value = '';
+  firNoInput.className = 'form-control form-control-sm';
+  firValidationMsg.className = 'fir-validation-msg';
+  firValidationMsg.style.display = 'none';
+
+  const sheetData = firDataFromSheet[psName] || {
+    available: true,
+    usedFIRs: [],
+    year: null
+  };
+
+  const usedFIRs = getUsedFIRs(psName, firYear);
+  const usedSet = new Set(usedFIRs);
+  
+  // --- RECOMMENDATION LOGIC: Find max used + 1 ---
+  let maxUsedFIR = 0;
+  if (usedFIRs.length > 0) {
+    maxUsedFIR = Math.max(...usedFIRs);
+  }
+  
+  // Check stored last FIR (from localStorage)
+  const storedLastFIR = getPSLastFIR(psName, firYear);
+  if (storedLastFIR && storedLastFIR > maxUsedFIR) {
+    maxUsedFIR = storedLastFIR;
+  }
+  
+  // Next recommended FIR = max used + 1
+  const nextRecommended = maxUsedFIR + 1;
+  
+  const numbers = generateFirNumbers(psName, firYear);
+  
+  if (numbers.length === 0) {
+    const placeholder = document.createElement('span');
+    placeholder.className = 'fir-chip placeholder-chip';
+    placeholder.textContent = 'No FIRs available';
+    firScrollWrapper.appendChild(placeholder);
+    firRangeLabel.textContent = '–';
+    firHintText.textContent = 'No FIR data available for ' + firYear;
+    firStatusBadge.textContent = 'No data';
+    firStatusBadge.className = 'fir-status-badge bg-secondary rounded px-1 text-white';
+    return;
+  }
+
+  const totalFIRs = numbers.length;
+  const usedCount = usedFIRs.length;
+  const usedInRange = usedFIRs.filter(n => n >= numbers[0] && n <= numbers[numbers.length - 1]).length;
+  const availableInRange = totalFIRs - usedInRange;
+  
+  const sheetHasYear = sheetData.year && sheetData.year === parseInt(firYear);
+  
+  // Update status badge with better logic
+  if (sheetData.available) {
+    firStatusBadge.textContent = `✅ All FIRs Available`;
+    firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
+  } else if (sheetHasYear && usedCount > 0) {
+    // Show "Many available" since FIRs are infinite, just some are used
+    firStatusBadge.textContent = `📊 Many Available / ${usedCount} Used (Sheet)`;
+    firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
+  } else if (usedCount === 0) {
+    firStatusBadge.textContent = `✅ ${totalFIRs} FIRs Available`;
+    firStatusBadge.className = 'fir-status-badge bg-success text-white rounded px-1';
+  } else {
+    // Show "Many available" since FIRs are infinite
+    firStatusBadge.textContent = `📊 Many Available / ${usedCount} Used`;
+    firStatusBadge.className = 'fir-status-badge bg-info text-white rounded px-1';
+  }
+  
+  let firstAvailableFIR = null;
+  let recommendedChip = null;
+  
+  numbers.forEach(num => {
+    const chip = document.createElement('span');
+    chip.className = 'fir-chip';
+    
+    if (usedSet.has(num)) {
+      chip.classList.add('used-chip');
+    } else {
+      chip.classList.add('recommended-chip');
+      if (firstAvailableFIR === null) firstAvailableFIR = num;
+      
+      // Mark the next recommended (max used + 1) with special styling
+      if (num === nextRecommended) {
+        chip.classList.add('next-recommended-chip');
+        recommendedChip = chip;
+      }
+    }
+    
+    chip.textContent = num;
+    chip.dataset.value = num;
+    chip.onclick = () => {
+      if (chip.classList.contains('used-chip')) {
+        chip.style.transform = 'scale(0.9)';
+        setTimeout(() => { chip.style.transform = ''; }, 200);
+        return;
+      }
+      firNoInput.value = num;
+      validateFIRNumber(num, psName, grYearInput.value, firYear);
+      firScrollWrapper.querySelectorAll('.fir-chip').forEach(c => c.classList.remove('active-chip'));
+      chip.classList.add('active-chip');
+      chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    };
+    firScrollWrapper.appendChild(chip);
+  });
+
+  firRangeLabel.textContent = numbers.length > 0 ? `${numbers[0]} – ${numbers[numbers.length-1]}` : '–';
+  
+  // --- UPDATE HINT WITH RECOMMENDATION ---
+  if (usedCount === 0) {
+    firHintText.innerHTML = `✨ All FIR numbers are available. <strong>Recommended: ${nextRecommended}</strong> (Start from 1)`;
+    firHintText.className = 'text-success fw-bold';
+  } else if (availableInRange > 0 && nextRecommended) {
+    const isAvailable = !usedSet.has(nextRecommended);
+    if (isAvailable) {
+      firHintText.innerHTML = `⭐ <strong>RECOMMENDED: FIR No. ${nextRecommended}</strong> (Next available after ${maxUsedFIR})`;
+      firHintText.className = 'text-primary fw-bold';
+      
+      // Auto-select the recommended FIR
+      setTimeout(() => {
+        const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
+        for (let chip of chips) {
+          if (parseInt(chip.dataset.value) === nextRecommended) {
+            chip.classList.add('active-chip');
+            chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            firNoInput.value = nextRecommended;
+            validateFIRNumber(nextRecommended, psName, grYearInput.value, firYear);
+            break;
+          }
+        }
+      }, 150);
+    } else {
+      firHintText.innerHTML = `💡 Next available FIR is <strong>${firstAvailableFIR}</strong> (${maxUsedFIR} is used)`;
+      firHintText.className = '';
+      
+      // Auto-select first available
+      setTimeout(() => {
+        const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
+        if (chips.length > 0) {
+          const firstChip = chips[0];
+          firstChip.classList.add('active-chip');
+          firNoInput.value = parseInt(firstChip.dataset.value);
+          validateFIRNumber(firNoInput.value, psName, grYearInput.value, firYear);
+        }
+      }, 150);
+    }
+  } else if (availableInRange === 0) {
+    firHintText.innerHTML = `⚠️ All FIR numbers in this range are used for ${firYear}. <strong>Next would be: ${nextRecommended}</strong> (Scroll to see)`;
+    firHintText.className = 'text-warning fw-bold';
+    
+    // Auto-select next recommended even if not in current view
+    setTimeout(() => {
+      firNoInput.value = nextRecommended;
+      validateFIRNumber(nextRecommended, psName, grYearInput.value, firYear);
+    }, 150);
+  } else {
+    firHintText.innerHTML = `💡 ${availableInRange} FIR(s) available in range. Used FIRs are hidden.`;
+    firHintText.className = '';
+  }
+
+  // If no recommendation was set, select first available
+  setTimeout(() => {
+    if (!firNoInput.value && firstAvailableFIR) {
+      const chips = firScrollWrapper.querySelectorAll('.fir-chip.recommended-chip');
+      if (chips.length > 0) {
+        chips[0].classList.add('active-chip');
+        firNoInput.value = parseInt(chips[0].dataset.value);
+        validateFIRNumber(firNoInput.value, psName, grYearInput.value, firYear);
+      }
+    }
+  }, 100);
+}
+
+    // ---------- AUTO FILL FROM O2 ----------
+    function autoFillFromO2(o2Value) {
+      const match = o2Value.match(/(\d{4})\/(\d+)/);
+      if (!match) return;
+      
+      const year = match[1];
+      const grNumber = parseInt(match[2], 10) + 1;
+      
+      grYearInput.value = year;
+      updateYearLabel(year);
+      // Set FIR year to match GR year initially
+      if (!firYearInput.value) firYearInput.value = year;
+      
+      yearButtons.querySelectorAll('.btn').forEach(b => {
+        if (Number(b.dataset.year) === Number(year)) {
+          b.className = 'btn btn-primary';
+        } else {
+          b.className = 'btn btn-outline-secondary';
+        }
+      });
+      
+      grNoInput.value = grNumber;
+      
+      // Render FIR bar after setting values
+      setTimeout(() => {
+        renderFirBar();
+      }, 100);
+    }
+
+    // ---------- UNLOCK APP ----------
+    function unlockApp() {
+      if (!window.psList || !window.SCRIPT_URL) {
+        passwordStatus.textContent = '⚠️ District data not loaded. Please select district again.';
+        passwordStatus.className = 'text-danger';
+        return;
+      }
+      
+      isUnlocked = true;
+      setAuthStatus({ unlocked: true, timestamp: Date.now() });
+      passwordCard.style.display = 'none';
+      mainContent.style.display = 'block';
+      
+      initializeApp();
+      loadO2Value();
+      fetchFirDataFromSheet();
+      
+      setTimeout(() => {
+        grNoInput.focus();
+      }, 300);
+    }
+
+    // ---------- AUTH HELPERS ----------
+    function setAuthStatus(status) {
+      localStorage.setItem(AUTH_KEY, JSON.stringify(status));
+    }
+    function getAuthStatus() {
+      try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; }
+    }
+    function clearAuth() {
+      localStorage.removeItem(AUTH_KEY);
+      localStorage.removeItem(REMEMBER_PASSWORD_KEY);
+    }
+
+    // ---------- PASSWORD ----------
+    function loadRememberedPassword() {
+      const saved = localStorage.getItem(REMEMBER_PASSWORD_KEY);
+      if (saved) { 
+        passwordInput.value = saved; 
+        rememberCheckbox.checked = true;
+        currentPassword = saved;
+      }
+    }
+    function saveRememberedPassword(password) {
+      currentPassword = password;
+      if (rememberCheckbox.checked) localStorage.setItem(REMEMBER_PASSWORD_KEY, password);
+      else localStorage.removeItem(REMEMBER_PASSWORD_KEY);
+    }
+
+    // ---------- BUILD CHIPS ----------
+    function buildYearButtons() {
+      const currentYear = new Date().getFullYear();
+      const years = [currentYear - 2, currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
+      yearButtons.innerHTML = '';
+      years.forEach(year => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-outline-secondary';
+        btn.textContent = year;
+        btn.dataset.year = year;
+        btn.onclick = () => {
+          grYearInput.value = year;
+          updateYearLabel(year);
+          // Auto-set FIR year when GR year is selected
+          if (!firYearInput.value) firYearInput.value = year;
+          yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
+          btn.className = 'btn btn-primary';
+          renderFirBar();
+          if (firNoInput.value && psNameInput.value && firYearInput.value) {
+            validateFIRNumber(firNoInput.value, psNameInput.value, year, firYearInput.value);
+          }
+        };
+        yearButtons.appendChild(btn);
+      });
+    }
+
+function buildPSButtons() {
+  if (!window.psList) {
+    console.warn('psList not defined yet');
+    return;
+  }
+  psButtons.innerHTML = '';
+  window.psList.forEach(ps => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline-secondary';
+    btn.textContent = ps.btn;
+    btn.dataset.value = ps.value;
+    btn.onclick = () => {
+      psNameInput.value = ps.value;
+      updatePsLabel(ps.value);
+      psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
+      btn.className = 'btn btn-primary';
+      
+      // Clear FIR number when PS changes
+      firNoInput.value = '';
+      firNoInput.className = 'form-control form-control-sm';
+      firValidationMsg.className = 'fir-validation-msg';
+      firValidationMsg.style.display = 'none';
+      
+      // Re-render FIR bar for new PS
+      renderFirBar();
+      
+      // Validate if FIR number exists after render
+      if (firNoInput.value && grYearInput.value && firYearInput.value) {
+        validateFIRNumber(firNoInput.value, ps.value, grYearInput.value, firYearInput.value);
+      }
+    };
+    psButtons.appendChild(btn);
+  });
+}
+
+    function buildTypeButtons() {
+      typeButtons.querySelectorAll('.btn').forEach(btn => {
+        btn.onclick = () => {
+          const value = btn.dataset.value;
+          typeInput.value = value;
+          updateTypeLabel(value);
+          typeButtons.querySelectorAll('.btn').forEach(b => {
+            b.className = b.dataset.value === value ? 'btn btn-primary' : 'btn btn-outline-secondary';
+          });
+        };
+      });
+    }
+
+    function buildRemarksSuggestions() {
+      const REMARKS_SUGGESTIONS = [
+        "CJM Court",
+        "JM 1st",
+        "JM 2nd",
+        "JM 3rd",
+        "Addl Sessions judge",
+        "Dist. Sessions judge"
+      ];
+      
+      remarksScrollWrapper.innerHTML = '';
+      
+      REMARKS_SUGGESTIONS.forEach(suggestion => {
+        const chip = document.createElement('span');
+        chip.className = 'remarks-chip';
+        chip.textContent = suggestion;
+        chip.dataset.value = suggestion;
+        chip.onclick = () => {
+          remarksInput.value = suggestion;
+          remarksScrollWrapper.querySelectorAll('.remarks-chip').forEach(c => c.classList.remove('active-chip'));
+          chip.classList.add('active-chip');
+          remarksInput.focus();
+        };
+        remarksScrollWrapper.appendChild(chip);
+      });
+
+      remarksRangeLabel.textContent = `${REMARKS_SUGGESTIONS.length} suggestions`;
+      remarksHintText.textContent = '💡 Click a suggestion to auto-fill';
+    }
+
+    // ---------- SCROLL BUTTONS ----------
+    firScrollLeft.addEventListener('click', () => {
+      firScrollWrapper.scrollBy({ left: -120, behavior: 'smooth' });
+    });
+    firScrollRight.addEventListener('click', () => {
+      firScrollWrapper.scrollBy({ left: 120, behavior: 'smooth' });
+    });
+
+    remarksScrollLeft.addEventListener('click', () => {
+      remarksScrollWrapper.scrollBy({ left: -120, behavior: 'smooth' });
+    });
+    remarksScrollRight.addEventListener('click', () => {
+      remarksScrollWrapper.scrollBy({ left: 120, behavior: 'smooth' });
+    });
+
+    // ---------- FIR INPUT VALIDATION ON CHANGE ----------
+    firNoInput.addEventListener('input', function() {
+      const psName = psNameInput.value.trim();
+      const firYear = firYearInput.value.trim();
+      
+      if (!psName || !firYear) {
+        firNoInput.className = 'form-control form-control-sm';
+        firValidationMsg.className = 'fir-validation-msg';
+        firValidationMsg.style.display = 'none';
+        return;
+      }
+      
+      if (this.value) {
+        validateFIRNumber(this.value, psName, grYearInput.value, firYear);
+      } else {
+        firNoInput.className = 'form-control form-control-sm';
+        firValidationMsg.className = 'fir-validation-msg';
+        firValidationMsg.style.display = 'none';
+      }
+    });
+
+    // ---------- LOAD DATA (NO EDIT) ----------
+    function loadData() {
+      const entries = getEntries();
+      
+      grYearInput.value = '';
+      psNameInput.value = '';
+      updateYearLabel('');
+      updatePsLabel('');
+      firNoInput.value = '';
+      firYearInput.value = '';
+      firRgDate.value = '';
+      typeInput.value = 'Charge Sheet';
+      updateTypeLabel('Charge Sheet');
+      
+      firNoInput.className = 'form-control form-control-sm';
+      firValidationMsg.className = 'fir-validation-msg';
+      firValidationMsg.style.display = 'none';
+      
+      const defaultDetails = `Complainant:\nI.O:`;
+      detailsInput.value = defaultDetails;
+      remarksInput.value = '';
+      
+      yearButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
+      psButtons.querySelectorAll('.btn').forEach(b => b.className = 'btn btn-outline-secondary');
+      typeButtons.querySelectorAll('.btn').forEach(b => {
+        b.className = b.dataset.value === 'Charge Sheet' ? 'btn btn-primary' : 'btn btn-outline-secondary';
+      });
+      remarksScrollWrapper.querySelectorAll('.remarks-chip').forEach(c => c.classList.remove('active-chip'));
+      
+      if (entries.length > 0) {
+        const lastEntry = entries[entries.length - 1];
+        grNoInput.value = Number(lastEntry.grNo) + 1;
+        
+        if (lastEntry.grYear && !grYearInput.value) {
+          grYearInput.value = lastEntry.grYear;
+          updateYearLabel(lastEntry.grYear);
+          if (!firYearInput.value) firYearInput.value = lastEntry.grYear;
+          yearButtons.querySelectorAll('.btn').forEach(b => {
+            if (Number(b.dataset.year) === Number(lastEntry.grYear)) {
+              b.className = 'btn btn-primary';
+            }
+          });
+        }
+        
+        if (lastEntry.psName && !psNameInput.value && window.psList) {
+          psNameInput.value = lastEntry.psName;
+          updatePsLabel(lastEntry.psName);
+          psButtons.querySelectorAll('.btn').forEach(b => {
+            const psObj = window.psList.find(p => p.btn === b.textContent);
+            if (psObj && psObj.value === lastEntry.psName) {
+              b.className = 'btn btn-primary';
+            }
+          });
+        }
+      } else {
+        grNoInput.value = 1;
+      }
+      
+      saveBtn.innerHTML = '<i class="bi bi-save"></i> Save Entry';
+      clearEditIndex();
+      
+      setTimeout(() => {
+        renderFirBar();
+      }, 100);
+      
+      updatePendingCount();
+    }
+
+    // ---------- SAVE ----------
+    saveBtn.addEventListener('click', function() {
+      const grYear = grYearInput.value.trim();
+      const grNo = grNoInput.value.trim();
+      const psName = psNameInput.value.trim();
+      const firNo = firNoInput.value.trim();
+      const firYear = firYearInput.value.trim() || grYear;
+      let firRgDateVal = "";
+
+      if (firNo && psName && firYear) {
+        const isValid = validateFIRNumber(firNo, psName, grYear, firYear);
+        if (!isValid) {
+          statusDiv.innerHTML = '⚠️ Please enter a valid and available FIR number';
+          statusDiv.className = 'text-danger';
+          firNoInput.focus();
+          return;
+        }
+      }
+
+      if (firRgDate.value.trim()) {
+        const parts = firRgDate.value.split("/");
+        if (parts.length === 3) {
+          const date = new Date(parts[2], parts[1] - 1, parts[0]);
+          firRgDateVal = date.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+          });
+        }
+      }
+      
+      const typeVal = typeInput.value.trim();
+      const detailsVal = detailsInput.value.trim();
+      const remarksVal = remarksInput.value.trim();
+
+      if (!grYear) { alert('Select GR Year'); return; }
+      if (!grNo) { alert('Enter GR No'); return; }
+      if (!psName) { alert('Select PS Name'); return; }
+      if (!firNo) { alert('Enter FIR No'); return; }
+      if (!firYear) { alert('Enter FIR Year'); return; }
+
+      const entries = getEntries();
+
+      const firNum = parseInt(firNo, 10);
+      if (!isNaN(firNum) && psName && firYear) {
+        setPSLastFIR(psName, firYear, firNum);
+      }
+
+      const entryData = { 
+        grYear, grNo, psName, firNo, 
+        firYear: firYear,
+        firRgDate: firRgDateVal, 
+        type: typeVal, 
+        details: detailsVal, 
+        remarks: remarksVal,
+        createdAt: new Date().toLocaleString(),
+        updatedAt: new Date().toLocaleString()
+      };
+
+      entries.push(entryData);
+      setEntries(entries);
+      
+      statusDiv.innerHTML = '✓ Entry Saved Successfully!';
+      statusDiv.className = 'text-success';
+      
+      renderFirBar();
+      loadData();
+      setTimeout(() => { 
+        statusDiv.textContent = ''; 
+        statusDiv.className = ''; 
+      }, 3000);
+    });
+
+    // ---------- INIT ----------
+    function initializeApp() {
+      buildYearButtons();
+      buildPSButtons();
+      buildTypeButtons();
+      buildRemarksSuggestions();
+      loadData();
+    }
+
+    window.initializeApp = initializeApp;
+
+    // ---------- UNLOCK BUTTON ----------
+    unlockBtn.addEventListener('click', async function() {
+      const district = getSelectedDistrict();
+      if (!district) {
+        passwordStatus.textContent = '⚠️ Please select a district first!';
+        passwordStatus.className = 'text-danger';
+        return;
+      }
+      
+      if (!window.SCRIPT_URL || !window.psList) {
+        passwordStatus.textContent = '⚠️ District data not loaded. Please select district again.';
+        passwordStatus.className = 'text-danger';
+        return;
+      }
+      
+      const password = passwordInput.value.trim();
+      if (!password) { 
+        passwordStatus.textContent = '⚠️ Please enter password'; 
+        passwordStatus.className = 'text-danger'; 
+        return; 
+      }
+      
+      unlockBtn.disabled = true;
+      unlockBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Checking...';
+      passwordStatus.textContent = '⏳ Verifying...';
+      passwordStatus.className = '';
+      
+      try {
+        const formData = new FormData();
+        formData.append('action', 'verifyPassword');
+        formData.append('password', password);
+        
+        const response = await fetch(window.SCRIPT_URL, { 
+          method: 'POST', 
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          passwordStatus.textContent = '✅ Access granted!';
+          passwordStatus.className = 'text-success';
+          saveRememberedPassword(password);
+          unlockApp();
+        } else {
+          passwordStatus.textContent = '❌ Invalid password';
+          passwordStatus.className = 'text-danger';
+          passwordInput.value = '';
+          passwordInput.focus();
+        }
+        
+      } catch (error) {
+        passwordStatus.textContent = '❌ Error verifying password';
+        passwordStatus.className = 'text-danger';
+        passwordInput.value = '';
+        passwordInput.focus();
+      } finally {
+        unlockBtn.disabled = false;
+        unlockBtn.innerHTML = '<i class="bi bi-key"></i> Unlock';
+      }
+    });
+
+    passwordInput.addEventListener('keypress', e => { 
+      if (e.key === 'Enter') unlockBtn.click(); 
+    });
+
+    // ---------- LOCK ----------
+    window.lockApp = function() {
+      if (confirm('Lock the app?')) {
+        isUnlocked = false;
+        clearAuth();
+        currentPassword = '';
+        mainContent.style.display = 'none';
+        passwordCard.style.display = 'block';
+        if (!rememberCheckbox.checked) passwordInput.value = '';
+        passwordStatus.textContent = '';
+        passwordStatus.className = '';
+        passwordInput.focus();
+      }
+    };
+
+    // ---------- DISTRICT UI ----------
+    const districtAPD = document.getElementById('districtAPD');
+    const districtJPG = document.getElementById('districtJPG');
+    const districtStatus = document.getElementById('districtStatus');
+    
+    const savedDistrict = getSelectedDistrict();
+    if (savedDistrict) {
+      if (savedDistrict === 'APD') {
+        districtAPD.classList.add('selected');
+      } else if (savedDistrict === 'JPG') {
+        districtJPG.classList.add('selected');
+      }
+      districtStatus.textContent = '⏳ Loading: ' + savedDistrict + '...';
+      districtStatus.className = 'mt-1 fw-semibold text-center small text-primary';
+      loadDistrictScript(savedDistrict);
+    }
+    
+    districtAPD.addEventListener('click', function() {
+      districtAPD.classList.add('selected');
+      districtJPG.classList.remove('selected');
+      setSelectedDistrict('APD');
+      districtStatus.textContent = '⏳ Loading Alipurduar...';
+      districtStatus.className = 'mt-1 fw-semibold text-center small text-primary';
+      loadDistrictScript('APD');
+    });
+    
+    districtJPG.addEventListener('click', function() {
+      districtJPG.classList.add('selected');
+      districtAPD.classList.remove('selected');
+      setSelectedDistrict('JPG');
+      districtStatus.textContent = '⏳ Loading Jalpaiguri...';
+      districtStatus.className = 'mt-1 fw-semibold text-center small text-primary';
+      loadDistrictScript('JPG');
+    });
+
+    // ---------- AUTO UNLOCK ----------
+    function tryAutoUnlock() {
+      const authStatus = getAuthStatus();
+      if (authStatus && authStatus.unlocked && getSelectedDistrict() && window.SCRIPT_URL && window.psList) {
+        unlockApp();
+        return;
+      }
+
+      const saved = localStorage.getItem(REMEMBER_PASSWORD_KEY);
+      if (saved && getSelectedDistrict() && window.SCRIPT_URL && window.psList) { 
+        passwordInput.value = saved; 
+        rememberCheckbox.checked = true;
+        currentPassword = saved;
+        setTimeout(() => { 
+          unlockBtn.click(); 
+        }, 300); 
+      }
+    }
+
+    // ---------- INIT ----------
+    loadRememberedPassword();
+    
+    setTimeout(() => {
+      tryAutoUnlock();
+    }, 1000);
+
+  })();
+</script>
+
+<script>
+// Flatpickr for FIR Registration Date - with mobile keyboard disabled
+const fp = flatpickr("#firRgDate", {
+    dateFormat: "d/m/Y",
+    allowInput: false,
+    disableMobile: true,
+    clickOpens: true,
+    onOpen(selectedDates, dateStr, instance) {
+        document.activeElement?.blur();
+        
+        const entries = JSON.parse(localStorage.getItem("grEntries") || "[]");
+        if (entries.length > 0) {
+            const lastEntry = entries[entries.length - 1];
+            if (lastEntry.firRgDate) {
+                instance.jumpToDate(new Date(lastEntry.firRgDate));
+                return;
+            }
+        }
+        const year = parseInt(document.getElementById("grYearInput").value);
+        if (!isNaN(year)) {
+            instance.jumpToDate(new Date(year, 0, 1));
+        }
+    }
+});
+
+document.getElementById('firRgDate').addEventListener('focus', function(e) {
+    this.blur();
+    fp.open();
+});
+
+document.getElementById('firRgDate').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    fp.open();
+});
+</script>
+<script>
+  async function clearSiteData() {
+    if (!confirm("Remove all stored data for this website?")) return;
+
+    // Storage
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Cookies
+    document.cookie.split(";").forEach(cookie => {
+        const name = cookie.split("=")[0].trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+    });
+
+    // Cache Storage
+    if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+    }
+
+    // IndexedDB
+    if ("indexedDB" in window && indexedDB.databases) {
+        const dbs = await indexedDB.databases();
+        await Promise.all(
+            dbs.map(db => db.name && indexedDB.deleteDatabase(db.name))
+        );
+    }
+
+    // Unregister Service Workers
+    if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(
+            registrations.map(reg => reg.unregister())
+        );
+    }
+
+    alert("All site data has been removed. Reloading...");
+    location.reload();
+}
+</script>
+</body>
+</html>
