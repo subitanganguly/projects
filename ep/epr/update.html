@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Update · GR Entries</title>
+  <!-- Bootstrap 5 + Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    .table-sm td, .table-sm th { font-size: 0.75rem; }
+    .btn-sm { font-size: 0.7rem; }
+    .filter-btn { min-width: 100px; }
+    .entry-stats .stat-item { background: #fff; border-radius: 20px; padding: 0.2rem 0.8rem; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .filter-btn .badge { font-size: 0.65rem; margin-left: 4px; }
+    .eproc-input:disabled { background-color: #e9ecef; cursor: default; }
+    .eproc-input.editable { background-color: #fff; cursor: text; }
+    .edit-icon-btn { padding: 0.4rem 0.4rem; font-size: 0.7rem; line-height: 1; }
+
+    /* side panel */
+    .filter-side-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      max-width: 92vw;
+      height: 100%;
+      background: #fff;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+      transition: right 0.3s ease;
+      z-index: 1050;
+      display: flex;
+      flex-direction: column;
+      padding: 1.2rem 1rem;
+      border-left: 1px solid #dee2e6;
+    }
+    .filter-side-panel.open { right: 0; }
+    .filter-side-panel .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e9ecef;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .filter-side-panel .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+    .filter-side-panel .filter-group {
+      margin-bottom: 1.2rem;
+    }
+    .filter-side-panel .filter-group label {
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #495057;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+    .filter-side-panel .filter-group .filter-values {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .filter-side-panel .filter-group .filter-values .badge {
+      font-size: 0.7rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 30px;
+      background: #f1f3f5;
+      color: #212529;
+      cursor: pointer;
+      user-select: none;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    .filter-side-panel .filter-group .filter-values .badge.active {
+      background: #0d6efd;
+      color: #fff;
+      border-color: #0d6efd;
+    }
+    .filter-side-panel .filter-group .filter-values .badge:hover { background: #e9ecef; }
+    .filter-side-panel .filter-group .filter-values .badge.active:hover { background: #0b5ed7; }
+    .filter-side-panel .panel-footer {
+      border-top: 1px solid #e9ecef;
+      padding-top: 0.8rem;
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .filter-side-panel .panel-footer .btn { flex: 1; }
+    .overlay-blur {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.2);
+      backdrop-filter: blur(2px);
+      z-index: 1040;
+      display: none;
+    }
+    .overlay-blur.show { display: block; }
+    /* ensure table row stays */
+    .filter-badge-count { font-size: 0.6rem; margin-left: 4px; }
+    
+    /* range input styles */
+    .range-input-group {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .range-input-group input {
+      flex: 1;
+      min-width: 60px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+    .range-input-group input:focus {
+      border-color: #0d6efd;
+      outline: none;
+      box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+    }
+    .range-input-group span {
+      font-size: 0.75rem;
+      color: #6c757d;
+    }
+    .filter-text-input {
+      width: 100%;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+    .filter-text-input:focus {
+      border-color: #0d6efd;
+      outline: none;
+      box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<div class="container-fluid px-3 py-1">
+
+  <!-- DISTRICT SELECTION & PASSWORD CARD -->
+  <div class="card mb-3 shadow-sm" id="authCard">
+    <div class="card-body p-4">
+      <h5 class="fw-semibold mb-2 d-flex align-items-center gap-2"><i class="bi bi-building"></i> District Selection</h5>
+      <div class="text-center my-2"><i class="bi bi-geo-alt fs-1 text-primary"></i><p class="text-secondary small mb-0">Select your district to continue</p></div>
+      <div class="d-flex flex-wrap gap-3 justify-content-center">
+        <button class="btn btn-outline-secondary flex-fill" id="districtAPD" data-district="APD" style="min-width:120px;">📍 Alipurduar <span class="badge bg-secondary">APD</span></button>
+        <button class="btn btn-outline-secondary flex-fill" id="districtJPG" data-district="JPG" style="min-width:120px;">📍 Jalpaiguri <span class="badge bg-secondary">JPG</span></button>
+      </div>
+      <div id="districtStatus" class="mt-2 fw-semibold text-center small text-secondary">Please select a district</div>
+      <hr class="my-3">
+      <h5 class="fw-semibold mb-2 d-flex align-items-center gap-2"><i class="bi bi-lock"></i> Authentication</h5>
+      <div class="text-center my-2"><i class="bi bi-unlock fs-1 text-primary"></i><p class="text-secondary small mb-0">Enter password to access GR Entries</p></div>
+      <div class="d-flex flex-column flex-sm-row gap-2">
+        <input type="password" id="passwordInput" class="form-control" placeholder="Enter password" style="flex:1;">
+        <button id="unlockBtn" class="btn btn-primary d-flex align-items-center gap-1" style="white-space:nowrap;"><i class="bi bi-key"></i> Unlock</button>
+      </div>
+      <div class="form-check mt-2">
+        <input class="form-check-input" type="checkbox" id="rememberPassword">
+        <label class="form-check-label text-secondary small" for="rememberPassword">Remember Password</label>
+      </div>
+      <div id="passwordStatus" class="mt-1 fw-semibold text-center small"></div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="mainContent" style="display:none;">
+    <!-- ALL RECORDS CARD -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-transparent d-flex flex-wrap align-items-center justify-content-between">
+        <h5 class="fw-semibold mb-0 d-flex align-items-center gap-2"><i class="bi bi-database"></i> All Records</h5>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <a href="view.html" class="btn btn-sm btn-outline-secondary"><i class="bi bi-cloud-sync"></i> View</a>
+          <button class="btn btn-sm btn-outline-primary" id="filterPanelToggle"><i class="bi bi-funnel"></i> Filter</button>
+          <button class="btn btn-sm btn-outline-success" id="excelDownloadBtn"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center entry-stats">
+          <span class="stat-item border border-success"><span class="fw-bold text-success" id="todayCount">0</span> <span class="text-secondary small">Today</span></span>
+          <span class="stat-item border border-primary"><span class="fw-bold text-primary" id="monthCount">0</span> <span class="text-secondary small">This Month</span></span>
+          <span class="stat-item border border-dark"><span class="fw-bold text-dark" id="yearCount">0</span> <span class="text-secondary small">This Year</span></span>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-sm btn-outline-secondary filter-btn" data-filter="all" id="filterAll" style="max-height: 30px;">
+            📋 All <span class="badge bg-secondary" id="allCount">0</span>
+          </button>
+          <button class="btn btn-sm btn-outline-success filter-btn" data-filter="with" id="filterWith" style="max-height: 30px;">
+            ✅ With E-Proc <span class="badge bg-success" id="withCount">0</span>
+          </button>
+          <button class="btn btn-sm btn-outline-danger filter-btn" data-filter="without" id="filterWithout" style="max-height: 30px;">
+            ❌ Without <span class="badge bg-danger" id="withoutCount">0</span>
+          </button>
+          <div class="rounded-pill"><span class="badge bg-success" id="liveStatus">🟢 Live</span> <span class="text-secondary small"></span></div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="refreshRecords()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+            <button class="btn btn-sm btn-outline-secondary" id="toggleLiveBtn" onclick="toggleLiveUpdate()"><i class="bi bi-pause"></i> Pause</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-2 p-sm-3">
+        <div class="d-flex flex-wrap gap-2 align-items-center bg-light rounded-3 p-2 mb-2">
+          <span class="text-secondary small" id="syncStatusText">📊 Loading records...</span>
+          <span class="badge bg-secondary" id="syncStatusBadge">0</span>
+          <span class="text-secondary small ms-auto" id="lastUpdateTime">Last update: --</span>
+        </div>
+        <div class="table-responsive rounded-4 border shadow-sm p-2">
+          <table class="table table-hover align-middle mb-0 table-sm">
+            <thead class="table-light">
+              <tr>
+                <th>#</th><th>GR Year</th><th>GR No</th><th>PS Name</th><th>FIR No</th><th>FIR Year</th>
+                <th>FIR Date</th><th>Type</th><th>Details</th><th>Remarks</th>
+                <th>E-Proc ID</th><th>Entry Date</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr><td colspan="12" class="text-center text-secondary py-3 small">Loading records from sheet...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTER SIDE PANEL -->
+  <div class="overlay-blur" id="filterOverlay"></div>
+  <div class="filter-side-panel" id="filterSidePanel">
+    <div class="panel-header">
+      <h6 class="fw-bold mb-0"><i class="bi bi-funnel"></i> Filter Records</h6>
+      <button class="btn-close" id="closeFilterPanel" aria-label="Close"></button>
+    </div>
+    <div class="panel-body" id="filterPanelBody">
+      <!-- dynamic filter groups will be injected here -->
+      <div class="text-secondary small text-center py-4">Loading filter options...</div>
+    </div>
+    <div class="panel-footer">
+      <button class="btn btn-outline-secondary btn-sm" id="clearAllFilters">Clear All</button>
+      <button class="btn btn-primary btn-sm" id="applyFilters">Apply Filters</button>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal fade" id="appModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-body text-center p-4">
+          <div class="fs-1" id="modalIcon">✅</div>
+          <h5 class="fw-semibold mt-2" id="modalTitle">Success</h5>
+          <p class="text-secondary small" id="modalDesc">Operation completed.</p>
+          <div id="progressContainer" style="display:none;">
+            <div class="progress mt-3" style="height:6px;"><div class="progress-bar bg-primary" id="progressFill" style="width:0%;"></div></div>
+            <div class="mt-1 fw-medium text-secondary small" id="progressText">0%</div>
+          </div>
+        </div>
+        <div class="modal-footer justify-content-center border-0 pb-4">
+          <button class="btn btn-primary px-5" id="modalBtn">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  (function() {
+    // ---------- CONST ----------
+    const DISTRICT_STORAGE_KEY = "selectedDistrict";
+    const REMEMBER_PASSWORD_KEY = "rememberedPassword";
+    const AUTH_KEY = "grAuth";
+    const LIVE_UPDATE_INTERVAL = 5000;
+
+    // ---------- DOM REFS ----------
+    const passwordCard = document.getElementById('authCard');
+    const passwordInput = document.getElementById('passwordInput');
+    const unlockBtn = document.getElementById('unlockBtn');
+    const passwordStatus = document.getElementById('passwordStatus');
+    const rememberCheckbox = document.getElementById('rememberPassword');
+    const mainContent = document.getElementById('mainContent');
+    const tableBody = document.getElementById('tableBody');
+    const syncStatusText = document.getElementById('syncStatusText');
+    const syncStatusBadge = document.getElementById('syncStatusBadge');
+    const districtBadge = document.getElementById('districtBadge');
+    const lastUpdateTime = document.getElementById('lastUpdateTime');
+    const liveStatus = document.getElementById('liveStatus');
+    const toggleLiveBtn = document.getElementById('toggleLiveBtn');
+    const todayCount = document.getElementById('todayCount');
+    const monthCount = document.getElementById('monthCount');
+    const yearCount = document.getElementById('yearCount');
+    const allCount = document.getElementById('allCount');
+    const withCount = document.getElementById('withCount');
+    const withoutCount = document.getElementById('withoutCount');
+    const filterAll = document.getElementById('filterAll');
+    const filterWith = document.getElementById('filterWith');
+    const filterWithout = document.getElementById('filterWithout');
+    const modalEl = document.getElementById('appModal');
+    const modalIcon = document.getElementById('modalIcon');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDesc = document.getElementById('modalDesc');
+    const modalBtn = document.getElementById('modalBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+
+    // filter panel
+    const filterSidePanel = document.getElementById('filterSidePanel');
+    const filterOverlay = document.getElementById('filterOverlay');
+    const filterPanelBody = document.getElementById('filterPanelBody');
+    const closeFilterPanel = document.getElementById('closeFilterPanel');
+    const filterPanelToggle = document.getElementById('filterPanelToggle');
+    const clearAllFilters = document.getElementById('clearAllFilters');
+    const applyFiltersBtn = document.getElementById('applyFilters');
+    const excelDownloadBtn = document.getElementById('excelDownloadBtn');
+
+    let isUnlocked = false;
+    let modalInstance = null;
+    let currentPassword = '';
+    let allRecords = [];
+    let filteredRecords = [];
+    let isUpdating = false;
+    let liveUpdateTimer = null;
+    let isLiveEnabled = true;
+    let previousRecordsHash = '';
+    let currentFilter = 'all';
+
+    // advanced filter state
+    let advancedFilter = {};
+
+    // Helper function to get field value with multiple possible keys
+    function getField(record, ...keys) {
+      for (let key of keys) {
+        if (record[key] !== undefined && record[key] !== null && record[key] !== '') {
+          return record[key];
+        }
+      }
+      return '';
+    }
+
+    // ---------- DISTRICT SELECTION ----------
+    function getSelectedDistrict() { return localStorage.getItem(DISTRICT_STORAGE_KEY) || null; }
+    function setSelectedDistrict(district) { localStorage.setItem(DISTRICT_STORAGE_KEY, district); }
+    function loadDistrictScript(district) {
+      document.querySelectorAll('script[data-district-script]').forEach(el => el.remove());
+      const script = document.createElement('script');
+      script.setAttribute('data-district-script', 'true');
+      script.src = (district === 'APD') ? 'apd-script.js?' + Date.now() : 'jpg-script.js?' + Date.now();
+      script.onload = function() {
+        if (window.SCRIPT_URL) {
+          document.getElementById('districtStatus').textContent = '✅ Loaded: ' + district;
+          document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-success';
+          if (districtBadge) districtBadge.textContent = '📍 ' + district;
+        } else {
+          document.getElementById('districtStatus').textContent = '⚠️ Script loaded but URL missing for: ' + district;
+          document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-warning';
+        }
+      };
+      script.onerror = function() {
+        document.getElementById('districtStatus').textContent = '❌ Failed to load: ' + district;
+        document.getElementById('districtStatus').className = 'mt-1 fw-semibold text-center small text-danger';
+      };
+      document.head.appendChild(script);
+    }
+
+    // ---------- AUTH ----------
+    function setAuthStatus(status) { localStorage.setItem(AUTH_KEY, JSON.stringify(status)); }
+    function getAuthStatus() { try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; } }
+    function getCurrentPassword() { return currentPassword || localStorage.getItem(REMEMBER_PASSWORD_KEY) || ''; }
+    function loadRememberedPassword() {
+      const saved = localStorage.getItem(REMEMBER_PASSWORD_KEY);
+      if (saved) { passwordInput.value = saved; rememberCheckbox.checked = true; currentPassword = saved; }
+    }
+    function saveRememberedPassword(password) {
+      currentPassword = password;
+      if (rememberCheckbox.checked) localStorage.setItem(REMEMBER_PASSWORD_KEY, password);
+      else localStorage.removeItem(REMEMBER_PASSWORD_KEY);
+    }
+
+    function unlockApp() {
+      if (!window.SCRIPT_URL) {
+        passwordStatus.textContent = '⚠️ District data not loaded. Please select district again.';
+        passwordStatus.className = 'text-danger';
+        return;
+      }
+      isUnlocked = true;
+      setAuthStatus({ unlocked: true, timestamp: Date.now() });
+      passwordCard.style.display = 'none';
+      mainContent.style.display = 'block';
+      loadAllRecords();
+      startLiveUpdate();
+    }
+
+    // ---------- HASH ----------
+    function generateRecordsHash(records) {
+      if (!records || records.length === 0) return 'empty';
+      return records.map(r => 
+        `${getField(r, 'GR Year', 'GR YEAR')}|${getField(r, 'GR NO.', 'GR No')}|${getField(r, 'PS NAME', 'PS Name')}|${getField(r, 'FIR NO', 'FIR No')}|${getField(r, 'FIR YEAR', 'FIR Year')}|${getField(r, 'E-PROSECUTION-ID')}|${getField(r, 'Entry Date')}`
+      ).join('||');
+    }
+
+    // ---------- ENTRY DATE STATS ----------
+    function computeEntryDateStats(records) {
+      const now = new Date();
+      const todayStr = now.toDateString();
+      const month = now.getMonth();
+      const year = now.getFullYear();
+      let today = 0, monthCnt = 0, yearCnt = 0;
+      records.forEach(r => {
+        const ed = getField(r, 'Entry Date');
+        if (!ed) return;
+        try {
+          const parts = ed.split(' ');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const m = monthNames.indexOf(parts[1]);
+            const y = parseInt(parts[2]);
+            if (!isNaN(day) && m !== -1 && !isNaN(y)) {
+              const d = new Date(y, m, day);
+              if (d.toDateString() === todayStr) today++;
+              if (m === month && y === year) monthCnt++;
+              if (y === year) yearCnt++;
+            }
+          }
+        } catch(e) {}
+      });
+      return { today, month: monthCnt, year: yearCnt };
+    }
+
+    // ---------- LOAD ALL RECORDS ----------
+    async function loadAllRecords(silent = false) {
+      if (!window.SCRIPT_URL) { if (!silent) showModal('⚠️', 'Error', 'Script URL not loaded.', false); return; }
+      const password = getCurrentPassword();
+      if (!password) { if (!silent) showModal('⚠️', 'Password Required', 'Please unlock the app first.', false); return; }
+      if (!silent) { syncStatusText.textContent = '⏳ Loading records...'; syncStatusBadge.textContent = '...'; }
+
+      try {
+        const formData = new FormData();
+        formData.append('action', 'getAllRecords');
+        formData.append('password', password);
+
+        const response = await fetch(window.SCRIPT_URL, { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (data.success) {
+          const newRecords = data.records || [];
+          const newHash = generateRecordsHash(newRecords);
+          if (newHash !== previousRecordsHash) {
+            allRecords = newRecords;
+            previousRecordsHash = newHash;
+            updateStatsAndCounts();
+            applyFilter(currentFilter);
+            buildFilterOptions(); // rebuild side panel filters
+            const now = new Date();
+            console.log('First record:', allRecords[0]);
+            lastUpdateTime.textContent = `Last update: ${now.toLocaleTimeString()}`;
+            if (!silent) {
+              syncStatusText.textContent = `✅ Loaded ${allRecords.length} records`;
+              syncStatusBadge.textContent = `${allRecords.length}`;
+              syncStatusBadge.className = 'badge bg-success';
+            }
+          } else if (!silent) {
+            syncStatusText.textContent = `✅ ${allRecords.length} records (no changes)`;
+            syncStatusBadge.textContent = `${allRecords.length}`;
+            syncStatusBadge.className = 'badge bg-success';
+          }
+        } else {
+          if (!silent) {
+            syncStatusText.textContent = '❌ Failed to load: ' + (data.message || 'Unknown error');
+            syncStatusBadge.textContent = 'Error';
+            syncStatusBadge.className = 'badge bg-danger';
+            showModal('❌', 'Load Failed', data.message || 'Failed to load records.', false);
+          }
+        }
+      } catch (error) {
+        if (!silent) {
+          syncStatusText.textContent = '❌ Error: ' + error.message;
+          syncStatusBadge.textContent = 'Error';
+          syncStatusBadge.className = 'badge bg-danger';
+          showModal('❌', 'Error', 'Failed to load records: ' + error.message, false);
+        }
+      }
+    }
+
+    function updateStatsAndCounts() {
+      const withE = allRecords.filter(r => {
+        const eproc = getField(r, 'E-PROSECUTION-ID');
+        return eproc && eproc.trim() !== '';
+      });
+      const withoutE = allRecords.filter(r => {
+        const eproc = getField(r, 'E-PROSECUTION-ID');
+        return !eproc || eproc.trim() === '';
+      });
+      allCount.textContent = allRecords.length;
+      withCount.textContent = withE.length;
+      withoutCount.textContent = withoutE.length;
+      const stats = computeEntryDateStats(allRecords);
+      todayCount.textContent = stats.today;
+      monthCount.textContent = stats.month;
+      yearCount.textContent = stats.year;
+    }
+
+    // ---------- BUILD FILTER OPTIONS (side panel) ----------
+    function buildFilterOptions() {
+      if (!allRecords.length) {
+        filterPanelBody.innerHTML = `<div class="text-secondary small text-center py-4">No records to filter.</div>`;
+        return;
+      }
+      
+      // Get unique GR Years
+      const grYears = [...new Set(allRecords.map(r => getField(r, 'GR Year', 'GR YEAR')).filter(v => v.trim() !== ''))].sort();
+      
+      // Get unique PS Names
+      const psNames = [...new Set(allRecords.map(r => getField(r, 'PS NAME', 'PS Name')).filter(v => v.trim() !== ''))].sort();
+      
+      // Get unique FIR Years
+      const firYears = [...new Set(allRecords.map(r => getField(r, 'FIR YEAR', 'FIR Year')).filter(v => v.trim() !== ''))].sort();
+      
+      // Get unique Types
+      const types = [...new Set(allRecords.map(r => getField(r, 'TYPE', 'Type')).filter(v => v.trim() !== ''))].sort();
+      
+      // Get GR No range
+      const grNos = allRecords.map(r => parseInt(getField(r, 'GR NO.', 'GR No'))).filter(v => !isNaN(v) && v > 0);
+      const minGrNo = grNos.length ? Math.min(...grNos) : 0;
+      const maxGrNo = grNos.length ? Math.max(...grNos) : 0;
+      
+      // Get Entry Date range
+      const entryDates = allRecords.map(r => getField(r, 'Entry Date')).filter(v => v.trim() !== '');
+      
+      let html = '';
+      
+      // GR Year filter (multiselect badges)
+      if (grYears.length) {
+        html += `<div class="filter-group" data-field="gr_year">
+          <label>GR Year</label>
+          <div class="filter-values">`;
+        grYears.forEach(val => {
+          const active = advancedFilter.gr_year && advancedFilter.gr_year.includes(val) ? 'active' : '';
+          html += `<span class="badge ${active}" data-value="${val.replace(/"/g, '&quot;')}">${val}</span>`;
+        });
+        html += `</div></div>`;
+      }
+      
+      // GR No range filter
+      if (minGrNo > 0 || maxGrNo > 0) {
+        const grNoFrom = advancedFilter.gr_no_from || '';
+        const grNoTo = advancedFilter.gr_no_to || '';
+        html += `<div class="filter-group" data-field="gr_no_range">
+          <label>GR No (Range)</label>
+          <div class="range-input-group">
+            <input type="number" class="gr-no-from" placeholder="From" value="${grNoFrom}" min="${minGrNo}" max="${maxGrNo}">
+            <span>to</span>
+            <input type="number" class="gr-no-to" placeholder="To" value="${grNoTo}" min="${minGrNo}" max="${maxGrNo}">
+            <span class="text-muted small">(${minGrNo} - ${maxGrNo})</span>
+          </div>
+        </div>`;
+      }
+      
+      // PS Name filter (multiselect badges)
+      if (psNames.length) {
+        html += `<div class="filter-group" data-field="ps_name">
+          <label>PS Name</label>
+          <div class="filter-values">`;
+        psNames.forEach(val => {
+          const active = advancedFilter.ps_name && advancedFilter.ps_name.includes(val) ? 'active' : '';
+          html += `<span class="badge ${active}" data-value="${val.replace(/"/g, '&quot;')}">${val}</span>`;
+        });
+        html += `</div></div>`;
+      }
+      
+      // FIR Year filter (multiselect badges)
+      if (firYears.length) {
+        html += `<div class="filter-group" data-field="fir_year">
+          <label>FIR Year</label>
+          <div class="filter-values">`;
+        firYears.forEach(val => {
+          const active = advancedFilter.fir_year && advancedFilter.fir_year.includes(val) ? 'active' : '';
+          html += `<span class="badge ${active}" data-value="${val.replace(/"/g, '&quot;')}">${val}</span>`;
+        });
+        html += `</div></div>`;
+      }
+      
+      // Type filter (multiselect badges)
+      if (types.length) {
+        html += `<div class="filter-group" data-field="type">
+          <label>Type</label>
+          <div class="filter-values">`;
+        types.forEach(val => {
+          const active = advancedFilter.type && advancedFilter.type.includes(val) ? 'active' : '';
+          html += `<span class="badge ${active}" data-value="${val.replace(/"/g, '&quot;')}">${val}</span>`;
+        });
+        html += `</div></div>`;
+      }
+      
+      // Remarks filter (text input)
+      html += `<div class="filter-group" data-field="remarks">
+        <label>Remarks (contains)</label>
+        <input type="text" class="filter-text-input remarks-input" placeholder="Search in remarks..." value="${advancedFilter.remarks || ''}">
+      </div>`;
+      
+      // E-Proc ID filter (starts with)
+      html += `<div class="filter-group" data-field="eproc_id">
+        <label>E-Proc ID (starts with)</label>
+        <input type="text" class="filter-text-input eproc-id-input" placeholder="Enter beginning of E-Proc ID..." value="${advancedFilter.eproc_id || ''}">
+      </div>`;
+      
+      // Entry Date range filter
+      if (entryDates.length) {
+        const entryDateFrom = advancedFilter.entry_date_from || '';
+        const entryDateTo = advancedFilter.entry_date_to || '';
+        html += `<div class="filter-group" data-field="entry_date_range">
+          <label>Entry Date (Range)</label>
+          <div class="range-input-group">
+            <input type="date" class="entry-date-from" placeholder="From" value="${entryDateFrom}">
+            <span>to</span>
+            <input type="date" class="entry-date-to" placeholder="To" value="${entryDateTo}">
+          </div>
+        </div>`;
+      }
+      
+      filterPanelBody.innerHTML = html || `<div class="text-secondary small text-center py-4">No filterable columns.</div>`;
+
+      // attach click toggles for badges
+      filterPanelBody.querySelectorAll('.filter-values .badge').forEach(badge => {
+        badge.addEventListener('click', function(e) {
+          e.stopPropagation();
+          this.classList.toggle('active');
+        });
+      });
+      
+      // For range inputs and text inputs, we store values in advancedFilter when apply is clicked
+    }
+
+    // ---------- APPLY ADVANCED FILTER ----------
+    function applyAdvancedFilter() {
+      // read from panel
+      const newFilter = {};
+      
+      // Get badge selections
+      const groups = filterPanelBody.querySelectorAll('.filter-group');
+      groups.forEach(group => {
+        const fieldKey = group.dataset.field;
+        if (fieldKey === 'gr_no_range' || fieldKey === 'entry_date_range' || fieldKey === 'remarks' || fieldKey === 'eproc_id') {
+          // handled separately
+          return;
+        }
+        const activeVals = [];
+        group.querySelectorAll('.filter-values .badge.active').forEach(b => {
+          activeVals.push(b.dataset.value);
+        });
+        if (activeVals.length) newFilter[fieldKey] = activeVals;
+      });
+      
+      // Get GR No range
+      const grNoFrom = filterPanelBody.querySelector('.gr-no-from')?.value || '';
+      const grNoTo = filterPanelBody.querySelector('.gr-no-to')?.value || '';
+      if (grNoFrom) newFilter.gr_no_from = grNoFrom;
+      if (grNoTo) newFilter.gr_no_to = grNoTo;
+      
+      // Get Entry Date range
+      const entryDateFrom = filterPanelBody.querySelector('.entry-date-from')?.value || '';
+      const entryDateTo = filterPanelBody.querySelector('.entry-date-to')?.value || '';
+      if (entryDateFrom) newFilter.entry_date_from = entryDateFrom;
+      if (entryDateTo) newFilter.entry_date_to = entryDateTo;
+      
+      // Get Remarks
+      const remarks = filterPanelBody.querySelector('.remarks-input')?.value || '';
+      if (remarks.trim()) newFilter.remarks = remarks.trim();
+      
+      // Get E-Proc ID
+      const eprocId = filterPanelBody.querySelector('.eproc-id-input')?.value || '';
+      if (eprocId.trim()) newFilter.eproc_id = eprocId.trim();
+      
+      advancedFilter = newFilter;
+      applyFilter(currentFilter);
+      // update sync status
+      const activeCount = Object.values(advancedFilter).flat().length;
+      if (activeCount) {
+        syncStatusText.textContent = `🔍 Filtered: ${filteredRecords.length} of ${allRecords.length} records`;
+        syncStatusBadge.textContent = `${filteredRecords.length}`;
+        syncStatusBadge.className = 'badge bg-info';
+      } else {
+        syncStatusText.textContent = `📊 ${allRecords.length} records (filter cleared)`;
+        syncStatusBadge.textContent = `${allRecords.length}`;
+        syncStatusBadge.className = 'badge bg-secondary';
+      }
+      closePanel();
+    }
+
+    // ---------- FILTER LOGIC (with advanced) ----------
+    function applyFilter(filter) {
+      currentFilter = filter;
+      let base = [];
+      if (filter === 'all') base = [...allRecords];
+      else if (filter === 'with') base = allRecords.filter(r => {
+        const eproc = getField(r, 'E-PROSECUTION-ID');
+        return eproc && eproc.trim() !== '';
+      });
+      else if (filter === 'without') base = allRecords.filter(r => {
+        const eproc = getField(r, 'E-PROSECUTION-ID');
+        return !eproc || eproc.trim() === '';
+      });
+
+      // advanced filter
+      if (Object.keys(advancedFilter).length) {
+        base = base.filter(r => {
+          // Check badge filters
+          for (let key in advancedFilter) {
+            if (key === 'gr_no_from' || key === 'gr_no_to' || key === 'entry_date_from' || key === 'entry_date_to' || key === 'remarks' || key === 'eproc_id') continue;
+            
+            const fieldMap = {
+              'gr_year': ['GR Year', 'GR YEAR'],
+              'ps_name': ['PS NAME', 'PS Name'],
+              'fir_year': ['FIR YEAR', 'FIR Year'],
+              'type': ['TYPE', 'Type']
+            };
+            const fields = fieldMap[key] || [key];
+            let val = '';
+            for (let f of fields) {
+              if (r[f] !== undefined && r[f] !== null && r[f] !== '') {
+                val = r[f];
+                break;
+              }
+            }
+            if (!advancedFilter[key].includes(val)) return false;
+          }
+          
+          // GR No range
+          if (advancedFilter.gr_no_from || advancedFilter.gr_no_to) {
+            const grNo = parseInt(getField(r, 'GR NO.', 'GR No'));
+            if (isNaN(grNo)) return false;
+            if (advancedFilter.gr_no_from && grNo < parseInt(advancedFilter.gr_no_from)) return false;
+            if (advancedFilter.gr_no_to && grNo > parseInt(advancedFilter.gr_no_to)) return false;
+          }
+          
+          // Entry Date range
+          if (advancedFilter.entry_date_from || advancedFilter.entry_date_to) {
+            const entryDate = getField(r, 'Entry Date');
+            if (!entryDate) return false;
+            // Parse date - format "DD Month YYYY"
+            const parts = entryDate.split(' ');
+            if (parts.length !== 3) return false;
+            const day = parseInt(parts[0]);
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const month = monthNames.indexOf(parts[1]);
+            const year = parseInt(parts[2]);
+            if (isNaN(day) || month === -1 || isNaN(year)) return false;
+            const dateObj = new Date(year, month, day);
+            
+            if (advancedFilter.entry_date_from) {
+              const fromParts = advancedFilter.entry_date_from.split('-');
+              const fromDate = new Date(parseInt(fromParts[0]), parseInt(fromParts[1]) - 1, parseInt(fromParts[2]));
+              if (dateObj < fromDate) return false;
+            }
+            if (advancedFilter.entry_date_to) {
+              const toParts = advancedFilter.entry_date_to.split('-');
+              const toDate = new Date(parseInt(toParts[0]), parseInt(toParts[1]) - 1, parseInt(toParts[2]));
+              if (dateObj > toDate) return false;
+            }
+          }
+          
+          // Remarks contains
+          if (advancedFilter.remarks) {
+            const remarks = getField(r, 'REMARKS', 'Remarks');
+            if (!remarks.toLowerCase().includes(advancedFilter.remarks.toLowerCase())) return false;
+          }
+          
+          // E-Proc ID starts with
+          if (advancedFilter.eproc_id) {
+            const eproc = getField(r, 'E-PROSECUTION-ID');
+            if (!eproc.toLowerCase().startsWith(advancedFilter.eproc_id.toLowerCase())) return false;
+          }
+          
+          return true;
+        });
+      }
+      filteredRecords = base;
+      renderTable(filteredRecords);
+
+      // update button styles
+      [filterAll, filterWith, filterWithout].forEach(b => {
+        b.classList.remove('btn-primary', 'btn-success', 'btn-danger', 'btn-outline-secondary', 'btn-outline-success', 'btn-outline-danger');
+      });
+      if (filter === 'all') { filterAll.classList.add('btn-primary'); filterAll.classList.remove('btn-outline-secondary'); }
+      else { filterAll.classList.add('btn-outline-secondary'); filterAll.classList.remove('btn-primary'); }
+      if (filter === 'with') { filterWith.classList.add('btn-success'); filterWith.classList.remove('btn-outline-success'); }
+      else { filterWith.classList.add('btn-outline-success'); filterWith.classList.remove('btn-success'); }
+      if (filter === 'without') { filterWithout.classList.add('btn-danger'); filterWithout.classList.remove('btn-outline-danger'); }
+      else { filterWithout.classList.add('btn-outline-danger'); filterWithout.classList.remove('btn-danger'); }
+    }
+
+    // ---------- RENDER TABLE ----------
+// ---------- RENDER TABLE ----------
+function renderTable(records) {
+  if (!records || records.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="12" class="text-center text-secondary py-3 small">No records match filter.</td></tr>`;
+    return;
+  }
+
+  let html = '';
+  records.forEach((record, index) => {
+    const grYear = getField(record, 'GR Year', 'GR YEAR');
+    const grNo = getField(record, 'GR NO.', 'GR No');
+    const psName = getField(record, 'PS NAME', 'PS Name');
+    const firNo = getField(record, 'FIR NO', 'FIR No');
+    const firYear = getField(record, 'FIR YEAR', 'FIR Year');
+    // IMPORTANT: The field name has TWO spaces between FIR and RG
+    const firDate = getField(record, 'FIR  RG DATE', 'FIR RG DATE', 'FIR Rg Date', 'FIR_RG_DATE', 'FIR DATE', 'FIR Date');
+    const type = getField(record, 'TYPE', 'Type');
+    
+    const details = (getField(record, 'DETAILS', 'Details') || '')
+      .replace(/\r\n|\r|\n/g, '<br>');
+    
+    const remarks = getField(record, 'REMARKS', 'Remarks');
+    const eProcId = getField(record, 'E-PROSECUTION-ID');
+    const entryDate = getField(record, 'Entry Date');
+
+    const hasRequired = grYear && grNo && psName && firNo && firYear;
+    const globalIdx = allRecords.indexOf(record);
+    const hasEProc = eProcId && eProcId.trim() !== '';
+    const isDisabled = hasEProc || !hasRequired;
+
+    html += `
+      <tr id="row-${globalIdx}" data-global="${globalIdx}">
+        <td class="small">${index + 1}</td>
+        <td class="small">${grYear || '—'}</td>
+        <td class="small">${grNo || '—'}</td>
+        <td class="small">${psName || '—'}</td>
+        <td class="small">${firNo || '—'}</td>
+        <td class="small">${firYear || '—'}</td>
+        <td class="small">${firDate || '—'}</td>
+        <td class="small">${type || '—'}</td>
+        <td class="small" style="min-width:220px; white-space:normal; line-height:1.4;">
+          ${details || '—'}
+        </td>
+        <td class="small text-truncate" style="max-width:80px;" title="${remarks}">${remarks || '—'}</td>
+        <td>
+          <div class="d-flex align-items-center gap-1">
+            <input type="text" class="form-control form-control-sm eproc-input ${hasEProc ? 'border border-1 fw-bold text-success border-success' : 'border border-1 border-danger'}" 
+                   data-global="${globalIdx}" 
+                   value="${eProcId}" 
+                   placeholder="${hasRequired ? 'Enter E-Proc ID' : '⚠️ Missing fields'}"
+                   style="max-width:250px; font-size:0.75rem; flex:1;"
+                   ${isDisabled ? 'disabled' : ''}>
+            ${hasRequired ? `
+            ${hasEProc ? `
+              <button class="btn btn-outline-primary btn-sm edit-icon-btn edit-toggle-btn"
+                      data-global="${globalIdx}"
+                      title="Edit E-Proc ID">
+                <i class="bi bi-pencil"></i>
+              </button>
+            ` : ''}
+
+            <button class="btn btn-sm btn-success save-eproc-btn"
+                    data-global="${globalIdx}"
+                    style="display:none; font-size:0.7rem; white-space:nowrap; padding:0.15rem 0.5rem;">
+              <i class="bi bi-check2"></i> Save
+            </button>
+          ` : ''}
+          </div>
+          ${!hasRequired ? '<div class="text-danger small mt-1">⚠️ Missing fields</div>' : ''}
+          ${hasEProc ? '<div class="text-success small mt-1">✅ ID present</div>' : ''}
+        </td>
+        <td class="small ${entryDate ? 'fw-semibold' : ''}" style="min-width:110px;">
+          ${entryDate || '—'}
+          ${entryDate ? '<i class="bi bi-check-circle-fill text-success ms-1" style="font-size:0.6rem;"></i>' : ''}
+        </td>
+      </tr>
+    `;
+  });
+  tableBody.innerHTML = html;
+
+  tableBody.removeEventListener('click', handleTableClick);
+  tableBody.removeEventListener('input', handleInputChange);
+  tableBody.addEventListener('click', handleTableClick);
+  tableBody.addEventListener('input', handleInputChange);
+}
+
+    // ---------- EVENT HANDLERS ----------
+    function handleTableClick(e) {
+      const editBtn = e.target.closest('.edit-toggle-btn');
+      if (editBtn) {
+        const globalIdx = parseInt(editBtn.dataset.global);
+        const tr = editBtn.closest('tr');
+        const input = tr.querySelector('.eproc-input');
+        const saveBtn = tr.querySelector('.save-eproc-btn');
+        if (input && input.disabled) {
+          input.disabled = false;
+          input.classList.add('editable');
+          input.focus();
+          input.select();
+          if (saveBtn) saveBtn.style.display = 'none';
+          editBtn.innerHTML = '<i class="bi bi-pencil-square"></i>';
+          editBtn.classList.remove('btn-outline-primary');
+          editBtn.classList.add('btn-warning');
+        } else if (input && !input.disabled) {
+          input.focus();
+        }
+        return;
+      }
+
+      const saveBtn = e.target.closest('.save-eproc-btn');
+      if (saveBtn) {
+        const globalIdx = parseInt(saveBtn.dataset.global);
+        const tr = saveBtn.closest('tr');
+        const input = tr.querySelector('.eproc-input');
+        if (!input) return;
+        const newValue = input.value.trim();
+        if (newValue) {
+          updateEProcId(globalIdx, newValue, input, saveBtn);
+        } else {
+          showModal('⚠️', 'Empty Value', 'Please enter an E-Prosecution ID.', false);
+        }
+        return;
+      }
+    }
+
+    function handleInputChange(e) {
+      const input = e.target.closest('.eproc-input');
+      if (!input) return;
+      const globalIdx = parseInt(input.dataset.global);
+      const tr = input.closest('tr');
+      const saveBtn = tr.querySelector('.save-eproc-btn');
+      if (!saveBtn) return;
+      const originalValue = allRecords[globalIdx]?.['E-PROSECUTION-ID'] || '';
+      if (input.value.trim() !== originalValue) {
+        saveBtn.style.display = 'inline-flex';
+      } else {
+        saveBtn.style.display = 'none';
+      }
+    }
+
+    // ---------- UPDATE E-PROSECUTION ID ----------
+    async function updateEProcId(globalIdx, eProcId, inputElement, saveBtn) {
+      if (isUpdating) return;
+      if (!allRecords[globalIdx]) return;
+      const record = allRecords[globalIdx];
+      const grYear = getField(record, 'GR Year', 'GR YEAR');
+      const grNo = getField(record, 'GR NO.', 'GR No');
+      const psName = getField(record, 'PS NAME', 'PS Name');
+      const firNo = getField(record, 'FIR NO', 'FIR No');
+      const firYear = getField(record, 'FIR YEAR', 'FIR Year');
+
+      if (!grYear || !grNo || !psName || !firNo || !firYear) {
+        showModal('⚠️', 'Missing Data', `Record is missing required fields.`, false);
+        return;
+      }
+      const password = getCurrentPassword();
+      if (!password) { showModal('⚠️', 'Password Required', 'Please unlock the app first.', false); return; }
+      if (!window.SCRIPT_URL) { showModal('⚠️', 'Error', 'Script not loaded.', false); return; }
+
+      isUpdating = true;
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+      inputElement.disabled = true;
+
+      try {
+        const formData = new FormData();
+        formData.append('action', 'updateEProsecutionId');
+        formData.append('grYear', String(grYear).trim());
+        formData.append('grNo', String(grNo).trim());
+        formData.append('psName', String(psName).trim());
+        formData.append('firNo', String(firNo).trim());
+        formData.append('firYear', String(firYear).trim());
+        formData.append('eProsecutionId', String(eProcId).trim());
+        formData.append('password', password);
+
+        const response = await fetch(window.SCRIPT_URL, { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (data.success) {
+          allRecords[globalIdx]['E-PROSECUTION-ID'] = eProcId;
+          previousRecordsHash = '';
+          showModal('✅', 'Update Successful', data.message || 'E-Prosecution ID updated.', true);
+          updateStatsAndCounts();
+          saveBtn.style.display = 'none';
+
+          inputElement.classList.remove(
+              'editable',
+              'border-danger',
+              'border-2'
+          );
+
+          inputElement.classList.add(
+              'bg-success',
+              'text-light',
+              'border-success'
+          );
+
+          const tr = inputElement.closest('tr');
+          const editBtn = tr.querySelector('.edit-toggle-btn');
+          if (editBtn) {
+            editBtn.innerHTML = '<i class="bi bi-pencil"></i>';
+            editBtn.classList.remove('btn-warning');
+            editBtn.classList.add('btn-outline-primary');
+          }
+          const parentTd = inputElement.closest('td');
+          const hint = parentTd.querySelector('.text-success');
+          if (hint) hint.textContent = '✅ ID present';
+          await loadAllRecords(true);
+          applyFilter(currentFilter);
+        } else {
+          showModal('❌', 'Update Failed', data.message || 'Failed to update record.', false);
+        }
+      } catch (error) {
+        showModal('❌', 'Error', 'Update failed: ' + error.message, false);
+      } finally {
+        isUpdating = false;
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="bi bi-check2"></i> Save';
+        if (allRecords[globalIdx]?.['E-PROSECUTION-ID']?.trim()) {
+          inputElement.disabled = true;
+        }
+      }
+    }
+
+    // ---------- REFRESH ----------
+    window.refreshRecords = function() {
+      if (isUnlocked) { previousRecordsHash = ''; loadAllRecords(false); }
+    };
+
+    // ---------- LIVE UPDATE ----------
+    function startLiveUpdate() {
+      if (liveUpdateTimer) clearInterval(liveUpdateTimer);
+      isLiveEnabled = true;
+      liveStatus.textContent = '🟢 Live';
+      liveStatus.className = 'badge bg-success';
+      toggleLiveBtn.innerHTML = '<i class="bi bi-pause"></i> Pause';
+      liveUpdateTimer = setInterval(async function() {
+        if (!isLiveEnabled || isUpdating) return;
+        await loadAllRecords(true);
+      }, LIVE_UPDATE_INTERVAL);
+    }
+    function stopLiveUpdate() {
+      if (liveUpdateTimer) { clearInterval(liveUpdateTimer); liveUpdateTimer = null; }
+      isLiveEnabled = false;
+      liveStatus.textContent = '⏸️ Paused';
+      liveStatus.className = 'badge bg-secondary';
+      toggleLiveBtn.innerHTML = '<i class="bi bi-play"></i> Resume';
+    }
+    window.toggleLiveUpdate = function() {
+      if (isLiveEnabled) stopLiveUpdate();
+      else { startLiveUpdate(); loadAllRecords(true); }
+    };
+
+    // ---------- MODAL ----------
+    function showModal(icon, title, desc, isSuccess) {
+      modalIcon.textContent = icon;
+      modalTitle.textContent = title;
+      modalDesc.textContent = desc;
+      progressContainer.style.display = 'none';
+      modalBtn.disabled = false;
+      modalBtn.textContent = 'OK';
+      modalBtn.className = `btn ${isSuccess ? 'btn-success' : 'btn-primary'} px-5`;
+      if (!modalInstance) modalInstance = new bootstrap.Modal(modalEl);
+      modalInstance.show();
+    }
+    modalBtn.addEventListener('click', function() {
+      if (modalBtn.disabled) return;
+      if (modalInstance) modalInstance.hide();
+    });
+
+    // ---------- PANEL CONTROLS ----------
+    function openPanel() {
+      filterSidePanel.classList.add('open');
+      filterOverlay.classList.add('show');
+      buildFilterOptions();
+    }
+    function closePanel() {
+      filterSidePanel.classList.remove('open');
+      filterOverlay.classList.remove('show');
+    }
+    filterPanelToggle.addEventListener('click', openPanel);
+    closeFilterPanel.addEventListener('click', closePanel);
+    filterOverlay.addEventListener('click', closePanel);
+
+    clearAllFilters.addEventListener('click', function() {
+      // Clear all badge selections
+      filterPanelBody.querySelectorAll('.filter-values .badge.active').forEach(b => b.classList.remove('active'));
+      // Clear all text inputs
+      filterPanelBody.querySelectorAll('.filter-text-input').forEach(input => input.value = '');
+      // Clear all range inputs
+      filterPanelBody.querySelectorAll('.range-input-group input').forEach(input => input.value = '');
+      advancedFilter = {};
+      applyFilter(currentFilter);
+      syncStatusText.textContent = `📊 ${allRecords.length} records (filter cleared)`;
+      syncStatusBadge.textContent = `${allRecords.length}`;
+      syncStatusBadge.className = 'badge bg-secondary';
+      closePanel();
+    });
+
+    applyFiltersBtn.addEventListener('click', applyAdvancedFilter);
+
+    // ---------- EXCEL DOWNLOAD ----------
+    excelDownloadBtn.addEventListener('click', function() {
+      const dataToExport = filteredRecords.length ? filteredRecords : allRecords;
+      if (!dataToExport.length) {
+        showModal('⚠️', 'No Data', 'No records available for download.', false);
+        return;
+      }
+      // Build CSV
+      const headers = ['GR Year', 'GR NO.', 'PS NAME', 'FIR NO', 'FIR YEAR', 'FIR RG DATE', 'TYPE', 'DETAILS', 'REMARKS', 'E-PROSECUTION-ID', 'Entry Date'];
+      let csvRows = [];
+      csvRows.push(headers.join(','));
+      dataToExport.forEach(row => {
+        const values = headers.map(h => {
+          let val = row[h] || '';
+          if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
+            val = `"${val.replace(/"/g, '""')}"`;
+          }
+          return val;
+        });
+        csvRows.push(values.join(','));
+      });
+      const csvString = csvRows.join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `gr_entries_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showModal('✅', 'Download Started', `Exported ${dataToExport.length} records.`, true);
+    });
+
+    // ---------- UNLOCK ----------
+    unlockBtn.addEventListener('click', async function() {
+      const district = getSelectedDistrict();
+      if (!district) { passwordStatus.textContent = '⚠️ Please select a district first!'; passwordStatus.className = 'text-danger'; return; }
+      if (!window.SCRIPT_URL) { passwordStatus.textContent = '⚠️ District data not loaded.'; passwordStatus.className = 'text-danger'; return; }
+      const password = passwordInput.value.trim();
+      if (!password) { passwordStatus.textContent = '⚠️ Please enter password'; passwordStatus.className = 'text-danger'; return; }
+      unlockBtn.disabled = true;
+      unlockBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Checking...';
+      passwordStatus.textContent = '⏳ Verifying...';
+      passwordStatus.className = '';
+      try {
+        const formData = new FormData();
+        formData.append('action', 'verifyPassword');
+        formData.append('password', password);
+        formData.append('district', district);
+        const response = await fetch(window.SCRIPT_URL, { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.success) {
+          passwordStatus.textContent = '✅ Access granted!';
+          passwordStatus.className = 'text-success';
+          saveRememberedPassword(password);
+          unlockApp();
+        } else {
+          passwordStatus.textContent = '❌ Invalid password';
+          passwordStatus.className = 'text-danger';
+          passwordInput.value = '';
+          passwordInput.focus();
+        }
+      } catch (error) {
+        passwordStatus.textContent = '❌ Error verifying password';
+        passwordStatus.className = 'text-danger';
+        passwordInput.value = '';
+        passwordInput.focus();
+      } finally {
+        unlockBtn.disabled = false;
+        unlockBtn.innerHTML = '<i class="bi bi-key"></i> Unlock';
+      }
+    });
+    passwordInput.addEventListener('keypress', e => { if (e.key === 'Enter') unlockBtn.click(); });
+
+    function tryAutoUnlock() {
+      const authStatus = getAuthStatus();
+      if (authStatus && authStatus.unlocked && getSelectedDistrict() && window.SCRIPT_URL) { unlockApp(); return; }
+      const saved = localStorage.getItem(REMEMBER_PASSWORD_KEY);
+      if (saved && getSelectedDistrict() && window.SCRIPT_URL) {
+        passwordInput.value = saved; rememberCheckbox.checked = true; currentPassword = saved;
+        setTimeout(() => { unlockBtn.click(); }, 300);
+      }
+    }
+
+    // ---------- DISTRICT UI ----------
+    const districtAPD = document.getElementById('districtAPD');
+    const districtJPG = document.getElementById('districtJPG');
+    const districtStatus = document.getElementById('districtStatus');
+    const savedDistrict = getSelectedDistrict();
+    if (savedDistrict) {
+      if (savedDistrict === 'APD') { districtAPD.className = 'btn btn-primary flex-fill'; districtJPG.className = 'btn btn-outline-secondary flex-fill'; }
+      else if (savedDistrict === 'JPG') { districtJPG.className = 'btn btn-primary flex-fill'; districtAPD.className = 'btn btn-outline-secondary flex-fill'; }
+      districtStatus.textContent = '⏳ Loading: ' + savedDistrict + '...';
+      districtStatus.className = 'mt-2 fw-semibold text-center small text-primary';
+      loadDistrictScript(savedDistrict);
+    }
+    districtAPD.addEventListener('click', function() {
+      this.className = 'btn btn-primary flex-fill';
+      districtJPG.className = 'btn btn-outline-secondary flex-fill';
+      setSelectedDistrict('APD');
+      districtStatus.textContent = '⏳ Loading Alipurduar...';
+      districtStatus.className = 'mt-2 fw-semibold text-center small text-primary';
+      loadDistrictScript('APD');
+    });
+    districtJPG.addEventListener('click', function() {
+      this.className = 'btn btn-primary flex-fill';
+      districtAPD.className = 'btn btn-outline-secondary flex-fill';
+      setSelectedDistrict('JPG');
+      districtStatus.textContent = '⏳ Loading Jalpaiguri...';
+      districtStatus.className = 'mt-2 fw-semibold text-center small text-primary';
+      loadDistrictScript('JPG');
+    });
+
+    // ---------- FILTER BUTTON EVENTS ----------
+    filterAll.addEventListener('click', function() { applyFilter('all'); });
+    filterWith.addEventListener('click', function() { applyFilter('with'); });
+    filterWithout.addEventListener('click', function() { applyFilter('without'); });
+
+    // ---------- INIT ----------
+    loadRememberedPassword();
+    setTimeout(() => { tryAutoUnlock(); }, 1000);
+  })();
+</script>
+
+</body>
+</html>
