@@ -511,7 +511,8 @@
       }
       
       // Get unique GR Years
-      const grYears = [...new Set(allRecords.map(r => getField(r, 'GR Year', 'GR YEAR')).filter(v => v.trim() !== ''))].sort();
+      // Get unique GR Years - use the exact field name from your data
+        const grYears = [...new Set(allRecords.map(r => getField(r, 'GR Year')).filter(v => v.trim() !== ''))].sort();
       
       // Get unique PS Names
       const psNames = [...new Set(allRecords.map(r => getField(r, 'PS NAME', 'PS Name')).filter(v => v.trim() !== ''))].sort();
@@ -1102,7 +1103,7 @@ function renderTable(records) {
         return;
       }
       // Build CSV
-      const headers = ['GR Year', 'GR NO.', 'PS NAME', 'FIR NO', 'FIR YEAR', 'FIR RG DATE', 'TYPE', 'DETAILS', 'REMARKS', 'E-PROSECUTION-ID', 'Entry Date'];
+      const headers = ['GR Year', 'GR NO.', 'PS NAME', 'FIR NO', 'FIR YEAR', 'FIR  RG DATE', 'TYPE', 'DETAILS', 'REMARKS', 'E-PROSECUTION-ID', 'Entry Date'];
       let csvRows = [];
       csvRows.push(headers.join(','));
       dataToExport.forEach(row => {
